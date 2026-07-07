@@ -1,0 +1,22 @@
+# OS, IDE, python, & temp files
+**/.DS_Store
+*.log
+*.pid
+.idea/
+.vscode/
+.runs/
+.session/
+.playwright-mcp/
+.env
+__pycache__/
+*.pyc
+
+# Worktrees
+worktrees/
+
+# Repositories
+salestech-be/
+frontend-monorepo/
+reevo-realtime/
+harvey-the-slack-bot/
+infrastructure/
