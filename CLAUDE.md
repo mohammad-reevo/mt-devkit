@@ -43,5 +43,5 @@ Standalone tools: `worktree`, `db` (local/dev Postgres), `populate-dev-data`, `e
 ## Status — migration in progress
 
 Graduating out of `devkit`. Plan: `spec/mt-devkit-migration.md`. Design: `spec/my-devkit-design.md`.
-Devkit parity ledger: `spec/devkit-parity.md`. Skills are being de-prefixed from `mt-*` to bare
-names — until that lands (migration Phase 2), some may still carry the `mt-` prefix.
+Devkit parity ledger: `spec/devkit-parity.md`. Skills use bare names (the `mt-` prefix was dropped
+in migration Phase 2).

@@ -8,7 +8,7 @@ code change to happen inside a git worktree, keeping each repo's primary checkou
 Detection: a primary checkout has `.git` as a DIRECTORY; a linked worktree has
 `.git` as a FILE pointing at the real gitdir. We deny edits whose target resolves
 into a primary checkout and tell the agent to make/enter a worktree first (the
-mt-worktree skill). A hook cannot relocate the session itself -- it can only block
+worktree skill). A hook cannot relocate the session itself -- it can only block
 until the agent is in a worktree.
 
 Allow (gate does not fire) when:
@@ -105,7 +105,7 @@ def main():
         "Worktree gate: '{rel}' is in the PRIMARY checkout of {root} (its main "
         "working tree), which must stay pristine for parallel tasks. Do not edit "
         "here.\n"
-        "  Fix: make a worktree with the mt-worktree skill (`create <name>`), which "
+        "  Fix: make a worktree with the worktree skill (`create <name>`), which "
         "sets up the sub-repos on `mohammad/<name>` and switches you in; then make the "
         "change inside it. (Or EnterWorktree into an existing worktree.)\n"
         "  Bypass this session only: set CLAUDE_WORKTREE_GATE=0.".format(

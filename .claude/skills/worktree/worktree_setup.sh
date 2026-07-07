@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# mt_worktree_setup.sh — create a worktree of the parent workspace + its sub-repos on a
+# worktree_setup.sh — create a worktree of the parent workspace + its sub-repos on a
 # logical feature branch, copy env/settings, fix the frontend→backend path for THIS
 # worktree, and install backend deps.
 #
-# Usage: mt_worktree_setup.sh <name> <main-repo-abs-path>
+# Usage: worktree_setup.sh <name> <main-repo-abs-path>
 #
-# Personal rebuild of devkit's worktree_setup.sh — `mt-` prefix temporary. Self-contained:
+# Personal rebuild of devkit's worktree_setup.sh — self-contained. Self-contained:
 # no devkit hooks. Idempotent-ish: skips sub-repos/env files that already exist.
 #
 # Secrets: env files are copied and path-fixed ON DISK. The one path key is rewritten with a
 # line-scoped in-place sed; the file's contents (API keys, etc.) are never read into context.
 set -euo pipefail
 
-name="${1:?Usage: mt_worktree_setup.sh <name> <main-repo-path>}"
+name="${1:?Usage: worktree_setup.sh <name> <main-repo-path>}"
 main="${2:?main repo path required}"
 wt="${main}/worktrees/${name}"
 branch="mohammad/${name}"
@@ -78,4 +78,4 @@ if [[ -f "${be_wt}/pyproject.toml" ]]; then
     (cd "$be_wt" && uv sync --quiet)
 fi
 
-echo "mt-worktree setup complete: ${wt}" >&2
+echo "worktree setup complete: ${wt}" >&2

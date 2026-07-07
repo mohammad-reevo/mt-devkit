@@ -1,19 +1,19 @@
 ---
-name: mt-verify
-description: Verification phase of my personal dev workflow. Takes the pushed, reviewed branch from mt-implement, implicitly picks a verification strategy (run scripts / skip / in-app with me), proves the change works, then opens the PR using the relevant repo's own pr-description skill + template. Directly invocable on any branch. Use after mt-implement, or to verify + PR a branch on its own.
+name: verify
+description: Verification phase of my personal dev workflow. Takes the pushed, reviewed branch from implement, implicitly picks a verification strategy (run scripts / skip / in-app with me), proves the change works, then opens the PR using the relevant repo's own pr-description skill + template. Directly invocable on any branch. Use after implement, or to verify + PR a branch on its own.
 ---
 
-> Personal rebuild — `mt-` prefix temporary (stripped at graduation to standalone repo).
-> Part of the funnel: **mt-scope → mt-plan → mt-implement → mt-verify → mt-babysit → mt-done**
+> Personal rebuild — self-contained, no devkit dependency.
+> Part of the funnel: **scope → plan → implement → verify → babysit → done**
 > (see `~/.claude/spec/my-devkit-design.md`).
 
-# mt-verify — prove it works, then open the PR
+# verify — prove it works, then open the PR
 
-You pick up a **pushed, reviewed, green branch** (from mt-implement) and carry it to an **open
+You pick up a **pushed, reviewed, green branch** (from implement) and carry it to an **open
 PR** — but only once the change is proven to actually work. Two jobs: verify, then PR.
 
-Not your job: unit/integration **test-building** is decided in mt-scope and built in
-mt-implement; **code review** already happened in implement; **CI babysitting** is mt-babysit.
+Not your job: unit/integration **test-building** is decided in scope and built in
+implement; **code review** already happened in implement; **CI babysitting** is babysit.
 This skill is post-build, does-it-actually-work verification plus the PR.
 
 ## Input check (always first)
@@ -50,7 +50,7 @@ in-app case pulls me in.
 failure to surface and stop on, not a step to route around.
 
 If verification surfaces a bug → fix it, re-run the check, commit + push. These after-the-fact
-changes do **not** re-run mt-implement's code review (it was a one-shot post-implementation gate).
+changes do **not** re-run implement's code review (it was a one-shot post-implementation gate).
 
 ## 3. Open the PR (only after it passes 100%)
 
@@ -63,7 +63,7 @@ what/why (from Goals) + how-verified (strategy + step-2 results); attach the scr
 changes. Use the repo's own tooling — never devkit's `frontend-pr`/`backend-pr`, and don't
 duplicate them.
 
-Report the PR link + a one-line verification summary. Return to `/mt-workflow` to continue —
+Report the PR link + a one-line verification summary. Return to `/workflow` to continue —
 it owns what comes next.
 
 ## Guardrails
@@ -75,5 +75,5 @@ it owns what comes next.
 - **PR only when green.** The PR is created after verification passes 100% — never draft-then-fix.
 - **Use the repo's own PR tooling.** The PR description follows the relevant repo's
   `pr-description` skill + `pull_request_template.md` (read-and-follow if not natively loaded) —
-  never devkit's PR skills, and nothing duplicated into `mt-*`.
-- **No state, no auto-transition** (Wave 1: I drive). mt-babysit is a separate opt-in phase.
+  never devkit's PR skills, and nothing duplicated into the harness.
+- **No state, no auto-transition** (Wave 1: I drive). babysit is a separate opt-in phase.

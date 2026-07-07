@@ -34,5 +34,5 @@ Plus standalone tools: `worktree`, `db`, `populate-dev-data`, `env-manager`, and
 ## Status
 
 Graduating out of `devkit`. See `spec/mt-devkit-migration.md` for the migration plan and
-`spec/my-devkit-design.md` for the full design. Skills are being de-prefixed from `mt-*` to bare
-names as part of the migration.
+`spec/my-devkit-design.md` for the full design. Skills use bare names (the `mt-` prefix was
+dropped in Phase 2 of the migration).

@@ -1,11 +1,11 @@
 ---
-name: mt-db
+name: db
 description: Query Postgres from my personal harness — the LOCAL Docker DB by default, or the shared Dev Aurora writer when I say "dev". Self-contained psql wrapper (personal rebuild of devkit's local-db + dev-db, no devkit dependency). Use for data investigation, debugging, verifying migrations, or checking state after backend ops. Full SQL (SELECT/INSERT/UPDATE/DELETE). Assume LOCAL unless I explicitly mention dev. Triggers on "query the db", "check the local db", "query the dev db", "look up X in postgres", "run this SQL".
 ---
 
-# mt-db — query Postgres (local by default, dev on request)
+# db — query Postgres (local by default, dev on request)
 
-> Personal rebuild — `mt-` prefix temporary. Consolidates devkit's `local-db` + `dev-db` into one
+> Personal rebuild — self-contained. Consolidates devkit's `local-db` + `dev-db` into one
 > skill. Self-contained: no devkit paths, scripts, or hooks.
 
 ## Target: assume local unless I say dev
@@ -16,11 +16,11 @@ description: Query Postgres from my personal harness — the LOCAL Docker DB by 
 ## How to run
 
 ```
-bash ~/.claude/skills/mt-db/dbquery.sh [--dev] [--csv|--expanded|--tuples-only] "SQL"
+bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh [--dev] [--csv|--expanded|--tuples-only] "SQL"
 ```
 
-- **Local (default):** `bash ~/.claude/skills/mt-db/dbquery.sh "SELECT count(*) FROM contact;"`
-- **Dev:** add `--dev`: `bash ~/.claude/skills/mt-db/dbquery.sh --dev "SELECT count(*) FROM contact;"`
+- **Local (default):** `bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh "SELECT count(*) FROM contact;"`
+- **Dev:** add `--dev`: `bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh --dev "SELECT count(*) FROM contact;"`
 - `--csv` for machine-readable rows, `--expanded` for one-record vertical output, `--tuples-only`
   to drop headers/footers. psql meta-commands work too (`\dt`, `\d contact`).
 

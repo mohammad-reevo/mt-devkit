@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# mt-db — personal rebuild of devkit's local-db + dev-db, consolidated. mt- prefix temporary.
+# db — personal rebuild of devkit's local-db + dev-db, consolidated. self-contained.
 # Self-contained: no devkit paths, scripts, or hooks. Queries Postgres via psql.
 #   default target: local Docker DB.   --dev: shared Dev Aurora WRITER (Tailscale + chamber).
 

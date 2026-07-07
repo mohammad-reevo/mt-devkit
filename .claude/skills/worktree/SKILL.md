@@ -1,13 +1,13 @@
 ---
-name: mt-worktree
+name: worktree
 description: Manage isolated worktrees for my personal dev funnel. Given a name, creates a worktree of the parent workspace + its sub-repos (salestech-be, frontend-monorepo) each on a logical feature branch mohammad/<name>, with env/settings copied and the frontend→backend path fixed for the worktree. Three modes — create / list / remove. Use to start isolated work, see active worktrees, or tear one down. Triggers on "make/create a worktree", "list worktrees", "remove worktree <name>".
 ---
 
-> Personal rebuild — `mt-` prefix temporary (stripped at graduation to standalone repo).
+> Personal rebuild — self-contained, no devkit dependency.
 > Standalone tool (rebuilt from devkit's worktree skill; self-contained, no devkit
 > scripts/hooks). See `~/.claude/spec/my-devkit-design.md`.
 
-# mt-worktree — isolated worktrees for the funnel
+# worktree — isolated worktrees for the funnel
 
 Given a **name**, create a worktree of the parent workspace + its sub-repos, each on a logical
 feature branch `mohammad/<name>`, env copied and the frontend's backend-path fixed for *this*
@@ -27,7 +27,7 @@ the first entry of `git worktree list` in the parent repo; fall back to
    in the worktree's frontend env to `<worktree>/salestech-be` via a line-scoped in-place sed —
    secrets never read into context — and runs `uv sync`):
    ```bash
-   bash ~/.claude/skills/mt-worktree/mt_worktree_setup.sh "<name>" "$MAIN"
+   bash $CLAUDE_PROJECT_DIR/.claude/skills/worktree/worktree_setup.sh "<name>" "$MAIN"
    ```
 2. Switch the session in: `EnterWorktree(path: "$MAIN/worktrees/<name>")`.
 3. Report: "Worktree `<name>` ready — sub-repos on `mohammad/<name>`, backend path fixed for
@@ -49,7 +49,7 @@ Render a compact table (worktree | updated | salestech-be branch | frontend-mono
    stand in a directory you're about to delete.
 2. Run the teardown script:
    ```bash
-   bash ~/.claude/skills/mt-worktree/mt_worktree_teardown.sh "<name>" "$MAIN"
+   bash $CLAUDE_PROJECT_DIR/.claude/skills/worktree/worktree_teardown.sh "<name>" "$MAIN"
    ```
    It removes each sub-repo worktree + the parent worktree and deletes the **local**
    `mohammad/<name>` branches.
@@ -62,7 +62,7 @@ Render a compact table (worktree | updated | salestech-be branch | frontend-mono
 - Worktrees share Docker infra (DB / Redis / Temporal) — only code differs.
 - `.env` is copied + path-fixed on disk by the script, never read into the conversation.
   Deeper secret hardening is a separate task.
-- **Funnel wiring (later):** `mt-plan` will `create` a worktree (name from the idea);
-  `mt-done` calls `remove` to tear it down after close-out.
-- After a standalone `create`, return to `/mt-workflow` to drive the funnel in the new worktree
+- **Funnel wiring (later):** `plan` will `create` a worktree (name from the idea);
+  `done` calls `remove` to tear it down after close-out.
+- After a standalone `create`, return to `/workflow` to drive the funnel in the new worktree
   — it owns what comes next.

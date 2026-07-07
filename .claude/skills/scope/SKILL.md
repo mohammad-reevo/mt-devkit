@@ -1,13 +1,13 @@
 ---
-name: mt-scope
-description: Funnel head of my personal dev workflow. Brainstorm/discuss a raw development idea — or a Linear ticket — into a converged high-level direction — 2–3 approaches with tradeoffs, light research, open questions, and the testing the work warrants (unit/integration, at altitude). Deliberately NO task breakdown and NO file paths. Decides the idea's name up front (yours if given, else self-generated), and records the name in the scope file. Writes ~/.claude/spec/<name>-scope.md for mt-plan to consume. Use when starting a new idea or kicking off a ticket, before any planning. Triggers on "start this ticket", "kick off <TICKET-ID>", "let's start <TICKET-ID>".
+name: scope
+description: Funnel head of my personal dev workflow. Brainstorm/discuss a raw development idea — or a Linear ticket — into a converged high-level direction — 2–3 approaches with tradeoffs, light research, open questions, and the testing the work warrants (unit/integration, at altitude). Deliberately NO task breakdown and NO file paths. Decides the idea's name up front (yours if given, else self-generated), and records the name in the scope file. Writes ~/.claude/spec/<name>-scope.md for plan to consume. Use when starting a new idea or kicking off a ticket, before any planning. Triggers on "start this ticket", "kick off <TICKET-ID>", "let's start <TICKET-ID>".
 ---
 
-> Personal rebuild — `mt-` prefix temporary (stripped at graduation to standalone repo).
-> Part of the funnel: **mt-scope → mt-plan → mt-implement → mt-verify → mt-babysit → mt-done**
+> Personal rebuild — self-contained, no devkit dependency.
+> Part of the funnel: **scope → plan → implement → verify → babysit → done**
 > (see `~/.claude/spec/my-devkit-design.md`).
 
-# mt-scope — brainstorm an idea into a direction
+# scope — brainstorm an idea into a direction
 
 You are running the **divergent** phase. Your job is to help me converge on a *direction*,
 not a plan. Stay at altitude the entire time.
@@ -23,7 +23,7 @@ scope/plan files, the worktree, and the branch `mohammad/<name>`, and it's recor
 scope file (below) so downstream phases read it rather than re-derive it.
 
 **Re-entrancy.** Check `~/.claude/spec/<name>-scope.md`:
-- **Exists** → revision (mt-plan kicked it back, or I changed my mind). Read it, state the
+- **Exists** → revision (plan kicked it back, or I changed my mind). Read it, state the
   current direction, ask what changed. Revise from there — don't start over.
 - **Doesn't exist** → fresh scope, run the four beats below.
 
@@ -69,8 +69,8 @@ you advocate, you don't decide.
 **Testing call (part of the direction).** Before writing the file, settle — at altitude — what
 testing the chosen direction warrants: unit tests for new logic, an integration test for a
 flow, or none for a trivial/refactor change. Name the *kinds* and what they'd cover, never test
-files or cases (that's mt-plan). This is the **one place test-building is scoped** — mt-plan
-turns it into concrete test tasks and mt-implement builds them; mt-verify does post-build
+files or cases (that's plan). This is the **one place test-building is scoped** — plan
+turns it into concrete test tasks and implement builds them; verify does post-build
 verification only and never decides tests.
 
 ### 4. Write the scope file (only after I've agreed on a direction)
@@ -94,16 +94,16 @@ What we're doing, at altitude. The shape of the solution — never tasks, never 
 
 ## Testing
 What testing the chosen direction warrants, at altitude — the kinds of tests + what they cover,
-or "none" + why. mt-plan turns this into concrete test tasks; it doesn't invent test scope.
+or "none" + why. plan turns this into concrete test tasks; it doesn't invent test scope.
 
 ## Open questions
-Things mt-plan must resolve or ask me about.
+Things plan must resolve or ask me about.
 
 ## Out of scope
-What we consciously deferred, so mt-plan doesn't reinvent it.
+What we consciously deferred, so plan doesn't reinvent it.
 ```
 
-Close by telling me the file path. Return to `/mt-workflow` to continue the funnel — it owns
+Close by telling me the file path. Return to `/workflow` to continue the funnel — it owns
 what comes next.
 This filename is the **slug authority** for the rest of the funnel — downstream skills find
 the chain by this file, they never re-derive the slug from the idea.
@@ -111,11 +111,11 @@ the chain by this file, they never re-derive the slug from the idea.
 ## Guardrails
 
 - **No descending.** If the discussion starts producing task lists, file paths, function
-  names, or schemas — stop, say "that's mt-plan territory", and capture the thread as an
+  names, or schemas — stop, say "that's plan territory", and capture the thread as an
   open question instead. This applies to your own output too: catch yourself.
 - **Honest tradeoffs.** Every approach gets real costs named. An approach with no listed
   downside means you haven't thought about it enough.
 - **No invented requirements.** Scope what I asked about. Gaps you notice become open
   questions, not silently-added scope.
-- **One artifact, no state.** No session files, no hooks, no auto-transition into mt-plan
+- **One artifact, no state.** No session files, no hooks, no auto-transition into plan
   (Wave 1: I drive).

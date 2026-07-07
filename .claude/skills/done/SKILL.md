@@ -1,22 +1,22 @@
 ---
-name: mt-done
-description: Close out the current worktree — gate the PR(s) for its checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, then tear down the worktree + local branches. Manual only. `/mt-done cancel` abandons an idea without the gate. Use when a PR is ready to close out of your active set (merge happens separately). Triggers on "/mt-done", "close this out", "done with this".
+name: done
+description: Close out the current worktree — gate the PR(s) for its checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, then tear down the worktree + local branches. Manual only. `/done cancel` abandons an idea without the gate. Use when a PR is ready to close out of your active set (merge happens separately). Triggers on "/done", "close this out", "done with this".
 ---
 
-> Personal rebuild — `mt-` prefix temporary (stripped at graduation to standalone repo).
-> Funnel tail: **… → mt-verify → mt-babysit → mt-done** (see `~/.claude/spec/my-devkit-design.md`).
+> Personal rebuild — self-contained, no devkit dependency.
+> Funnel tail: **… → verify → babysit → done** (see `~/.claude/spec/my-devkit-design.md`).
 
-# mt-done — close out the worktree
+# done — close out the worktree
 
-**Manual only.** Runs only when I explicitly invoke `/mt-done`. Never auto — I review the PRs.
+**Manual only.** Runs only when I explicitly invoke `/done`. Never auto — I review the PRs.
 
 You close out the **current worktree**: gate the PR(s) for whatever branches are checked out,
 delete their plan/scope spec files, and tear the worktree down. Deliberately minimal — no
 archiving, no records, no session state. The PR is the source of truth.
 
 ## Two modes
-- **`/mt-done`** — normal close-out (runs the gate).
-- **`/mt-done cancel`** — abandon the idea: skip the gate, tear down anyway (dead exploration,
+- **`/done`** — normal close-out (runs the gate).
+- **`/done cancel`** — abandon the idea: skip the gate, tear down anyway (dead exploration,
   superseded direction). No reason arg.
 
 ## Resolve what's being closed
@@ -47,7 +47,7 @@ happens separately from your queue).
 1. **Delete matching spec files** — for each branch, strip `mohammad/` → `<slug>`; delete
    `~/.claude/spec/<slug>-plan.md` and `<slug>-scope.md` if present. Plan-optional: a branch
    with no spec files just skips this.
-2. **Remove the worktree + local branches** — invoke `mt-worktree` `remove <name>` (it exits
+2. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
    the worktree first, removes the sub-repo + parent worktrees, deletes the **local**
    `mohammad/<slug>` branches). **Remote branches are never touched** — they back the open PRs
    and GitHub deletes them on merge.
@@ -58,7 +58,7 @@ What was closed: the PR link(s), which spec files were deleted, and that the wor
 removed.
 
 ## Guardrails
-- **Explicit only.** Never auto-run — only on my `/mt-done`.
+- **Explicit only.** Never auto-run — only on my `/done`.
 - **Gate is all-or-nothing.** Any PR failing CI or with an open thread → stop, tear down
   nothing. Report every failure at once (don't fail on the first).
 - **All threads, not a filtered list.** Query every thread's `isResolved`; outdated counts as
