@@ -29,10 +29,10 @@ When the user invokes this skill with a verbal command (e.g. `/env-manager run b
 6. **If something fails**, stop and report exactly what failed. Do not apply silent workarounds, do not retry with different flags, do not skip steps. The user reads logs themselves.
 7. **Always anchor cwd at `<worktree_root>` first** (resolved per Rule 9). Bash tool sessions persist cwd between calls, and the ACL hook rejects any call whose cwd is inside a sub-repo (e.g. `salestech-be`, `frontend-monorepo`, `reevo-realtime`). Every command must begin with `cd <worktree_root> && cd <subdir> && ...` — never just `cd <subdir>`, and never the literal hardcoded path.
 8. **Rule 4 exception — readiness poll after starting envs.** The `run-be`, `run-fe-2`, `run-rt` aliases background-detach immediately. After dispatching, poll: `until lsof -iTCP:8000 -sTCP:LISTEN -nP >/dev/null && lsof -iTCP:3000 -sTCP:LISTEN -nP >/dev/null && lsof -iTCP:8787 -sTCP:LISTEN -nP >/dev/null; do sleep 5; done` then report final lsof. Do **not** use `sleep N && lsof` — harness blocks chained sleeps. Applies only to **Envs** section rows that start a service.
-9. **Resolve `<worktree_root>` before running any row.** Devkit can be checked out as the canonical clone at `/Users/mohammad/Desktop/code/devkit` or as one or more worktrees at `/Users/mohammad/Desktop/code/mt-devkit/worktrees/<name>/`. Each is a complete clone containing `salestech-be/`, `frontend-monorepo/`, `reevo-realtime/`. Resolve as follows:
+9. **Resolve `<worktree_root>` before running any row.** mt-devkit can be checked out as the canonical clone at `/Users/mohammad/Desktop/code/mt-devkit` or as one or more worktrees at `/Users/mohammad/Desktop/code/mt-devkit/worktrees/<name>/`. Each is a complete clone containing `salestech-be/`, `frontend-monorepo/`, `reevo-realtime/`. Resolve as follows:
     - Start from the **live current working directory** — run `pwd` and use its output. Do **not** read the env header's "primary working directory": that value is captured at session start and never follows the session into a worktree, so it always resolves to wherever the session began (usually `main`) even when you are working inside a worktree. `pwd` is the only signal that reflects the worktree you are actually in.
-    - Walk up the parent chain until you find a directory containing both `salestech-be/` and `frontend-monorepo/` as siblings. That directory is `<worktree_root>`. (Note: a bare `git worktree add` of a single sub-repo — e.g. a `worktrees/<name>/` that contains only `salestech-be/` — is **not** a resolvable worktree here; it lacks the `frontend-monorepo/` sibling, so the walk-up skips past it. A full devkit worktree, created via the devkit `worktree` skill, contains all sub-repos as siblings.)
-    - If no such directory exists in the parent chain, **stop and tell the user**: "not inside a devkit worktree". Do **not** silently fall back to `/Users/mohammad/Desktop/code/devkit`.
+    - Walk up the parent chain until you find a directory containing both `salestech-be/` and `frontend-monorepo/` as siblings. That directory is `<worktree_root>`. (Note: a bare `git worktree add` of a single sub-repo — e.g. a `worktrees/<name>/` that contains only `salestech-be/` — is **not** a resolvable worktree here; it lacks the `frontend-monorepo/` sibling, so the walk-up skips past it. A full mt-devkit worktree, created via the `worktree` skill, contains all sub-repos as siblings.)
+    - If no such directory exists in the parent chain, **stop and tell the user**: "not inside an mt-devkit worktree". Do **not** silently fall back to `/Users/mohammad/Desktop/code/mt-devkit`.
     - **Cache the resolved value for the entire command.** All-Envs compositions inherit the same `<worktree_root>` — never re-detect mid-chain. Re-detect on each new `/env-manager` invocation.
     - Rationale: kills are port/process-based and already worktree-agnostic, but `run`/`git`/`gen` rows must operate on the worktree the user is currently sitting in.
 
@@ -45,12 +45,12 @@ When a row uses the `<env_name>` placeholder, substitute the matching `<env_subd
 | backend | `salestech-be` |
 | frontend | `frontend-monorepo` |
 | realtime | `reevo-realtime` |
-| devkit | `.` |
+| mt-devkit | `.` |
 | all-envs | meta — implicit fan-out (see below) |
 
 ### `all-envs` fan-out
 
-When a parameterized row receives `<env_name> = all-envs`, run the row's command **four times in parallel** — once for each of `{backend, frontend, realtime, devkit}` — and report a 4-line block summarizing per-env results. This fan-out applies uniformly to every parameterized `<env_name>` row (`merge`, `pull`, `checkout`, `check branch`, etc.) so each new such row automatically supports `all-envs` without needing its own composition row.
+When a parameterized row receives `<env_name> = all-envs`, run the row's command **four times in parallel** — once for each of `{backend, frontend, realtime, mt-devkit}` — and report a 4-line block summarizing per-env results. This fan-out applies uniformly to every parameterized `<env_name>` row (`merge`, `pull`, `checkout`, `check branch`, etc.) so each new such row automatically supports `all-envs` without needing its own composition row.
 
 If any individual fan-out call fails, report which env failed and stop per Rule 6 — do not silently skip.
 
@@ -67,8 +67,8 @@ If branch lookup returns empty, use `unknown`. If multiple PIDs are listening on
 
 ## Worktree root → name (helper)
 
-Used by `check devkit` and the worktree step of **PID → worktree+branch lookup**. Map a worktree root path:
-- `/Users/mohammad/Desktop/code/devkit` → `main`
+Used by `check mt-devkit` and the worktree step of **PID → worktree+branch lookup**. Map a worktree root path:
+- `/Users/mohammad/Desktop/code/mt-devkit` → `main`
 - `/Users/mohammad/Desktop/code/mt-devkit/worktrees/<name>` → `<name>`
 - Otherwise → `unknown (path: <path>)`
 
@@ -84,7 +84,7 @@ The map is split into sections by domain. When a row delegates to another row, t
 |---|---|
 | run all-envs | **run docker** (Docker section) → **run backend** (Backend section) → **run realtime** (Realtime section) → **run frontend** (Frontend section), in that order. Each `run` is idempotent (stops any running instance first, then starts), so this also recycles whatever is already up — no separate re-run needed. Then poll-until-listening per Rule 8. |
 | kill all-envs | **kill backend** (Backend section) → **kill realtime** (Realtime section) → **kill frontend** (Frontend section) → **kill docker** (Docker section), in that order. |
-| check all-envs | **check devkit** (Devkit section) → **check backend** (Backend section) → **check frontend** (Frontend section) → **check realtime** (Realtime section) → **check docker** (Docker section), in that order. Run all five and report combined results as **five separate lines** (one per sub-check, preserving each sub-row's "Report a single line" output verbatim — do not join with separators like `·` or `\|`). Do not stop on a NOT LISTENING / NOT RUNNING result (this is a status query, not a workflow step, so Rule 7 does not apply). |
+| check all-envs | **check mt-devkit** (mt-devkit section) → **check backend** (Backend section) → **check frontend** (Frontend section) → **check realtime** (Realtime section) → **check docker** (Docker section), in that order. Run all five and report combined results as **five separate lines** (one per sub-check, preserving each sub-row's "Report a single line" output verbatim — do not join with separators like `·` or `\|`). Do not stop on a NOT LISTENING / NOT RUNNING result (this is a status query, not a workflow step, so Rule 7 does not apply). |
 
 ### Git
 
@@ -93,8 +93,8 @@ The map is split into sections by domain. When a row delegates to another row, t
 | You say | I run |
 |---|---|
 | merge `<branch_name>` `<env_name>` | `cd <worktree_root> && cd <env_subdir> && zsh -ic 'gpu && git merge origin/<branch_name>'` |
-| pull `<env_name>` | Steps: (1) `cd <worktree_root> && cd <env_subdir>`; (2) capture pre-pull HEAD: `prev_head=$(git rev-parse HEAD)`; (3) `zsh -ic 'gpu'` and report pull output; (4) **devkit plugin auto-install** — only when `<env_name>` is `devkit` (or `all-envs` reaches devkit): run `git diff --name-only "$prev_head"..HEAD` to list changed paths. For any path matching `plugins/<plugin>/...`, extract the unique `<plugin>` names. If at least one plugin changed, run `claude plugin marketplace update devkit` once, then `claude plugin install <plugin>@devkit` for each unique plugin. Report each install's output. If no `plugins/` paths changed, skip step 4 silently. Rationale: source `plugins/` is what `git pull` updates; the active hook code is the installed copy at `~/.claude/plugins/cache/devkit/<plugin>/<version>/`, which only `claude plugin install` syncs — `git pull` alone leaves the hook cache stale. |
-| checkout `<branch_name>` `<env_name>` | `cd <worktree_root> && cd <env_subdir> && zsh -ic 'git checkout <branch_name>'`. Report checkout output. Then execute **pull `<env_name>`** (this section) — that handles the upstream fast-forward AND the devkit plugin auto-install logic, so checkout doesn't have to duplicate it. |
+| pull `<env_name>` | `cd <worktree_root> && cd <env_subdir> && zsh -ic 'gpu'` and report pull output. |
+| checkout `<branch_name>` `<env_name>` | `cd <worktree_root> && cd <env_subdir> && zsh -ic 'git checkout <branch_name>'`. Report checkout output. Then execute **pull `<env_name>`** (this section) — that handles the upstream fast-forward, so checkout doesn't have to duplicate it. |
 | check branch `<env_name>` | `git -C <worktree_root>/<env_subdir> branch --show-current`. Report a single line: `<env_name>: <branch_name>`. If the sub-repo directory doesn't exist, report `<env_name>: —`. If branch lookup returns empty, use `unknown`. |
 
 ### Backend
@@ -123,11 +123,11 @@ The map is split into sections by domain. When a row delegates to another row, t
 | kill realtime | `cd <worktree_root> && cd reevo-realtime && zsh -ic 'kill-rt'` |
 | check realtime | `lsof -iTCP:8787 -sTCP:LISTEN -nP`. If LISTENING, also run the **PID → worktree+branch lookup** helper for the first listening pid. Report a single line: `realtime (port 8787): LISTENING — pid <pid>, worktree: <wt_name>, branch: <branch_name>` or `realtime (port 8787): NOT LISTENING`. |
 
-### Devkit
+### mt-devkit
 
 | You say | I run |
 |---|---|
-| check devkit | `git -C <worktree_root> branch --show-current` for the branch. Apply the **Worktree root → name** helper to `<worktree_root>`. Report a single line: `devkit: worktree: <wt_name>, branch: <branch_name>`. If branch lookup returns empty, use `unknown`. |
+| check mt-devkit | `git -C <worktree_root> branch --show-current` for the branch. Apply the **Worktree root → name** helper to `<worktree_root>`. Report a single line: `mt-devkit: worktree: <wt_name>, branch: <branch_name>`. If branch lookup returns empty, use `unknown`. |
 
 ### Docker
 
