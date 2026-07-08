@@ -1,6 +1,6 @@
 ---
-name: mt-babysit
-description: Watch CI checks + PR review threads for the current worktree's PR(s) in a poll loop. OPT-IN — runs only when I explicitly invoke it, never auto-starts. Reports failing checks (trimmed logs) + unresolved threads; reruns a genuinely-flaky failure once. Use --watch-only for a single-shot check. Triggers on "/mt-babysit", "babysit the PR", "watch CI".
+name: babysit
+description: Watch CI checks + PR review threads for the current worktree's PR(s) in a poll loop. OPT-IN — runs only when I explicitly invoke it, never auto-starts. Reports failing checks (trimmed logs) + unresolved threads; reruns a genuinely-flaky failure once. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
 argument-hint: [--watch-only]
 allowed-tools:
   - Bash
@@ -8,11 +8,11 @@ allowed-tools:
   - ScheduleWakeup
 ---
 
-> Personal rebuild — `mt-` prefix temporary (stripped at graduation to standalone repo).
-> Funnel tail: **… → mt-verify → mt-babysit → mt-done** (see `~/.claude/spec/my-devkit-design.md`).
+> Personal rebuild — self-contained, no devkit dependency.
+> Funnel tail: **… → verify → babysit → done** (see `~/.claude/spec/my-devkit-design.md`).
 > Self-contained — no scripts, no devkit plugin; all inline `gh`.
 
-# mt-babysit — watch CI + PR comments
+# babysit — watch CI + PR comments
 
 **Opt-in.** Runs **only** when I explicitly invoke it — never auto-starts, never nudges after a
 push (that's the deliberate difference from devkit's). Each invocation is **one poll iteration**:
@@ -64,8 +64,8 @@ Track rerun state per `headSha` (a new push resets it).
 
 - **`--watch-only`** → print the status table + unresolved threads, then exit. No wakeup, no loop.
 - **Loop mode (default)** → all PRs green **and** zero unresolved threads → print "all green" and
-  exit (do **not** invoke mt-done, do **not** write any state). Otherwise:
-  `ScheduleWakeup(delaySeconds: 90, reason: "polling CI + PR threads", prompt: "Continue mt-babysit — run one more poll iteration for the current worktree's PR(s).")`
+  exit (do **not** invoke done, do **not** write any state). Otherwise:
+  `ScheduleWakeup(delaySeconds: 90, reason: "polling CI + PR threads", prompt: "Continue babysit — run one more poll iteration for the current worktree's PR(s).")`
 
 ## Guardrails
 
@@ -74,5 +74,5 @@ Track rerun state per `headSha` (a new push resets it).
 - **Flaky rerun is one-shot per headSha,** and only when the failure doesn't overlap your diff.
   After that, report it — never rerun endlessly to force green.
 - **Report, don't fix.** Surface failures + comments; don't dispatch fix agents or close out.
-- **No state, no auto-transition.** Reaching green doesn't trigger mt-done — closing out is my
-  explicit `/mt-done`.
+- **No state, no auto-transition.** Reaching green doesn't trigger done — closing out is my
+  explicit `/done`.

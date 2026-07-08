@@ -1,23 +1,23 @@
 ---
-name: mt-plan
-description: Convergent phase of my personal dev workflow. Consumes ~/.claude/spec/<slug>-scope.md, creates + enters the feature worktree (via mt-worktree) up front, then descends to concrete detail — goals, ordered task breakdown with file-level changes, verification strategy. Writes ~/.claude/spec/<slug>-plan.md for mt-implement to consume. Use after mt-scope has converged on a direction, or directly for small ideas (inline mini-scope).
+name: plan
+description: Convergent phase of my personal dev workflow. Consumes ~/.claude/spec/<slug>-scope.md, creates + enters the feature worktree (via worktree) up front, then descends to concrete detail — goals, ordered task breakdown with file-level changes, verification strategy. Writes ~/.claude/spec/<slug>-plan.md for implement to consume. Use after scope has converged on a direction, or directly for small ideas (inline mini-scope).
 ---
 
-> Personal rebuild — `mt-` prefix temporary (stripped at graduation to standalone repo).
-> Part of the funnel: **mt-scope → mt-plan → mt-implement → mt-verify → mt-babysit → mt-done**
+> Personal rebuild — self-contained, no devkit dependency.
+> Part of the funnel: **scope → plan → implement → verify → babysit → done**
 > (see `~/.claude/spec/my-devkit-design.md`).
 
-# mt-plan — turn a direction into a plan
+# plan — turn a direction into a plan
 
 You are running the **convergent** phase. File paths, function names, schemas — everything
-mt-scope banned — is now legal and expected. The output is a plan concrete enough that
-mt-implement never has to make a design decision.
+scope banned — is now legal and expected. The output is a plan concrete enough that
+implement never has to make a design decision.
 
 ## Input check (always first)
 
 Find the idea's existing files — **never re-derive a slug from prose**. Glob
 `~/.claude/spec/*-scope.md` and `*-plan.md`, match against the idea, and confirm with me
-if more than one could fit. The **name** decided in mt-scope is the slug authority — read it
+if more than one could fit. The **name** decided in scope is the slug authority — read it
 from the scope file's `> Name:` header (it also matches the filename).
 
 - **`<slug>-plan.md` exists** → revision. Read it **and re-read `<slug>-scope.md`** — the
@@ -33,14 +33,14 @@ from the scope file's `> Name:` header (it also matches the filename).
   file. Echo the slug + full filename back to me so downstream phases can be pointed at it
   verbatim. Don't force a small idea through ceremony — but if while planning the idea
   turns out NOT to be small (multiple viable directions, unclear goal), stop and recommend
-  running mt-scope.
+  running scope.
 
 ## Set up the worktree (before planning)
 
-Before any planning work, put us in the isolated worktree so research and mt-implement both run
+Before any planning work, put us in the isolated worktree so research and implement both run
 in it (and the worktree gate is satisfied):
 
-- Invoke **`mt-worktree` `create <name>`** — it makes `worktrees/<name>/` with the sub-repos on
+- Invoke **`worktree` `create <name>`** — it makes `worktrees/<name>/` with the sub-repos on
   `mohammad/<name>` (env copied + backend-path fixed) and switches the session in. If a worktree
   for `<name>` already exists (a revision, or you made one), it's reused — just confirm we're
   inside it. Skip only if I explicitly say I don't want a worktree.
@@ -51,7 +51,7 @@ in it (and the worktree gate is satisfied):
 ### 1. Deep research
 This is where real investigation happens — dispatch Explore agent(s) to map the actual code
 the plan will touch: exact files, existing patterns to follow, integration points, what the
-tests around this area look like. Unlike mt-scope's reconnaissance, depth is the point —
+tests around this area look like. Unlike scope's reconnaissance, depth is the point —
 the plan's tasks must name real files and real seams, not guesses.
 
 ### 2. Resolve and break down
@@ -61,7 +61,7 @@ the plan's tasks must name real files and real seams, not guesses.
 - **Break the work into ordered tasks.** Each task: one coherent change with a clear
   done-signal. Small enough to verify independently, big enough to be worth a checkbox.
 - **Kickback rule:** if research shows the chosen direction itself is wrong (not just a
-  detail), stop. Say what broke and recommend re-running mt-scope — don't quietly re-scope
+  detail), stop. Say what broke and recommend re-running scope — don't quietly re-scope
   inside the plan.
 
 ### 3. Converge and write
@@ -94,11 +94,11 @@ can run out of order.
 ## Verification
 - **Coding checks** — exact commands: tests to run/write (concretized from the scope's Testing
   call — don't invent test scope the scope didn't warrant), lint, types.
-- **Manual checks** — what mt-implement's close-out must prove by hand:
+- **Manual checks** — what implement's close-out must prove by hand:
   browser flows, API calls, data states.
 ```
 
-Close by telling me the plan path (we're already in the worktree). Return to `/mt-workflow` to
+Close by telling me the plan path (we're already in the worktree). Return to `/workflow` to
 continue the funnel — it owns what comes next.
 
 ## Guardrails

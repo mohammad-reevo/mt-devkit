@@ -29,7 +29,7 @@ When the user invokes this skill with a verbal command (e.g. `/env-manager run b
 6. **If something fails**, stop and report exactly what failed. Do not apply silent workarounds, do not retry with different flags, do not skip steps. The user reads logs themselves.
 7. **Always anchor cwd at `<worktree_root>` first** (resolved per Rule 9). Bash tool sessions persist cwd between calls, and the ACL hook rejects any call whose cwd is inside a sub-repo (e.g. `salestech-be`, `frontend-monorepo`, `reevo-realtime`). Every command must begin with `cd <worktree_root> && cd <subdir> && ...` — never just `cd <subdir>`, and never the literal hardcoded path.
 8. **Rule 4 exception — readiness poll after starting envs.** The `run-be`, `run-fe-2`, `run-rt` aliases background-detach immediately. After dispatching, poll: `until lsof -iTCP:8000 -sTCP:LISTEN -nP >/dev/null && lsof -iTCP:3000 -sTCP:LISTEN -nP >/dev/null && lsof -iTCP:8787 -sTCP:LISTEN -nP >/dev/null; do sleep 5; done` then report final lsof. Do **not** use `sleep N && lsof` — harness blocks chained sleeps. Applies only to **Envs** section rows that start a service.
-9. **Resolve `<worktree_root>` before running any row.** Devkit can be checked out as the canonical clone at `/Users/mohammad/Desktop/code/devkit` or as one or more worktrees at `/Users/mohammad/Desktop/code/devkit/worktrees/<name>/`. Each is a complete clone containing `salestech-be/`, `frontend-monorepo/`, `reevo-realtime/`. Resolve as follows:
+9. **Resolve `<worktree_root>` before running any row.** Devkit can be checked out as the canonical clone at `/Users/mohammad/Desktop/code/devkit` or as one or more worktrees at `/Users/mohammad/Desktop/code/mt-devkit/worktrees/<name>/`. Each is a complete clone containing `salestech-be/`, `frontend-monorepo/`, `reevo-realtime/`. Resolve as follows:
     - Start from the **live current working directory** — run `pwd` and use its output. Do **not** read the env header's "primary working directory": that value is captured at session start and never follows the session into a worktree, so it always resolves to wherever the session began (usually `main`) even when you are working inside a worktree. `pwd` is the only signal that reflects the worktree you are actually in.
     - Walk up the parent chain until you find a directory containing both `salestech-be/` and `frontend-monorepo/` as siblings. That directory is `<worktree_root>`. (Note: a bare `git worktree add` of a single sub-repo — e.g. a `worktrees/<name>/` that contains only `salestech-be/` — is **not** a resolvable worktree here; it lacks the `frontend-monorepo/` sibling, so the walk-up skips past it. A full devkit worktree, created via the devkit `worktree` skill, contains all sub-repos as siblings.)
     - If no such directory exists in the parent chain, **stop and tell the user**: "not inside a devkit worktree". Do **not** silently fall back to `/Users/mohammad/Desktop/code/devkit`.
@@ -69,7 +69,7 @@ If branch lookup returns empty, use `unknown`. If multiple PIDs are listening on
 
 Used by `check devkit` and the worktree step of **PID → worktree+branch lookup**. Map a worktree root path:
 - `/Users/mohammad/Desktop/code/devkit` → `main`
-- `/Users/mohammad/Desktop/code/devkit/worktrees/<name>` → `<name>`
+- `/Users/mohammad/Desktop/code/mt-devkit/worktrees/<name>` → `<name>`
 - Otherwise → `unknown (path: <path>)`
 
 ## Command map

@@ -7,7 +7,7 @@ reusing the backend's own idempotent bootstrap helper.
 
 Run it from the salestech-be repo so the backend package + project modules resolve:
 
-    cd <devkit-root> && cd salestech-be && uv run python ~/.claude/skills/spinup-local-db/provision_billing.py
+    cd <devkit-root> && cd salestech-be && uv run python $CLAUDE_PROJECT_DIR/.claude/skills/spinup-local-db/provision_billing.py
 
 Defaults to the org created by `make seed-dev-data`
 (00000000-0000-4000-a000-000000000001). Pass --org-id / --user-id to override.
@@ -24,7 +24,7 @@ import os
 import sys
 from uuid import UUID
 
-# This file lives outside the salestech-be source tree (in ~/.claude/skills), so
+# This file lives outside the salestech-be source tree (in the harness .claude/skills), so
 # put the current working dir (the salestech-be repo) on the path to import its
 # top-level `tests` / `salestech_be` packages.
 sys.path.insert(0, os.getcwd())
