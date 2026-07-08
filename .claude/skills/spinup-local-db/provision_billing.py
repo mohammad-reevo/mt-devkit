@@ -7,7 +7,7 @@ reusing the backend's own idempotent bootstrap helper.
 
 Run it from the salestech-be repo so the backend package + project modules resolve:
 
-    cd <devkit-root> && cd salestech-be && uv run python $CLAUDE_PROJECT_DIR/.claude/skills/spinup-local-db/provision_billing.py
+    cd <devkit-root> && cd salestech-be && uv run python $HOME/Desktop/code/mt-devkit/.claude/skills/spinup-local-db/provision_billing.py
 
 Defaults to the org created by `make seed-dev-data`
 (00000000-0000-4000-a000-000000000001). Pass --org-id / --user-id to override.

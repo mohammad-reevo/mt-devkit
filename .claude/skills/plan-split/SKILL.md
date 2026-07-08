@@ -61,7 +61,7 @@ After confirmation, write a JSON manifest to `/tmp/plan-split-<unix-ts>.json`:
 ### 4. Run the script
 
 ```
-bash $CLAUDE_PROJECT_DIR/.claude/skills/plan-split/split.sh /tmp/plan-split-<unix-ts>.json
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/plan-split/split.sh /tmp/plan-split-<unix-ts>.json
 ```
 
 For each part the script:

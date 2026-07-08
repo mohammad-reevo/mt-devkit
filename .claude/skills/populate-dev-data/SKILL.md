@@ -24,7 +24,7 @@ description: Restore an empty local Postgres from REAL cloud DEV data (~30 min) 
    be free of connections first.
 2. **Run the refresh (do NOT interrupt, ~30 min):**
    ```bash
-   bash $CLAUDE_PROJECT_DIR/.claude/skills/populate-dev-data/populate.sh
+   bash $HOME/Desktop/code/mt-devkit/.claude/skills/populate-dev-data/populate.sh
    ```
    Wipes Docker volumes, restarts Docker deps, copies DEV → local Postgres.
 3. **Start the backend** — env-manager: `run be`. Applies migrations and starts the workers (needed
@@ -44,23 +44,23 @@ from the snapshot (the admin you'll log in as), then:
 
 ```bash
 # verify role + status
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh "SELECT roles, status FROM user_organization_association WHERE user_id='<user_id>' AND organization_id='<org_id>';"
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh "SELECT roles, status FROM user_organization_association WHERE user_id='<user_id>' AND organization_id='<org_id>';"
 # fix to ADMIN/ACTIVE if needed
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh "UPDATE user_organization_association SET roles='{ADMIN}', status='ACTIVE' WHERE user_id='<user_id>' AND organization_id='<org_id>';"
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh "UPDATE user_organization_association SET roles='{ADMIN}', status='ACTIVE' WHERE user_id='<user_id>' AND organization_id='<org_id>';"
 # verify onboarding (need both user_onboarding and workspace_onboarding = COMPLETED)
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh "SELECT type, state->>'workflow_completed' FROM onboarding_progress WHERE organization_id='<org_id>' AND (user_id='<user_id>' OR user_id IS NULL);"
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh "SELECT type, state->>'workflow_completed' FROM onboarding_progress WHERE organization_id='<org_id>' AND (user_id='<user_id>' OR user_id IS NULL);"
 # insert missing user_onboarding
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh "INSERT INTO onboarding_progress(id,user_id,organization_id,type,state,created_at,updated_at) VALUES(gen_random_uuid(),'<user_id>','<org_id>','user_onboarding','{\"workflow_completed\":\"COMPLETED\"}',now(),now());"
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh "INSERT INTO onboarding_progress(id,user_id,organization_id,type,state,created_at,updated_at) VALUES(gen_random_uuid(),'<user_id>','<org_id>','user_onboarding','{\"workflow_completed\":\"COMPLETED\"}',now(),now());"
 # insert missing workspace_onboarding
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh "INSERT INTO onboarding_progress(id,user_id,organization_id,type,state,created_at,updated_at) VALUES(gen_random_uuid(),NULL,'<org_id>','workspace_onboarding','{\"workflow_completed\":\"COMPLETED\"}',now(),now());"
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh "INSERT INTO onboarding_progress(id,user_id,organization_id,type,state,created_at,updated_at) VALUES(gen_random_uuid(),NULL,'<org_id>','workspace_onboarding','{\"workflow_completed\":\"COMPLETED\"}',now(),now());"
 ```
 
 ## Verify (all must pass — via db)
 
 ```bash
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh --tuples-only "SELECT count(*) FROM contact;"   # > 0
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh --tuples-only "SELECT count(*) FROM account;"   # > 0
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh --tuples-only "SELECT state->>'workflow_completed' FROM onboarding_progress WHERE type='workspace_onboarding' AND organization_id='<org_id>';"  # COMPLETED
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh --tuples-only "SELECT count(*) FROM contact;"   # > 0
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh --tuples-only "SELECT count(*) FROM account;"   # > 0
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh --tuples-only "SELECT state->>'workflow_completed' FROM onboarding_progress WHERE type='workspace_onboarding' AND organization_id='<org_id>';"  # COMPLETED
 ```
 
 On failure: **stop, report which check + actual vs expected**, fix the rows above, retry — never
