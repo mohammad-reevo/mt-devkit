@@ -62,7 +62,8 @@
       "mcp__notion__*",
       "mcp__sentry__*",
       "mcp__datadog-official__*",
-      "mcp__slack__*"
+      "mcp__slack__*",
+      "mcp__rootly__*"
     ],
     "deny": [
       "Bash(rm -rf /)",
