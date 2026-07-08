@@ -16,11 +16,11 @@ description: Query Postgres from my personal harness — the LOCAL Docker DB by 
 ## How to run
 
 ```
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh [--dev] [--csv|--expanded|--tuples-only] "SQL"
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh [--dev] [--csv|--expanded|--tuples-only] "SQL"
 ```
 
-- **Local (default):** `bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh "SELECT count(*) FROM contact;"`
-- **Dev:** add `--dev`: `bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh --dev "SELECT count(*) FROM contact;"`
+- **Local (default):** `bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh "SELECT count(*) FROM contact;"`
+- **Dev:** add `--dev`: `bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh --dev "SELECT count(*) FROM contact;"`
 - `--csv` for machine-readable rows, `--expanded` for one-record vertical output, `--tuples-only`
   to drop headers/footers. psql meta-commands work too (`\dt`, `\d contact`).
 

@@ -39,13 +39,13 @@ Capture these three lines from the output (needed for the frontend `.env` in Ste
 `make seed-dev-data` does NOT create a billing subscription or any quota policy items, so running a flow fails the quota gate with `Feature FLOW_NODE_EXECUTIONS is not available`. Fix it with the script beside this file (reuses the backend's own idempotent bootstrap helper):
 
 ```bash
-cd <devkit-root> && cd salestech-be && uv run python $CLAUDE_PROJECT_DIR/.claude/skills/spinup-local-db/provision_billing.py
+cd <devkit-root> && cd salestech-be && uv run python $HOME/Desktop/code/mt-devkit/.claude/skills/spinup-local-db/provision_billing.py
 ```
 
 Defaults to the seeded org and auto-resolves the user — no IDs to pass. Idempotent (skips if an active subscription already exists). Verify:
 
 ```bash
-bash $CLAUDE_PROJECT_DIR/.claude/skills/db/dbquery.sh "SELECT count(*) FROM organization_subscription WHERE organization_id='00000000-0000-4000-a000-000000000001' AND status='ACTIVE'; SELECT resource_name FROM quota_policy_item WHERE resource_name ILIKE '%FLOW_NODE%';"
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/db/dbquery.sh "SELECT count(*) FROM organization_subscription WHERE organization_id='00000000-0000-4000-a000-000000000001' AND status='ACTIVE'; SELECT resource_name FROM quota_policy_item WHERE resource_name ILIKE '%FLOW_NODE%';"
 ```
 
 Expect 1 active subscription + a `FLOW_NODE_EXECUTIONS` row. Scope is flow execution only — `USER_SEAT` is intentionally not provisioned (it only causes a non-fatal warning on the billing overview page, not flows).

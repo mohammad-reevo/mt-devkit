@@ -27,7 +27,7 @@ the first entry of `git worktree list` in the parent repo; fall back to
    in the worktree's frontend env to `<worktree>/salestech-be` via a line-scoped in-place sed —
    secrets never read into context — and runs `uv sync`):
    ```bash
-   bash $CLAUDE_PROJECT_DIR/.claude/skills/worktree/worktree_setup.sh "<name>" "$MAIN"
+   bash $HOME/Desktop/code/mt-devkit/.claude/skills/worktree/worktree_setup.sh "<name>" "$MAIN"
    ```
 2. Switch the session in: `EnterWorktree(path: "$MAIN/worktrees/<name>")`.
 3. Report: "Worktree `<name>` ready — sub-repos on `mohammad/<name>`, backend path fixed for
@@ -49,7 +49,7 @@ Render a compact table (worktree | updated | salestech-be branch | frontend-mono
    stand in a directory you're about to delete.
 2. Run the teardown script:
    ```bash
-   bash $CLAUDE_PROJECT_DIR/.claude/skills/worktree/worktree_teardown.sh "<name>" "$MAIN"
+   bash $HOME/Desktop/code/mt-devkit/.claude/skills/worktree/worktree_teardown.sh "<name>" "$MAIN"
    ```
    It removes each sub-repo worktree + the parent worktree and deletes the **local**
    `mohammad/<name>` branches.
