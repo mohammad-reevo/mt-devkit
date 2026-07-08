@@ -57,15 +57,12 @@
       "WebFetch(*)",
       "WebSearch",
       "Skill(*)",
-      "mcp__playwright-isolated__browser_navigate",
-      "mcp__playwright-isolated__browser_click",
-      "mcp__playwright-isolated__browser_run_code",
-      "mcp__playwright-isolated__browser_snapshot",
-      "mcp__playwright-isolated__browser_take_screenshot",
-      "mcp__playwright-isolated__browser_wait_for",
-      "mcp__playwright-isolated__browser_evaluate",
-      "mcp__playwright-isolated__browser_hover",
-      "mcp__playwright-isolated__browser_type"
+      "mcp__playwright-isolated__*",
+      "mcp__linear__*",
+      "mcp__notion__*",
+      "mcp__sentry__*",
+      "mcp__datadog-official__*",
+      "mcp__slack__*"
     ],
     "deny": [
       "Bash(rm -rf /)",
