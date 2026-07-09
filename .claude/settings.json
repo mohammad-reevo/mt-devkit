@@ -32,6 +32,7 @@
       "Bash(python:*)",
       "Bash(bash:*)",
       "Bash(sh:*)",
+      "Bash(zsh:*)",
       "Bash(uv:*)",
       "Bash(node:*)",
       "Bash(npm:*)",
