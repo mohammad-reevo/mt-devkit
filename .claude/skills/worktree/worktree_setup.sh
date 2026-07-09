@@ -20,7 +20,7 @@ branch="mohammad/${name}"
 # --- 1. Parent-workspace worktree (container: holds the sub-repo worktrees) -----------------
 if [[ ! -d "$wt" ]]; then
     git -C "$main" branch -D "$branch" 2>/dev/null || true   # clear a stale branch from a failed teardown
-    git -C "$main" worktree add -b "$branch" "$wt" main >&2
+    git -C "$main" worktree add -b "$branch" "$wt" origin/main >&2
 fi
 
 # Rewrite REEVO_BACKEND_PATH in a frontend env file to this worktree's own backend.
@@ -39,7 +39,7 @@ for subrepo in salestech-be frontend-monorepo; do
     [[ -d "$dst" ]] && continue
 
     git -C "$src" branch -D "$branch" 2>/dev/null || true
-    git -C "$src" worktree add -b "$branch" "$dst" main >&2
+    git -C "$src" worktree add -b "$branch" "$dst" origin/main >&2
 
     # Copy env files verbatim (secrets stay on disk).
     for envfile in .env .env.local .env.test; do
