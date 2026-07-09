@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Allow-by-default command ACL + secret guard (PreToolUse: Bash|Read|Edit|Write).
+"""Allow-by-default command guard + secret guard (PreToolUse: Bash|Read|Edit|Write).
 
 Philosophy: allow everything except a small, curated set of dangerous shapes.
 This replaces the earlier prove-then-allow hook, which prompted on everything it
@@ -14,12 +14,13 @@ Outcomes (strictest wins across a compound command; deny > ask > allow):
   - allow -> emit allow -> runs with no prompt, built-in guards suppressed.
 
 Bash: allow-by-default; ask/deny only for the curated patterns (network->shell,
-  sudo/eval, destructive git, recursive rm, gh merge/review, secret reads, raw
-  disk writes). `bash -c`/`zsh -ic` payloads are classified recursively, so
-  env-manager aliases (`zsh -ic 'kill-be-f'`) stay allowed while
-  `bash -c "rm -rf ~"` is caught.
+  sudo/eval, destructive git, recursive rm, gh merge/review, raw-disk writes,
+  and whole-file secret dumps like `cat .env`). `bash -c`/`zsh -ic` payloads are
+  classified recursively, so env-manager aliases (`zsh -ic 'kill-be-f'`) stay
+  allowed while `bash -c "rm -rf ~"` is caught. Line-scoped secret reads
+  (`grep VAR .env`, `sed`) stay allowed -- that's env-manager's legit access.
 Read/Edit/Write: hands-off (emit nothing, so native permissions + the worktree
-  gate keep working) EXCEPT secret files (.env, keys) -> ask. This subsumes the
+  gate keep working) EXCEPT secret files (.env, keys) -> deny. This subsumes the
   separate env-guard.
 
 permissions.deny (rm -rf /, force-push) stays the native hard floor -- Claude
@@ -28,7 +29,7 @@ Code evaluates deny over a hook allow, so it still applies.
 Fail-safe: any error -> emit nothing -> normal prompt (a bug degrades to
 prompting, never to silently allowing something dangerous).
 
-Bypass: MT_ACL=0.
+Bypass: MT_GUARD=0.
 
 Runs under /usr/bin/python3 (macOS system Python 3.9): keep 3.9-compatible
 (no PEP 604 unions, no match/case).
@@ -44,8 +45,10 @@ import sys
 ALLOW, ASK, DENY = "allow", "ask", "deny"
 _RANK = {ALLOW: 0, ASK: 1, DENY: 2}
 
-# Decision applied to secret-file access. Flip to DENY here for hard-block.
-_SECRET_DECISION = ASK
+# Decision applied to secret-file access (Read/Edit/Write of a secret, or a
+# whole-file dump like `cat .env`). DENY hard-blocks reading secrets into the
+# transcript; flip to ASK for a prompt instead.
+_SECRET_DECISION = DENY
 
 
 def _emit(decision, reason):
@@ -100,6 +103,11 @@ def _is_secret_path(path):
 # Bash classification
 # --------------------------------------------------------------------------- #
 _SHELL_INTERPRETERS = {"bash", "sh", "zsh", "dash", "ksh"}
+# Tools that dump a whole file to stdout -- reading a secret with one of these
+# leaks it into the transcript. Line-scoped tools (grep/sed/awk/head/tail) are
+# excluded on purpose: they surface a single line and are env-manager's legit
+# way to read one value out of a .env.
+_WHOLE_FILE_READERS = {"cat", "less", "more", "bat", "view", "xxd", "od", "strings", "nl", "tac"}
 
 # curl/wget piped straight into a shell/interpreter -- the classic RCE vector.
 _NET_SHELL_RE = re.compile(
@@ -175,13 +183,13 @@ def _classify_gh(args):
 def _classify_segment(tokens, depth):
     if not tokens:
         return ALLOW
-    for t in tokens:
-        if _is_secret_path(t):
-            return _SECRET_DECISION
 
     binary, args = _real_binary(tokens)
     if binary is None:
         return ALLOW
+
+    if binary in _WHOLE_FILE_READERS and any(_is_secret_path(a) for a in args):
+        return _SECRET_DECISION
 
     if binary in _SHELL_INTERPRETERS and depth < 4:
         payload = _dash_c_payload(args)
@@ -240,7 +248,7 @@ def _classify_command(command, depth=0):
 # Entry
 # --------------------------------------------------------------------------- #
 def _run():
-    if os.environ.get("MT_ACL", "1") == "0":
+    if os.environ.get("MT_GUARD", "1") == "0":
         _nothing()
 
     try:
@@ -257,7 +265,7 @@ def _run():
             _nothing()
         decision = _classify_command(command)
         if decision == DENY:
-            _emit(DENY, "Blocked by ACL: raw-disk / filesystem-destroying command.")
+            _emit(DENY, "Blocked: raw-disk destruction or whole-file secret read.")
         if decision == ASK:
             _nothing()  # surface the normal prompt
         _emit(ALLOW, "allow-by-default ACL")

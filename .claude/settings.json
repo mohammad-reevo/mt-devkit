@@ -56,7 +56,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$HOME/Desktop/code/mt-devkit/.claude/hooks/acl_hook.py\""
+            "command": "/usr/bin/python3 \"$HOME/Desktop/code/mt-devkit/.claude/hooks/command_guard_hook.py\""
           }
         ]
       }
