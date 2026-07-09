@@ -14,7 +14,9 @@ until the agent is in a worktree.
 Allow (gate does not fire) when:
   - CLAUDE_WORKTREE_GATE=0            per-session escape hatch
   - target is not inside any git repo (worktrees require git)
-  - target is inside a linked worktree (`.git` is a file -- already isolated)
+  - target is inside a linked worktree (`.git` is a file -- already isolated),
+    UNLESS that worktree is on `main`/`master` (on-main guard -- feature work
+    belongs on a feature branch, so those are denied too)
   - target is under ~/.claude         (config must stay editable, incl. this hook)
 
 Runs under /usr/bin/python3 (macOS system Python 3.9): keep 3.9-compatible
@@ -70,6 +72,38 @@ def _enclosing_git_marker(start_dir):
         d = parent
 
 
+def _worktree_branch(marker):
+    """Given a linked-worktree `.git` FILE, return its current branch name.
+
+    No subprocess: read `gitdir: <path>` from the .git file, then parse
+    `<path>/HEAD` for `ref: refs/heads/<branch>`. Returns the branch name, or
+    None on any parse failure or detached HEAD (caller treats None as "allow").
+    """
+    try:
+        with open(marker, "r") as f:
+            content = f.read()
+    except Exception:
+        return None
+    gitdir = None
+    for line in content.splitlines():
+        line = line.strip()
+        if line.startswith("gitdir:"):
+            gitdir = line[len("gitdir:"):].strip()
+            break
+    if not gitdir:
+        return None
+    head_path = os.path.join(gitdir, "HEAD")
+    try:
+        with open(head_path, "r") as f:
+            head = f.read().strip()
+    except Exception:
+        return None
+    prefix = "ref: refs/heads/"
+    if head.startswith(prefix):
+        return head[len(prefix):].strip()
+    return None  # detached HEAD or unrecognized -- do not block
+
+
 def main():
     if os.environ.get("CLAUDE_WORKTREE_GATE", "1") == "0":
         _allow()
@@ -97,7 +131,19 @@ def main():
     if marker is None:
         _allow()  # not inside a git repo -- worktrees do not apply
     if os.path.isfile(marker):
-        _allow()  # linked worktree (.git is a file) -- already isolated
+        # Linked worktree (.git is a file) -- already isolated from the primary
+        # checkout. But still block edits when the worktree itself is sitting on
+        # the main/master branch: feature work belongs on a feature branch.
+        branch = _worktree_branch(marker)
+        if branch in ("main", "master"):
+            _deny(
+                "On-main guard: this worktree is on '{branch}'. Editing on the "
+                "main branch is blocked -- create/switch to a feature branch "
+                "first (`git checkout -b mohammad/<name> origin/main`).".format(
+                    branch=branch
+                )
+            )
+        _allow()
 
     # `.git` is a directory => primary checkout. Block.
     rel = os.path.relpath(abs_path, repo_root)

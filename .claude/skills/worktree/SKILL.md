@@ -18,7 +18,7 @@ the mechanical work — `.env` secrets are handled on disk and never read into c
 
 `MAIN` = the primary checkout of the parent workspace (where the sub-repos live). Resolve it as
 the first entry of `git worktree list` in the parent repo; fall back to
-`~/Desktop/code/devkit`. Worktrees live at `$MAIN/worktrees/<name>/`.
+`~/Desktop/code/mt-devkit`. Worktrees live at `$MAIN/worktrees/<name>/`.
 
 ## `create <name>`
 
