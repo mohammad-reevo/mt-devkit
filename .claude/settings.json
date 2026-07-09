@@ -33,6 +33,7 @@
       "Bash(bash:*)",
       "Bash(sh:*)",
       "Bash(zsh:*)",
+      "Bash(lsof:*)",
       "Bash(uv:*)",
       "Bash(node:*)",
       "Bash(npm:*)",
