@@ -84,6 +84,10 @@
           {
             "type": "command",
             "command": "/usr/bin/python3 \"$HOME/Desktop/code/mt-devkit/.claude/hooks/worktree_gate_hook.py\""
+          },
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"$HOME/Desktop/code/mt-devkit/.claude/hooks/implementer_gate_hook.py\""
           }
         ]
       },

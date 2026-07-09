@@ -33,12 +33,11 @@ finished work.
 
 Work the tasks **in plan order**, one at a time (each builds on the last):
 
-1. **Dispatch a subagent** (`general-purpose`, working in the plan's repo) for the task. Give
-   it the task verbatim — files, what changes, the done-signal — and tell it to: implement
-   exactly that, run the checks relevant to what it changed (that task's tests, lint, types),
-   and return a **lean report only** — done/blocked, the done-signal result, checks pass/fail
-   with just the distilled failure (not full logs), and any drift hit. It writes code and runs
-   checks; it does **not** touch the plan file.
+1. **Dispatch an `implementer` subagent** (`subagent_type: implementer`, working in the plan's
+   repo) for the task. Give it the task verbatim — files, what changes, the done-signal. The
+   `implementer` agent already carries the contract (make exactly that change, run the checks
+   for what it touched, return a lean report, never touch the plan file, report drift rather
+   than redesign) — don't restate it inline.
 2. **On green** → tick the task's checkbox in the plan file. You own the progress record;
    subagents never edit it.
 3. **On check failure** → decide: re-dispatch with fix guidance (bounded — ~2 attempts), or
@@ -61,8 +60,8 @@ it — that's the seam verify relies on.
    single-source-of-truth duplication, and plausible-but-shallow defects. It returns a
    **verdict** (clean / issues) + findings (each: what, where, why), and does **not** edit code.
 2. **Clean** → proceed to commit.
-3. **Issues** → dispatch a fix subagent for the findings, then re-dispatch the reviewer over the
-   new diff. Bounded to **~2 fix→re-review cycles**; still flagging real issues after that →
+3. **Issues** → dispatch an `implementer` subagent to fix the findings, then re-dispatch the
+   reviewer over the new diff. Bounded to **~2 fix→re-review cycles**; still flagging real issues after that →
    stop and escalate to me with the distilled findings. Same discipline as a check failure — a
    finding is fixed or escalated, never waved through.
 
@@ -92,8 +91,10 @@ pre-existing, never routed around.
 ## Guardrails
 
 - **Conduct, don't perform.** You never write task code or run checks in main context —
-  always through a subagent. Tempted to "just quickly edit it here"? That's exactly the bloat
-  this skill exists to avoid.
+  always through the `implementer` subagent. Tempted to "just quickly edit it here"? That's
+  exactly the bloat this skill exists to avoid — and `implementer_gate_hook.py` enforces it
+  (product-repo edits ≥30 lines from the orchestrator are blocked). See
+  [[delegate-product-code]].
 - **One task, one subagent.** No bundling multiple tasks into one dispatch — the loop exists
   so a failure points at one task.
 - **Main owns the plan file.** Checkboxes, amendments, and kickback decisions are yours;
