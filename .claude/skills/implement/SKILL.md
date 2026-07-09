@@ -45,31 +45,57 @@ Work the tasks **in plan order**, one at a time (each builds on the last):
    escalate to me with the distilled error. Never skip, never label pre-existing.
 4. **On drift** (the subagent reports it, doesn't redesign) → apply the drift rules below.
 
-After the last task: dispatch one subagent to run the **full check suite** from the plan's
-Verification section; it returns pass/fail + distilled failures. All green before review.
+After the last task, the coding is done — hand off to the **finalization gate** below, which
+runs the full check suite and the reviews concurrently.
 
-## Code review (finalize the coding)
+## Finalization gate (checks + review, in parallel)
 
-Once every task is `[x]` and the full suite is green — but **before** committing — run one
-finalization review over the whole branch diff. This is a **one-shot gate**: it runs once here,
-on the completed implementation. Later changes (e.g. fixes verify surfaces) do **not** re-run
-it — that's the seam verify relies on.
+Once every task is `[x]` — but **before** committing — run the finalization gate over the
+completed implementation. This is a **one-shot gate**: it runs once here. Later changes (e.g.
+fixes verify surfaces) do **not** re-run it — that's the seam verify relies on.
 
-1. **Dispatch one review subagent** (`general-purpose`, in the plan's repo) over the branch
-   diff. Tell it to review against **the repo's own conventions** (its `CLAUDE.md` /
-   `.claude/rules/` if present) **plus general quality** — correctness, clarity / dead-code,
-   single-source-of-truth duplication, and plausible-but-shallow defects. It returns a
-   **verdict** (clean / issues) + findings (each: what, where, why), and does **not** edit code.
-2. **Clean** → proceed to commit.
-3. **Issues** → dispatch a fix subagent for the findings, then re-dispatch the reviewer over the
-   new diff. Bounded to **~2 fix→re-review cycles**; still flagging real issues after that →
-   stop and escalate to me with the distilled findings. Same discipline as a check failure — a
-   finding is fixed or escalated, never waved through.
+Dispatch three subagents **concurrently** (independent axes — no reason to sequence them), all
+`general-purpose` in the plan's repo:
+
+1. **Full check suite** — run the full check suite from the plan's Verification section; returns
+   pass/fail + distilled failures (not raw logs).
+2. **General reviewer** (over the branch diff) — review against **the repo's own conventions**
+   (its `CLAUDE.md` / `.claude/rules/` if present) **plus general quality**: correctness, clarity
+   / dead-code, single-source-of-truth duplication, and plausible-but-shallow defects.
+3. **Structural-patterns reviewer** (over the branch diff) — hunt specifically for the
+   non-obvious structural smells a general pass skims past:
+   - **Paired collections that must stay in sync** — two dicts, two model columns, or parallel
+     lists keyed the same way, where adding an entry to one silently requires editing the other
+     (single-source-of-truth violations).
+   - **Stringly-typed enums** — a fixed set of string literals passed around as raw `str` where
+     an enum / literal type belongs.
+   - **Repeated literal sets** — the same set/tuple/list of literals duplicated across call sites
+     instead of named once.
+   - **Near-duplicate functions** — functions that are copies modulo a small variation, begging
+     to be one parameterized function.
+
+   (Silent try/except substitutions are **not** in scope here — `defensive-defaults.md` covers
+   them and the general reviewer catches them via that rule; don't re-hunt them.)
+
+Both reviewers return a **verdict** (clean / issues) + findings (each: what, where, why); neither
+edits code.
+
+**Gate result** — merge the three. The gate is **clean** only when the check suite is green
+**and both** reviewers are clean. Dedup overlapping findings (the general reviewer's
+single-source-of-truth duplication overlaps the structural reviewer's paired-collections /
+repeated-literals).
+
+- **Clean** → proceed to commit.
+- **Issues** (checks failed or either reviewer flagged) → dispatch a fix subagent for the merged
+  findings/failures, then **re-run the affected branches in parallel** — any code change re-runs
+  the check suite and both reviewers over the new diff. Bounded to **~2 fix→re-review cycles**;
+  still failing/flagging after that → stop and escalate to me with the distilled findings. Same
+  discipline as a check failure — a finding is fixed or escalated, never waved through.
 
 ## Commit & push
 
-Once every task is `[x]`, the full suite is green, **and the finalization review is clean**,
-dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on a feature
+Once every task is `[x]` **and the finalization gate is clean** (checks green + both reviewers
+clean), dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on a feature
 branch), commit the work, and push. It returns the branch name and push confirmation.
 
 Report to me: tasks done, checks green, reviewed, branch pushed. Return to `/workflow` to
@@ -103,7 +129,7 @@ pre-existing, never routed around.
 - **Honest reporting.** Failures reported with the (distilled) error; skips named as skips.
   "Done" means checked and green.
 - **Coding ends here.** Implement is the last phase that writes feature code. The finalization
-  review is a **one-shot** gate on the completed implementation; post-implementation fixes
+  gate is a **one-shot** gate on the completed implementation; post-implementation fixes
   (surfaced by verify) don't re-run it.
 - **No state, no auto-transition** (Wave 1: I drive). The plan file's checkboxes are the only
   progress record; verify is a separate phase you hand off to, not auto-run.
