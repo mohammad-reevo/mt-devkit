@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Allow-by-default command guard + secret guard (PreToolUse: Bash|Read|Edit|Write).
+"""Allow-by-default permission guard + secret guard (PreToolUse: Bash|Read|Edit|Write).
 
 Philosophy: allow everything except a small, curated set of dangerous shapes.
 This replaces the earlier prove-then-allow hook, which prompted on everything it
