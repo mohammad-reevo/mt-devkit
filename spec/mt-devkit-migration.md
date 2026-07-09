@@ -5,7 +5,9 @@
 > off" and no `.env` to retire; we simply stop using it. Detailed phase checklist below; this
 > supersedes the design doc's Wave-6 sketch.
 >
-> **Status: DRAFT for review — nothing executed yet.**
+> **Status: ✅ MIGRATION COMPLETE (2026-07-09).** Phases 0–4 done — the harness runs entirely from
+> `mt-devkit`; the legacy `~/.claude` copies + the 3 `@devkit` plugins are deleted; global `~/.claude`
+> is now the thin preference layer (4 rules + `claude-task`/`tasks/`). Only optional Phase 5 remains.
 
 ## Phase 0 — Repo + top-level docs
 - [ ] Create the private git repo `mt-devkit`, connect to
@@ -92,37 +94,37 @@ Split principle: **shareable dev-harness → `mt-devkit`; personal-to-me prefere
       **Nothing deleted from `~/.claude` yet** — that's Phase 4.
 - [ ] Still **not** here: policies + the broader plugins discussion — Phase 5.
 
-## Phase 4 — Delete the legacy copies + drop @devkit plugins + cut over (the absolute end)
+## Phase 4 — Delete the legacy copies + drop @devkit plugins + cut over — ✅ DONE (2026-07-09)
 Only after Phases 0–3 are done and verified (they are). The harness runs entirely from `mt-devkit`;
 now remove the now-duplicate legacy copies AND the last live devkit dependencies (the 3 @devkit
 plugins). **Ordered, verify between parts** — Parts B & C edit global config + need session restarts
 (a you-restart / me-edit relay). Point of no return, but everything's verified.
 
 **Part A — sync docs into mt-devkit (a PR):**
-- [ ] Copy `~/.claude/spec/{my-devkit-design, devkit-parity, mt-devkit-migration}.md` → `mt-devkit/spec/`
+- [x] Copy `~/.claude/spec/{my-devkit-design, devkit-parity, mt-devkit-migration}.md` → `mt-devkit/spec/`
       (overwrite the frozen Phase-1 snapshots) → PR → merge. So mt-devkit has the live docs before the
       `~/.claude` source is deleted.
 
 **Part B — drop the @devkit plugins (global `~/.claude/settings.json`):**
-- [ ] Remove the 3 `enabledPlugins` (babysit-pr, acl-hook, code-reviewer) + `extraKnownMarketplaces.devkit`
+- [x] Remove the 3 `enabledPlugins` (babysit-pr, acl-hook, code-reviewer) + `extraKnownMarketplaces.devkit`
       (if present) + `env.ACL_HOOK_CONFIG` + the `SessionStart` `patch_acl_default.sh` hook. Delete
       `~/.claude/hooks/patch_acl_default.sh` + the acl config files. (Replacements confirmed:
       babysit→mt-babysit, acl→our branch guard PR #10 + permissions, code-reviewer→in-skill review.)
-- [ ] **Restart → verify** a mt-devkit session: skills load, permissions work with no acl-hook, the
+- [x] **Restart → verify** a mt-devkit session: skills load, permissions work with no acl-hook, the
       branch guard (Hook 2) fires, no missing-plugin errors.
 
 **Part C — de-register + delete the legacy harness (global `~/.claude`):**
-- [ ] Remove the `Edit|Write` worktree-gate registration from global settings (runs from mt-devkit now).
-- [ ] **Delete from `~/.claude`:** `hooks/worktree_gate_hook.py`, the 14 moved skills, the 10 moved
+- [x] Remove the `Edit|Write` worktree-gate registration from global settings (runs from mt-devkit now).
+- [x] **Delete from `~/.claude`:** `hooks/worktree_gate_hook.py`, the 14 moved skills, the 10 moved
       rules, `spec/`. **KEEP:** the 4 preference rules (explanation-modes, job-list-sentinel, github,
       git-merge), the `claude-task` skill + `tasks/`, `settings.json`, memory, Slack MCP.
-- [ ] Trim `~/.claude/CLAUDE.md` to the 4 remaining rules.
-- [ ] **Restart → verify:** gate fires from mt-devkit, all skills/rules load from mt-devkit, no dangling
+- [x] Trim `~/.claude/CLAUDE.md` to the 4 remaining rules.
+- [x] **Restart → verify:** gate fires from mt-devkit, all skills/rules load from mt-devkit, no dangling
       `~/.claude/skills/...` refs.
 
 **Part D — final:**
-- [ ] Update the `project_moving_off_devkit` memory to "migration complete"; stop using the devkit dir.
-- [ ] Final sanity sweep. *(`.vscode/settings.json`: no action — identical to devkit's, `${workspaceFolder}`-
+- [x] Update the `project_moving_off_devkit` memory to "migration complete"; stop using the devkit dir.
+- [x] Final sanity sweep. *(`.vscode/settings.json`: no action — identical to devkit's, `${workspaceFolder}`-
       relative, gitignored local editor config; works as-is.)*
 
 ## Phase 5 — Optional ideation (backlog, non-blocking)
