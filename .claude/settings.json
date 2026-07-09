@@ -79,6 +79,15 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"$HOME/Desktop/code/mt-devkit/.claude/hooks/env_guard_hook.py\""
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write",
         "hooks": [
           {
