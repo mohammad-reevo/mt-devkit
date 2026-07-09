@@ -169,13 +169,36 @@ def _parse_creation(tokens):
         return (name, start)
 
     if sub == "branch":
-        # `git branch <name> [<start>]` creates; flags-only / no positional does not.
+        # `git branch <name> [<start>]` creates; but many `git branch` modes take
+        # a positional yet DON'T create -- listing with a pattern
+        # (`git branch --list <glob>`), filtering (`--contains <sha>`), deletion,
+        # rename, copy, upstream edits. Any such flag -> not creation.
+        _NON_CREATION = (
+            # delete / rename / copy
+            "-d", "-D", "--delete", "-m", "-M", "--move", "-c", "-C", "--copy",
+            # listing / read-only (may carry a pattern or commit positional)
+            "-l", "--list", "-a", "--all", "-r", "--remotes",
+            "-v", "-vv", "--verbose", "--show-current",
+            "--contains", "--no-contains", "--merged", "--no-merged", "--points-at",
+            "--format", "--sort", "--column", "--no-column",
+            "-i", "--ignore-case", "--abbrev", "--no-abbrev",
+            # modify an existing branch (not creation)
+            "--edit-description", "-u", "--set-upstream-to", "--unset-upstream",
+        )
+        # The `=value` forms of the arg-taking flags above.
+        _NON_CREATION_PREFIXES = (
+            "--contains=", "--no-contains=", "--merged=", "--no-merged=",
+            "--points-at=", "--format=", "--sort=", "--column=", "--abbrev=",
+            "--set-upstream-to=",
+        )
+        for a in args:
+            if a in _NON_CREATION or any(a.startswith(p) for p in _NON_CREATION_PREFIXES):
+                return None
+        # Creation-compatible flags (-f/--force, -t/--track, -q, ...) are dropped
+        # by _positionals; what remains is the new branch name (+ optional start).
         pos = _positionals(args)
         if not pos:
-            return None  # list / -a / --list / etc.
-        # Deletion / rename / copy flags are not creation.
-        if any(a in ("-d", "-D", "-m", "-M", "-c", "-C", "--delete", "--move", "--copy") for a in args):
-            return None
+            return None  # flags-only / bare `git branch` -> not creation
         name = pos[0]
         start = pos[1] if len(pos) > 1 else None
         return (name, start)
