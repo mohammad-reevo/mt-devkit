@@ -74,5 +74,12 @@ Track rerun state per `headSha` (a new push resets it).
 - **Flaky rerun is one-shot per headSha,** and only when the failure doesn't overlap your diff.
   After that, report it — never rerun endlessly to force green.
 - **Report, don't fix.** Surface failures + comments; don't dispatch fix agents or close out.
+- **Poll inline, in main orchestration — never delegate the watch.** babysit is a main-loop
+  task: one inline `gh` check + `ScheduleWakeup`, nothing more. Never dispatch a subagent to
+  poll CI/threads, and never arm a persistent `Monitor` to watch — a delegated watcher lingers
+  as a background task and silently duplicates the loop. Subagents are one-shot (bounded task →
+  report → end); watching over time is the orchestrator's job, here in the main chat. This also
+  means: don't bundle "report CI status over time" into an implement/verify subagent's prompt —
+  that's what makes it arm a lingering monitor.
 - **No state, no auto-transition.** Reaching green doesn't trigger done — closing out is my
   explicit `/done`.
