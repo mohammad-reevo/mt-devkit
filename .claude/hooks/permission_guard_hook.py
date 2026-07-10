@@ -20,8 +20,11 @@ Bash: allow-by-default; ask/deny only for the curated patterns (network->shell,
   allowed while `bash -c "rm -rf ~"` is caught. Line-scoped secret reads
   (`grep VAR .env`, `sed`) stay allowed -- that's env-manager's legit access.
 Read/Edit/Write: hands-off (emit nothing, so native permissions + the worktree
-  gate keep working) EXCEPT secret files (.env, keys) -> deny. This subsumes the
-  separate env-guard.
+  gate keep working) EXCEPT secret files (.env, keys) -> deny, and Edit/Write of
+  a `.claude/` config path -> allow. The latter overrides Claude Code's built-in
+  "edit its own settings" prompt, which fires on any `.claude/` write and which
+  the permissions.allow list cannot suppress -- only a hook allow can. This
+  subsumes the separate env-guard.
 
 permissions.deny (rm -rf /, force-push) stays the native hard floor -- Claude
 Code evaluates deny over a hook allow, so it still applies.
@@ -97,6 +100,16 @@ def _is_secret_path(path):
     if "/.aws/credentials" in p or "/.gnupg/" in p:
         return True
     return False
+
+
+def _is_claude_config_path(path):
+    """True if the path lives inside a `.claude/` config directory (user or
+    project). Claude Code always prompts on writes there ("edit its own
+    settings"); an explicit hook allow is the only way to suppress that."""
+    if not path:
+        return False
+    p = os.path.expanduser(os.path.expandvars(path)).replace("\\", "/")
+    return ".claude" in p.split("/")
 
 
 # --------------------------------------------------------------------------- #
@@ -276,6 +289,8 @@ def _run():
             if _SECRET_DECISION == DENY:
                 _emit(DENY, "Blocked by ACL: secret file (.env / key material).")
             _nothing()  # ASK -> normal prompt on the secret file
+        if tool in ("Edit", "Write", "NotebookEdit") and _is_claude_config_path(path):
+            _emit(ALLOW, "allow-by-default ACL: .claude config path")
         _nothing()  # non-secret file tool: hands off to native permissions
 
     _nothing()
