@@ -21,7 +21,7 @@ The reply gets shorter by saying less, never by *checking* less. An agent that v
    - A real decision with tradeoffs → the verdict plus the handful of things that drive it, each with enough reasoning to act.
    - A sprawling audit → the verdict plus the load-bearing findings inline; trim the rest, don't relocate it onto the reader.
 
-4. **A file is for the genuinely large, genuinely optional tail — and only rarely.** Exhaustive per-finding cards, full `file:line` proof tables, raw per-axis transcripts: if that residue is large AND you judge the reader is unlikely to want it, a scratch file under `tmp/` (e.g. `tmp/{topic}.md`) is fine as *supplementary* material. It is never the home of the answer, and the reply must be complete without it. When in doubt, keep it in the reply — an unread paragraph costs less than a file the reader has to chase.
+4. **A file is for the genuinely large, genuinely optional tail — and only rarely.** Exhaustive per-finding cards, full `file:line` proof tables, raw per-axis transcripts: if that residue is large AND you judge the reader is unlikely to want it, a scratch file under `~/.claude/tmp/` (e.g. `~/.claude/tmp/{topic}.md`, see `scratch-files.md`) is fine as *supplementary* material. It is never the home of the answer, and the reply must be complete without it. When in doubt, keep it in the reply — an unread paragraph costs less than a file the reader has to chase.
 
 5. **No finding-card decoration inline.** Don't render `Finding: … / Severity: … / Status: ✅ Verified — file:line` blocks in the message. In the reply a finding is a sentence: what it is and why it matters. The scaffolding is noise.
 
