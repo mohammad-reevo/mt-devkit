@@ -44,9 +44,10 @@ tear down nothing.** No merge requirement — a passing-but-unmerged PR closes o
 happens separately from your queue).
 
 ## Tear down (after the gate passes; immediately in cancel mode)
-1. **Delete matching spec files** — for each branch, strip `mohammad/` → `<slug>`; delete
-   `~/.claude/spec/<slug>-plan.md` and `<slug>-scope.md` if present. Plan-optional: a branch
-   with no spec files just skips this.
+1. **Delete matching spec + scratch files** — for each branch, strip `mohammad/` → `<slug>`;
+   delete `~/.claude/spec/<slug>-plan.md` and `<slug>-scope.md` if present, and remove the
+   scratch dir `~/.claude/tmp/<slug>/` if present (see `scratch-files.md`). Plan-optional: a
+   branch with no spec files just skips the spec part.
 2. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
    the worktree first, removes the sub-repo + parent worktrees, deletes the **local**
    `mohammad/<slug>` branches). **Remote branches are never touched** — they back the open PRs
