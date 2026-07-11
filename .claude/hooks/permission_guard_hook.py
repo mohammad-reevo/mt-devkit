@@ -17,8 +17,12 @@ Bash: allow-by-default; ask/deny only for the curated patterns (network->shell,
   sudo/eval, destructive git, recursive rm, gh merge/review, raw-disk writes,
   and whole-file secret dumps like `cat .env`). `bash -c`/`zsh -ic` payloads are
   classified recursively, so env-manager aliases (`zsh -ic 'kill-be-f'`) stay
-  allowed while `bash -c "rm -rf ~"` is caught. Line-scoped secret reads
-  (`grep VAR .env`, `sed`) stay allowed -- that's env-manager's legit access.
+  allowed while `bash -c "rm -rf ~"` is caught. Running a script file
+  (`bash foo.sh`) is allowed when the script sits under a trusted root
+  (~/.claude, ~/Desktop/code -- your config + dev tree); a script anywhere else
+  (~/Downloads, /tmp) still prompts, since its contents are opaque. Line-scoped
+  secret reads (`grep VAR .env`, `sed`) stay allowed -- that's env-manager's
+  legit access.
 Read/Edit/Write: hands-off (emit nothing, so native permissions + the worktree
   gate keep working) EXCEPT secret files (.env, keys) -> deny, and Edit/Write of
   a `.claude/` config path -> allow. The latter overrides Claude Code's built-in
@@ -110,6 +114,29 @@ def _is_claude_config_path(path):
         return False
     p = os.path.expanduser(os.path.expandvars(path)).replace("\\", "/")
     return ".claude" in p.split("/")
+
+
+# Roots under which running a script file (`bash foo.sh`) is auto-allowed: your
+# own config and dev tree. A script outside these (e.g. ~/Downloads, /tmp) still
+# prompts -- its contents are opaque, so the trust comes from where it lives.
+_TRUSTED_SCRIPT_ROOTS = (
+    os.path.expanduser("~/.claude"),
+    os.path.expanduser("~/Desktop/code"),
+)
+
+
+def _is_trusted_script(path):
+    """True if `path` resolves inside a trusted script root. Lexical (no FS
+    access), with a path-boundary check so `~/.claude-evil` can't match
+    `~/.claude`. A relative path can't be resolved without a reliable cwd, so it
+    returns False -> the normal prompt still applies."""
+    if not path:
+        return False
+    p = os.path.expanduser(os.path.expandvars(path)).replace("\\", "/")
+    if not p.startswith("/"):
+        return False
+    p = os.path.normpath(p)
+    return any(p == root or p.startswith(root + "/") for root in _TRUSTED_SCRIPT_ROOTS)
 
 
 # --------------------------------------------------------------------------- #
@@ -209,8 +236,11 @@ def _classify_segment(tokens, depth):
         if payload is not None:
             return _classify_command(payload, depth + 1)
         # `bash script.sh` (a script file, not -c) -- running arbitrary code.
-        if args and not args[0].startswith("-"):
-            return ASK
+        # Allow when the script lives in a trusted root (your config / dev tree);
+        # otherwise prompt, since the file's contents are opaque.
+        script = next((a for a in args if not a.startswith("-")), None)
+        if script is not None:
+            return ALLOW if _is_trusted_script(script) else ASK
         return ALLOW
 
     if binary in ("eval", "sudo", "doas"):
