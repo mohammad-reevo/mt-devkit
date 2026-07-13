@@ -97,7 +97,9 @@ What testing the chosen direction warrants, at altitude — the kinds of tests +
 or "none" + why. plan turns this into concrete test tasks; it doesn't invent test scope.
 
 ## Open questions
-Things plan must resolve or ask me about.
+Genuine unknowns that still need my input — each written as a direct, answerable question (not
+"figure out X"), ideally with your recommendation. Resolve what you can yourself first (a
+targeted read/research pass); only what you genuinely can't settle lands here.
 
 ## Out of scope
 What we consciously deferred, so plan doesn't reinvent it.
@@ -117,5 +119,10 @@ the chain by this file, they never re-derive the slug from the idea.
   downside means you haven't thought about it enough.
 - **No invented requirements.** Scope what I asked about. Gaps you notice become open
   questions, not silently-added scope.
+- **Resolve before asking.** An open question is a last resort, not a catch-all for anything
+  unresolved. Before one lands in the file, try to answer it yourself — a targeted read or
+  research pass. Keep only what genuinely needs my call, and phrase each as a straight,
+  answerable question with your recommendation — so the gate can ask it plainly rather than
+  hand me a vague list.
 - **One artifact, no state.** No session files, no hooks, no auto-transition into plan
   (Wave 1: I drive).

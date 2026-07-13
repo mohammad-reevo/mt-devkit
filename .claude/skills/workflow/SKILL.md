@@ -58,8 +58,17 @@ Invoke each phase skill and let it run to completion — each handles its own in
 - **scope → plan — HARD GATE.** Scope is the deep-context phase: a full, in-depth look at the
   work before we commit more to it, so I have real context and a conversation going. After the
   scope file lands, **stop and give me a quick summary of what we're doing** — the direction,
-  the approach we picked and why, the testing call, and any open questions. Then wait for my
-  **explicit go-ahead** before starting plan. Never cross this on your own.
+  the approach we picked and why, and the testing call. Then handle open questions properly
+  instead of dumping them on me:
+  - **Resolve what you can yourself first.** For each open question, try to answer it — a
+    targeted read/research pass, or reasoning from what scope already found. Don't punt a
+    question you could settle in a minute. Say which ones you resolved and how.
+  - **Ask the rest straight.** Surface only the questions that genuinely need *my* call, and
+    ask each as a clear, direct, answerable question — with your recommendation — not a vague
+    "things to resolve" list. Use **AskUserQuestion** when they're discrete choices so I can
+    just pick.
+
+  Then wait for my **explicit go-ahead** before starting plan. Never cross this on your own.
 - **plan → implement — no gate.** plan already got my approval before writing the plan; that
   *is* the checkpoint. Flow straight in. (plan creates + enters the worktree at its start.)
 - **implement → verify — no gate, but verify is user-directed.** implement ends at a pushed,
