@@ -41,6 +41,25 @@ to remove a bare `EnterWorktree` worktree, not the skill's parent+sub-repo set).
 The generic `EnterWorktree` / `git worktree add` mechanism above still applies in
 **other** repos that have no `worktree` skill.
 
+## One worktree per session — reuse it across branches and PRs
+
+The unit of isolation is the **Claude Code session**, not the branch or the task:
+each session gets **one** worktree and stays in it. When you finish a task and
+start another — or land a PR and open the next — **don't create a second
+worktree**. Cut the new branch off fresh `origin/main` **in place**, in whichever
+repo the change touches:
+
+```
+git fetch origin
+git -C <worktree> switch -c mohammad/<name> origin/main                 # parent / harness change
+git -C <worktree>/salestech-be switch -c mohammad/<name> origin/main    # a sub-repo PR
+```
+
+This holds **broadly, including sub-repo PRs** — reuse the session's existing
+sub-repo worktrees, switching the relevant one to a new branch. Create a fresh
+worktree (via the `worktree` skill) only for a genuinely separate, **parallel**
+session that needs its own isolated tree.
+
 ## Reviews — by convention
 
 The Edit/Write gate can't see a review (reviews don't mutate files). So for
@@ -51,7 +70,7 @@ when done.
 
 ## Why
 
-One pristine `main` per repo + a worktree per task = parallel work that never
+One pristine `main` per repo + a worktree per session = parallel work that never
 collides and always starts from current `origin/main`. See
 [[feedback_push_gate_stamp_nested_worktree.md]] for the `.git` file-vs-directory
 detection the gate relies on. This is personal global tooling, deliberately
