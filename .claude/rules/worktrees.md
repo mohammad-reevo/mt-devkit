@@ -22,6 +22,25 @@ session — the first blocked edit is the signal to enter a worktree.
 - **Always-allowed:** non-git paths (worktrees need git) and everything under
   `~/.claude/` (config must stay editable).
 
+## In the mt-devkit workspace — create worktrees via the `worktree` skill
+
+Inside this workspace, create worktrees with the **`worktree` skill**
+(`/worktree` → create), **not** the built-in `EnterWorktree`. The skill sets up
+what the funnel needs and `EnterWorktree` does not: the parent **plus the product
+sub-repos** (`salestech-be`, `frontend-monorepo`) each on `mohammad/<name>`,
+env/settings copied, and the frontend→backend path fixed for the worktree.
+`EnterWorktree` makes a bare parent-only worktree, so a session that used it for
+product work would be missing the sub-repo worktrees the funnel relies on.
+
+This holds **even for harness-only edits** (changing `mt-devkit/.claude/`
+itself): the skill sets the sub-repos up unused, which is accepted overhead for a
+single consistent way in. Tear a worktree down the same way — the `worktree`
+skill (`remove <name>`) or `/done`, **not** `ExitWorktree` (which only knows how
+to remove a bare `EnterWorktree` worktree, not the skill's parent+sub-repo set).
+
+The generic `EnterWorktree` / `git worktree add` mechanism above still applies in
+**other** repos that have no `worktree` skill.
+
 ## Reviews — by convention
 
 The Edit/Write gate can't see a review (reviews don't mutate files). So for
