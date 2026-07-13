@@ -42,9 +42,10 @@ in-app case pulls me in.
 - **Scripts-only** → run the script/flow (directly or via a subagent), capture pass/fail + the
   key output.
 - **N/A** → note "no manual verification needed: `<reason>`" and go straight to the PR.
-- **In-app** → drive the app live (browser MCP) with **me directing**: you propose a check, run
-  it when I say go, we look at the result together, I call pass/fail. You can suggest checks; I
-  steer. Capture a screenshot for UI changes.
+- **In-app** → bring the local env up via env-manager **`run all-envs`** (the whole stack in one
+  command — not individual `run backend` / `run frontend`), then drive the app live (browser MCP)
+  with **me directing**: you propose a check, run it when I say go, we look at the result together,
+  I call pass/fail. You can suggest checks; I steer. Capture a screenshot for UI changes.
 
 **No workarounds** — if something needs a hack to test (flag off, missing data, auth), that's a
 failure to surface and stop on, not a step to route around.
