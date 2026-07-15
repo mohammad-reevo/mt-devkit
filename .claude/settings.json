@@ -5,13 +5,10 @@
     "allow": [
       "Read(//Users/mohammad/.claude/**)",
       "Edit(//Users/mohammad/.claude/**)",
-      "Write(//Users/mohammad/.claude/**)",
       "Read(//Users/mohammad/Desktop/code/mt-devkit/**)",
       "Edit(//Users/mohammad/Desktop/code/mt-devkit/**)",
-      "Write(//Users/mohammad/Desktop/code/mt-devkit/**)",
       "Read(//Users/mohammad/Desktop/code/devkit/**)",
       "Edit(//Users/mohammad/Desktop/code/devkit/**)",
-      "Write(//Users/mohammad/Desktop/code/devkit/**)",
       "WebFetch(*)",
       "WebSearch",
       "Skill(*)",
