@@ -28,40 +28,5 @@
       "Bash(git push --force:*)",
       "Bash(git push -f:*)"
     ]
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/usr/bin/python3 \"$HOME/Desktop/code/mt-devkit/.claude/hooks/worktree_gate_hook.py\""
-          },
-          {
-            "type": "command",
-            "command": "/usr/bin/python3 \"$HOME/Desktop/code/mt-devkit/.claude/hooks/implementer_gate_hook.py\""
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/usr/bin/python3 \"$HOME/Desktop/code/mt-devkit/.claude/hooks/branch_from_main_guard_hook.py\""
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Read|Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/usr/bin/python3 \"$HOME/Desktop/code/mt-devkit/.claude/hooks/permission_guard_hook.py\""
-          }
-        ]
-      }
-    ]
   }
 }
