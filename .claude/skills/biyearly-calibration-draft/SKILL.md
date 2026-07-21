@@ -24,8 +24,9 @@ case credible.
 
 ## Required inputs — collect these FIRST, before any analysis
 
-1. **Current level (E3–E7). REQUIRED.** Ask directly if not given. Also confirm **level+1** for a promotion
-   case (recommended — the rubric explicitly allows assessing "your level plus one").
+1. **Level to assess — ASK the user, never assume.** Ask their **current level (E3–E7)** AND **whether to
+   also assess level+1** (the promotion case). Use AskUserQuestion or a direct question up front — don't
+   infer the level from the work, and don't assess level+1 unless the user asks for it.
 2. **Review window.** **H1 = Jan 1 – Jun 30**, **H2 = Jul 1 – Dec 31**. Confirm the year. Nothing outside
    the window counts (`git --until` is exclusive — use the 1st of the next month).
 3. **The current rubric — from the user.** Ask them to paste it or point to a local file. **Expect a
@@ -60,9 +61,13 @@ The concrete tools and queries for each source live in `reference/evidence-sweep
    disprove the strongest claims** — unshipped work and mis-attributed PRs die here.
 8. **Apply the honesty-traps checklist** (`reference/honesty-traps.md`) continuously — correct
    overstatements, bake honesty caveats inline.
-9. **Write the outputs** in the rubric's own submittable format (`templates/draft-template.md`).
+9. **Write the outputs** in the rubric's own submittable format (`templates/draft-template.md`) — writing
+   every claim **for impact, not as a PR list** (`reference/impact-framing.md`).
+10. **Impact-hardening pass.** Re-read each bullet and ask "what's the user / business / technical-complexity
+    *why*?" Rewrite soft "built X (PR)" bullets to lead with the impact; collapse PR-dumps to one explained
+    example plus a count. This pass is where a readable, persuasive draft is actually made.
 
-## The four disciplines (read the reference files)
+## The five disciplines (read the reference files)
 
 - **Evidence sweep** — `reference/evidence-sweep.md`: the hard-coded MCP sweep (git/gh, Linear, Slack,
   Notion, Datadog, Rootly, Sentry) plus "sweep whatever else is connected." Linear's delegation signal is
@@ -71,6 +76,9 @@ The concrete tools and queries for each source live in `reference/evidence-sweep
   not once.
 - **Grading** — `reference/grading.md`: 🟢/🟡/🔴 discipline and why the Example Behaviors decide ambiguous
   bullets (data/traffic scale, co-driver vs owner, DRI-of-surface vs whole-domain).
+- **Impact framing** — `reference/impact-framing.md`: write for impact, not a PR list. Every headline claim
+  carries a user / business / technical-complexity *why*, in the user's first-person voice, at readable
+  altitude. This is the difference between a credible draft and an unreadable dump of "(PR)(PR)(PR)".
 - **Output format** — `templates/draft-template.md`: the per-bullet submittable format + the 3-doc output.
 
 ## Non-negotiables
@@ -84,4 +92,7 @@ The concrete tools and queries for each source live in `reference/evidence-sweep
 - **Read the Example Behaviors before grading ambiguous bullets** — they define what a bullet actually means.
 - **Surface the user's OWN numbers, not team/product metrics.** Delegation counts, projects genuinely led,
   features built are fair; "100k product runs" is team impact, not personal.
+- **Write for impact, not a PR list.** Every headline claim leads with a user / business /
+  technical-complexity *why*, in the user's first-person voice — never a bare "built X (link)".
+  Readability is part of the deliverable. See `reference/impact-framing.md`.
 - **When unsure, flag — don't decide.** Hand judgment calls to the user.

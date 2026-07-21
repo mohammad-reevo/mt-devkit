@@ -18,6 +18,9 @@ what rests on attestation>
 Rules:
 - **Verbatim bullet text** — copy the rubric's wording exactly; don't paraphrase the bar.
 - **First-person evidence** — write sub-bullets as the user ("I drove…", "I built…") so they're liftable.
+- **Lead with impact, not the artifact** — every headline claim carries a user / business /
+  technical-complexity *why*, not a bare "built X (link)". See `reference/impact-framing.md`. This is the
+  difference between a readable argument and an unreadable PR list.
 - **Every colored bullet cites** — a PR#, an authorship-verified Notion doc, or an attested action + named
   voucher. No uncited grades.
 - **Add vouchers to load-bearing claims** — "(verify: Kai / Tan / PM)", "(TL: X)" — so the user knows what
