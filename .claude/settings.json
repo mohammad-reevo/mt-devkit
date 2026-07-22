@@ -18,7 +18,8 @@
       "mcp__sentry__*",
       "mcp__datadog-official__*",
       "mcp__slack__*",
-      "mcp__rootly__*"
+      "mcp__rootly__*",
+      "mcp__langfuse__*"
     ],
     "deny": [
       "Bash(rm -rf /)",
