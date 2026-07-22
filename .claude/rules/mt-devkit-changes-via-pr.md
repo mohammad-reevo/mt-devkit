@@ -4,7 +4,7 @@
 Any time you edit the mt-devkit harness itself — anything tracked under
 `mt-devkit/.claude/` (skills, rules, hooks, agents, settings templates) or other
 tracked files of the `mt-devkit` repo. This is about the **harness repo**, not the
-product sub-repos (`salestech-be`, `frontend-monorepo`), which have their own flow.
+product sub-repos (`salestech-be`, `frontend-monorepo`, `reevo-realtime`), which have their own flow.
 
 ## Rule
 A change to the mt-devkit harness lands through the normal git flow: a dedicated

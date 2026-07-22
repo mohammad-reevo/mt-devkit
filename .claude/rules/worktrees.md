@@ -27,7 +27,7 @@ session — the first blocked edit is the signal to enter a worktree.
 Inside this workspace, create worktrees with the **`worktree` skill**
 (`/worktree` → create), **not** the built-in `EnterWorktree`. The skill sets up
 what the funnel needs and `EnterWorktree` does not: the parent **plus the product
-sub-repos** (`salestech-be`, `frontend-monorepo`) each on `mohammad/<name>`,
+sub-repos** (`salestech-be`, `frontend-monorepo`, `reevo-realtime`) each on `mohammad/<name>`,
 env/settings copied, and the frontend→backend path fixed for the worktree.
 `EnterWorktree` makes a bare parent-only worktree, so a session that used it for
 product work would be missing the sub-repo worktrees the funnel relies on.

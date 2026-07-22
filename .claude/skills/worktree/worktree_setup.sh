@@ -32,7 +32,7 @@ fix_backend_path() {
 }
 
 # --- 2. Sub-repo worktrees + env + fix + deps ----------------------------------------------
-for subrepo in salestech-be frontend-monorepo; do
+for subrepo in salestech-be frontend-monorepo reevo-realtime; do
     src="${main}/${subrepo}"
     dst="${wt}/${subrepo}"
     [[ -d "$src" ]] || continue
