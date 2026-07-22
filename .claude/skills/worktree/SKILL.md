@@ -1,6 +1,6 @@
 ---
 name: worktree
-description: Manage isolated worktrees for my personal dev funnel. Given a name, creates a worktree of the parent workspace + its sub-repos (salestech-be, frontend-monorepo) each on a logical feature branch mohammad/<name>, with env/settings copied and the frontend→backend path fixed for the worktree. Three modes — create / list / remove. Use to start isolated work, see active worktrees, or tear one down. Triggers on "make/create a worktree", "list worktrees", "remove worktree <name>".
+description: Manage isolated worktrees for my personal dev funnel. Given a name, creates a worktree of the parent workspace + its sub-repos (salestech-be, frontend-monorepo, reevo-realtime) each on a logical feature branch mohammad/<name>, with env/settings copied and the frontend→backend path fixed for the worktree. Three modes — create / list / remove. Use to start isolated work, see active worktrees, or tear one down. Triggers on "make/create a worktree", "list worktrees", "remove worktree <name>".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -40,8 +40,8 @@ Show worktrees under `$MAIN/worktrees/`, most-recently-active first. For each, p
 - last commit: `git -C "$MAIN/worktrees/<name>/<subrepo>" log -1 --format='%ct|%cr'` (sort by
   `%ct`, show `%cr`)
 
-Render a compact table (worktree | updated | salestech-be branch | frontend-monorepo branch).
-`—` for a missing sub-repo. No `EnterWorktree`. If none: say so.
+Render a compact table (worktree | updated | salestech-be branch | frontend-monorepo branch |
+reevo-realtime branch). `—` for a missing sub-repo. No `EnterWorktree`. If none: say so.
 
 ## `remove <name>`
 

@@ -14,7 +14,7 @@ wt="${main}/worktrees/${name}"
 branch="mohammad/${name}"
 
 # Sub-repo worktrees + local branches
-for subrepo in salestech-be frontend-monorepo; do
+for subrepo in salestech-be frontend-monorepo reevo-realtime; do
     src="${main}/${subrepo}"
     dst="${wt}/${subrepo}"
     [[ -d "$src" ]] || continue
