@@ -18,6 +18,16 @@ wt="${main}/worktrees/${name}"
 branch="mohammad/${name}"
 
 # --- 1. Parent-workspace worktree (container: holds the sub-repo worktrees) -----------------
+# A directory that exists but is NOT a registered worktree is a stale leftover from a partial
+# teardown. The `[[ ! -d ]]` guard below would silently skip creating the parent worktree,
+# yielding a half-built worktree (no parent branch, sub-repos layered onto nothing) that looks
+# fine until something is missing — so fail loudly instead.
+if [[ -d "$wt" ]] && ! git -C "$main" worktree list --porcelain | grep -qxF "worktree ${wt}"; then
+    echo "error: ${wt} exists but is not a registered worktree — stale leftover from a failed teardown." >&2
+    echo "       Remove it and retry:  rm -r \"${wt}\"" >&2
+    exit 1
+fi
+
 if [[ ! -d "$wt" ]]; then
     git -C "$main" branch -D "$branch" 2>/dev/null || true   # clear a stale branch from a failed teardown
     git -C "$main" worktree add -b "$branch" "$wt" origin/main >&2
