@@ -92,4 +92,5 @@ Once verification passes, return to `/workflow` to continue — it owns what com
 - **Use the repo's own PR tooling.** The PR description follows the relevant repo's
   `pr-description` skill + `pull_request_template.md` (read-and-follow if not natively loaded) —
   never devkit's PR skills, and nothing duplicated into the harness.
-- **No state, no auto-transition** (Wave 1: I drive). babysit is a separate opt-in phase.
+- **No state, no auto-transition** (Wave 1: I drive). babysit is a separate phase — don't invoke
+  it yourself; hand back to `workflow`, which starts it once the PR is open.

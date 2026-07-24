@@ -18,7 +18,7 @@ reimplement from scratch if ever wanted) · `SKIP` (deliberately not wanted).
 | verify | REBUILT → mt-verify | user-directed; opens PR via repos' own pr skills |
 | done | REBUILT → mt-done | simplified; resolves by checked-out branch, no session machinery |
 | worktree | REBUILT → mt-worktree | self-contained; per-worktree `.env` fix |
-| babysit-pr (plugin) | REBUILT → mt-babysit | script-free, opt-in, fixes isOutdated drop |
+| babysit-pr (plugin) | REBUILT → mt-babysit | script-free, conductor-started tail, fixes isOutdated drop |
 | local-db | ✅ BUILT → mt-db (local) | consolidated into `mt-db`; local is the default target |
 | dev-db | ✅ BUILT → mt-db (dev) | consolidated into `mt-db`; `dev` target (Aurora writer, Tailscale + chamber) |
 | start-backend | COVERED | env-manager + run commands |
@@ -62,7 +62,7 @@ enforce that machine) are SKIP.
 | workflow_guard_hook | SKIP | plan-review/size/repo gates (repo-isolation already covered) |
 | plan_authoring_hook | SKIP | devkit plan-format enforcement |
 | subagent_push_guard (babysit-pr) | SKIP | would block mt-implement's subagent push |
-| babysit_pr_nudge (babysit-pr) | SKIP | babysit is opt-in (`BABYSIT_PR_AUTONUDGE=0`) |
+| babysit_pr_nudge (babysit-pr) | SKIP | babysit never attaches to a bare push (`BABYSIT_PR_AUTONUDGE=0`); the funnel starts it from `workflow` instead |
 | commit_gate_hook (commit-gate) | SKIP | mt-implement runs checks in-skill |
 | commit_review_nudge (code-reviewer) | SKIP | code review is in-skill |
 | review_stamp_hook (code-reviewer) | SKIP | stamp-gated-push machinery |
