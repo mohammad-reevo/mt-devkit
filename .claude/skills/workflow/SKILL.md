@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to an open PR through scope → plan → implement → verify, with a hard post-scope gate (summary + my approval) and kickback routing, then hands off to opt-in babysit + explicit done. Detects phase from the spec files + git/PR state. Also a status view across every in-flight idea. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
+description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with a hard post-scope gate (summary + my approval) and kickback routing, then stops at explicit done. Detects phase from the spec files + git/PR state. Also a status view across every in-flight idea. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -13,8 +13,8 @@ You are the **conductor**. You invoke the phase skills (via the Skill tool) and 
 handoffs — you never do their work. Compose, never duplicate: each phase's logic lives in its
 own skill. The spec files + git/PR state **are** the state (Wave 1: no session file).
 
-Purpose: drive an idea from raw idea to an **open PR** (scope → plan → implement → verify),
-enforce the one hard gate, route kickbacks — then hand off to the opt-in tail (babysit) and
+Purpose: drive an idea from raw idea to a **PR that's open and being watched** (scope → plan →
+implement → verify → babysit), enforce the one hard gate, route kickbacks — then stop at the
 explicit close-out (done).
 
 ## Two modes
@@ -29,7 +29,7 @@ Scan `~/.claude/spec/*-scope.md` and `*-plan.md`. For each idea, one line:
 - scope file only → **scoped — ready to plan**
 - plan, some tasks `[ ]` → **implementing — N/M tasks done**
 - plan all `[x]`, no PR for `mohammad/<name>` → **built — ready to verify**
-- plan all `[x]`, PR open → **in review — <PR link> (babysit / done when green)**
+- plan all `[x]`, PR open → **in review — <PR link> (babysit watching / done when green)**
 
 The last two rows need a quick `gh pr list --head mohammad/<name>` per built idea. Read-only —
 this advances nothing.
@@ -46,7 +46,7 @@ scope/plan file; a Linear ticket → identifier lowercased). Detect where it sta
 | scope only | **plan** |
 | plan with unchecked `[ ]` tasks | **implement** |
 | plan all `[x]`, no PR for `mohammad/<name>` | **verify** |
-| plan all `[x]`, PR open | **in review** — babysit (opt-in) / done (when green) |
+| plan all `[x]`, PR open | **babysit** — pick the watch back up; done (when green) is mine |
 
 State where we are and the phase you're entering. Invoking me mid-funnel is my go-ahead to run
 that phase.
@@ -74,10 +74,14 @@ Invoke each phase skill and let it run to completion — each handles its own in
 - **implement → verify — no gate, but verify is user-directed.** implement ends at a pushed,
   reviewed, green branch (no PR). Flow into verify — it pulls me in to direct the testing and
   then opens the PR. This is my post-implement touchpoint.
-- **verify → STOP.** Once verify opens the PR, the auto-drive is **done**. Surface the next
-  moves but **don't run them**: **babysit is opt-in** (never auto-start — my
-  `feedback_babysit_opt_in` rule), and **done is explicit** (`/done` when CI's green +
-  threads resolved). Report the PR link and stop.
+- **verify → babysit — no gate.** Once verify opens the PR, report the PR link and **go straight
+  into babysit** — don't ask, don't wait for me. A freshly-opened PR always needs watching, so
+  making me say "yes, watch it" was pure friction; the only thing that ever came of the pause was
+  a delay. Invoke the `babysit` skill and let it run its poll loop.
+- **babysit → STOP.** babysit paces itself to a ~25-minute CI run (≈10-minute polls, so review
+  comments still surface quickly) and reports what it finds — it does **not** fix, and reaching
+  green does **not** close anything out. **done stays explicit**: `/done` is mine to invoke once
+  CI's green and threads are resolved. Surface it as the next move; never run it.
 
 ### 3. Route kickbacks
 - plan finds the **direction** wrong → back to **scope** (revision) → re-summarize at the
@@ -94,7 +98,8 @@ back up.
   always through the owning skill.
 - **The post-scope gate is real** — a genuine summary + my actual go-ahead, never a rubber-stamp.
   Scope earns the commitment to plan.
-- **Never auto-run babysit or done.** They're opt-in / explicit; the workflow only surfaces them.
+- **babysit auto-runs as the tail; done never does.** Flowing verify → babysit is the drive
+  finishing its job. `/done` is the one transition that stays mine — the workflow only surfaces it.
 - **No new state.** Detect from spec files + git/PR every time; never cache the phase or invent a
   tracking file (Wave 1: files are the contract, I drive).
 - **One idea per drive.** The status view is the cross-idea overview.
