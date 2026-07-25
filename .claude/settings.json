@@ -1,7 +1,6 @@
 {
   "enableAllProjectMcpServers": true,
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
       "Read(//Users/mohammad/.claude/**)",
       "Edit(//Users/mohammad/.claude/**)",
