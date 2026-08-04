@@ -1,6 +1,6 @@
 ---
 name: create-implementation-plan
-description: Turn a stream of work — an eng-design doc, a PRD, a described change, or a large diff to dissect — into a comprehensive, code-grounded implementation plan that decomposes it into independently-shippable pieces (each ≈ one ticket / PR / Claude-Code conversation) with explicit dependencies. Tracker-agnostic — produces a spec-style markdown doc, no Linear/Jira/ticket references or polished overview (a downstream "plan → Linear" bridge handles that). Scales from a 2–3 PR change to a full project. Standalone, upstream of the scope→plan→implement funnel. Triggers on "create an implementation plan", "plan out this work", "break this into PRs/tickets", "dissect this into workable pieces", "/create-implementation-plan".
+description: Turn a stream of work — an eng-design doc, a PRD, a described change, or a large diff to dissect — into a comprehensive, code-grounded implementation plan that decomposes it into independently-shippable pieces (each ≈ one ticket / PR / Claude-Code conversation) with explicit dependencies. The plan doc itself is tracker-agnostic (a spec-style markdown doc, no ticket references); then, only when directed, an optional final step populates an existing Linear project with tickets (+ overview) via the linear-tickets skill — never creating projects, never syncing. Scales from a 2–3 PR change to a full project. Standalone, upstream of the scope→plan→implement funnel. Triggers on "create an implementation plan", "plan out this work", "break this into PRs/tickets", "dissect this into workable pieces", "turn this plan into Linear tickets", "/create-implementation-plan".
 ---
 
 # Create an Implementation Plan
@@ -9,8 +9,10 @@ Turn a converged stream of work into a **comprehensive, code-grounded implementa
 plan** that decomposes it into independently-shippable **work items** — each roughly one
 ticket / PR / Claude-Code conversation — with explicit dependencies. The output is a
 single spec-style markdown doc. This skill owns the *decomposition and the code
-grounding*; it is deliberately **tracker-agnostic** — no Linear, no ticket IDs, no
-polished overview. A downstream "plan → Linear" bridge maps the plan onto a tracker.
+grounding*. The plan doc it writes is deliberately **tracker-agnostic** — no ticket IDs,
+no polished overview. Then, only when you direct it, an optional final step (§8) populates
+an existing Linear project from the plan, delegating the mechanics to the `linear-tickets`
+skill.
 
 **Scale to the work.** A 2–3 PR change gets a short flat plan; a full project gets
 tracks/phases and deeper research. Match the effort to the input — don't over-engineer a
@@ -18,8 +20,9 @@ small dissection, don't under-plan a project.
 
 **Shape of the run:** gather → ground in real code → decompose into work items → a light
 bi-directional reconcile against the source → one approval gate on the breakdown → write
-the comprehensive doc → iterate. Keep the main thread lean — delegate wide reads and code
-research to subagents; think in the main thread.
+the comprehensive doc → iterate → *(optional, when directed)* materialize into Linear.
+Keep the main thread lean — delegate wide reads and code research to subagents; think in
+the main thread.
 
 ## 1. Gather inputs
 
@@ -94,20 +97,39 @@ Structure:
 
 **Comprehensive beats pretty.** The goal is a plan complete enough to drive real
 implementation — each item buildable from its own entry plus the source docs it links. Do
-**not** produce a separate polished overview or reference any tracker; the readable summary
-and the tickets are the bridge's job.
+**not** put a polished overview or tracker references *in the doc itself* — the readable
+summary and the tickets are produced by the optional Linear step (§8), only if asked.
 
 ## 7. Iterate
 
 Hand it over: the user reviews and reorganizes directly. Adjust when asked; **re-read the
 doc first** so you build on their edits, not your last version.
 
+## 8. Optional: materialize into Linear (directed)
+
+The plan doc is the deliverable. Once it's settled, **offer** to turn it into Linear
+tickets — **never automatic; always ask** what the user wants:
+
+- **Nothing** — the plan doc stands on its own (they'll handle tickets, or already have them). Stop here.
+- **Tickets** — populate an existing Linear project with the ticket tree.
+- **Tickets + overview** — also populate the project's overview (description) from the plan.
+
+If populating:
+
+1. **The user provides the project.** This skill **never creates a Linear project** — it populates one the user already made. Get the project (link / name).
+2. **Synthesize the readable layer.** The plan doc is dense and grounded; produce the *readable* Linear artifacts from it — plain-English ticket bodies (goal / what it ships / grounded technical notes / blockers) and, if asked, a readable project overview (goal, track breakdown, sequencing + dependency graph, settled decisions, scope). This dense→readable pass is this step's real work.
+3. **Map plan → Linear.** A work item → an issue; a work item with sub-items → a parent issue + sub-issues; tracks/phases → overview structure only (not Linear objects); the dependency graph → `blocked by` / `blocks` relations. Cycle / milestone / assignee are **user-directed**, not derived from the plan.
+4. **Approval gate.** Show the readable ticket breakdown (+ overview) for review **before** creating anything in Linear.
+5. **Create via `linear-tickets`.** Delegate the mechanics to the `linear-tickets` skill — create the issue tree in dependency order, wire relations, set the overview, verify. Follow its guardrails (status boundary, live cycle/milestone resolution, no destructive changes).
+
+**No syncing.** This is create-only. If tickets already exist for the plan, don't try to reconcile or update them — out of scope.
+
 ## Guardrails
 
 - **Ground in real code** — every load-bearing claim traces to a real identifier (§2).
-- **Tracker-agnostic** — no Linear/Jira, no ticket IDs, no polished overview. The plan stays portable; a downstream bridge maps it onto a tracker.
+- **The plan doc stays tracker-agnostic** — no ticket IDs, no polished overview *in the doc*; it stays portable. Materializing into Linear (§8) is a separate, **opt-in, directed** step — never automatic, never creates projects, never syncs.
 - **Most-recent source wins** on conflicts between source documents.
 - **No invented requirements** — plan the decided work; a gap the source leaves open is an open question, not an invented answer.
 - **Scale to the work** — a 2–3 PR change gets a short flat plan; a project gets tracks/phases and deep research.
 - **Response altitude** when synthesizing multi-agent research — findings, not transcripts, into the doc and the chat.
-- **Standalone, and distinct from the funnel.** Invoked directly, upstream of the scope→plan→implement funnel and of the "plan → Linear" bridge. Not the same as the funnel `plan` skill (per-idea task breakdown for immediate build in a worktree) or `plan-split` (fan-out to parallel worktrees) — this one decomposes a stream of work into shippable, dependency-linked pieces, agnostic of how they get built or tracked.
+- **Standalone, and distinct from the funnel.** Invoked directly, upstream of the scope→plan→implement funnel. Not the same as the funnel `plan` skill (per-idea task breakdown for immediate build in a worktree) or `plan-split` (fan-out to parallel worktrees) — this one decomposes a stream of work into shippable, dependency-linked pieces, agnostic of how they get built or tracked.
