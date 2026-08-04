@@ -30,6 +30,41 @@ bash $HOME/Desktop/code/mt-devkit/.claude/skills/snowflake/snowquery.sh [--csv|-
 The script resolves the connection itself — never construct a raw `snow sql` command or pass
 credentials on the command line.
 
+## Finding your way around
+
+**Data is scoped per organization, so an unqualified table name finds nothing.** `SELECT * FROM
+account` fails or returns an empty set — there is no shared `account` table. Always fully qualify
+as `<database>.<schema>.<table>`.
+
+| Layer | Value |
+|---|---|
+| Database | `REPORTING_DB_PROD` for prod. `REPORTING_DB_DEV` is shared by dev / staging / local / pytest — none of those have their own warehouse. |
+| Schema | One per organization: `ORG_<organization_id>`, uppercased with dashes replaced by underscores. Org `a1b2c3d4-…-9f8e` → schema `ORG_A1B2C3D4_…_9F8E`. |
+| Table | The object's `api_name` — `account`, `contact`, `user`, `select_list_value`, plus each org's custom objects. |
+
+So a real query looks like:
+
+```sql
+SELECT count(*) FROM REPORTING_DB_PROD.ORG_A1B2C3D4_5E6F_7890_ABCD_EF1234567890.account
+```
+
+**Discovery ladder** when you don't know the target — each step is a read, so all are allowed by
+default:
+
+```sql
+SHOW SCHEMAS IN DATABASE REPORTING_DB_PROD;          -- find the ORG_<uuid> schema
+SHOW TABLES IN SCHEMA REPORTING_DB_PROD.ORG_<uuid>;  -- what objects that org has
+DESCRIBE TABLE REPORTING_DB_PROD.ORG_<uuid>.account; -- column names and types
+```
+
+For a column-level search, `REPORTING_DB_PROD.INFORMATION_SCHEMA.COLUMNS` is queryable like any
+table.
+
+**Getting the org id:** it's a Postgres value, not a Snowflake one. Look it up with the **`db`**
+skill (e.g. `SELECT id, name FROM organization`), then build the schema name from it. The two
+skills are complementary — the dataset *catalog* (`reporting_dataset_v2`) lives in Postgres while
+the *rows* live in Snowflake.
+
 ## Guardrails
 
 - **Read-only by default.** The script checks the leading keyword of *every* `;`-separated
