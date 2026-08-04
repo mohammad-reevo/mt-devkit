@@ -6,7 +6,8 @@ description: Query the Reevo Snowflake reporting warehouse (a copy of production
 # snowflake — query the reporting warehouse
 
 > Personal harness tool, self-contained. Wraps the official `snow` CLI the same way `db` wraps
-> `psql`. Auth lives in `~/.snowflake/connections.toml`; no credentials in this repo.
+> `psql`. Auth lives in the CLI's own config (`~/Library/Application Support/snowflake/config.toml`
+> on macOS); no credentials in this repo.
 
 ## Target
 
@@ -80,14 +81,17 @@ the *rows* live in Snowflake.
 | | |
 |---|---|
 | CLI | `brew install snowflake-cli` (provides `snow`) |
-| Connection | `snow connection add --connection-name reevo --authenticator externalbrowser` |
+| Connection | `reevo` — account `VOB45637`, warehouse `REPORTING_PROD_WH`, database `REPORTING_DB_PROD`, `externalbrowser` auth. Recreate with `snow connection add -n reevo -a VOB45637 -u <you> -w REPORTING_PROD_WH -d REPORTING_DB_PROD -A externalbrowser`. |
+| Role | Not pinned on the connection — the session uses your Snowflake default role. `REPORTING_PROD_ROLE` is the backend *service* role; don't assume it's granted to a human user. Check with `SELECT current_role()`. |
 | Auth | SSO via browser. Needs a browser reachable from the terminal — **the first login must happen in an interactive session**, not a background job. |
 | Re-auth | The cached token covers roughly a working session; when it expires the script surfaces the CLI's auth error and you re-run the login. |
 
 ## Failure hints
 
 - `snow: command not found` → `brew install snowflake-cli`.
-- `~/.snowflake/connections.toml missing` → run the `snow connection add` line above.
+- `no Snowflake connection named 'reevo'` → run the `snow connection add` line above. The script
+  asks `snow connection list` rather than probing a config path, since that path is
+  platform-dependent.
 - Auth / token errors → re-run the browser login interactively; a background session cannot
   complete SSO.
 - `refusing to run a non-read statement` → intended. Re-read the SQL; add `--write` only if the

@@ -78,10 +78,14 @@ if ! command -v snow &>/dev/null; then
   exit 1
 fi
 
-if [[ ! -f "$HOME/.snowflake/connections.toml" ]]; then
-  echo "Error: no Snowflake connection is configured (~/.snowflake/connections.toml missing)." >&2
+# Ask `snow` whether the connection exists rather than probing a config path: the CLI stores
+# config at ~/Library/Application Support/snowflake/config.toml on macOS and
+# ~/.snowflake/config.toml elsewhere, so any hardcoded path is wrong on some platform.
+if ! snow connection list --format JSON 2>/dev/null | grep -q "\"connection_name\": \"$CONNECTION\""; then
+  echo "Error: no Snowflake connection named '$CONNECTION' is configured." >&2
   echo "Create one with:" >&2
-  echo "  snow connection add --connection-name $CONNECTION --authenticator externalbrowser" >&2
+  echo "  snow connection add -n $CONNECTION -a <account> -u <user> -A externalbrowser" >&2
+  echo "Existing connections: $(snow connection list --format JSON 2>/dev/null | grep '"connection_name"' | sed 's/.*: "//; s/".*//' | tr '\n' ' ')" >&2
   exit 1
 fi
 
