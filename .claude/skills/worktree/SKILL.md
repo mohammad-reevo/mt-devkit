@@ -22,7 +22,8 @@ the first entry of `git worktree list` in the parent repo; fall back to
 
 ## `create <name>`
 
-1. Run the setup script (it creates the parent + sub-repo worktrees on `mohammad/<name>`,
+1. Run the setup script (it **syncs all four primary checkouts to fresh main** first, then
+   creates the parent + sub-repo worktrees on `mohammad/<name>`,
    copies `.env*` + nested frontend env + `settings.local.json`, **rewrites `REEVO_BACKEND_PATH`**
    in the worktree's frontend env to `<worktree>/salestech-be` via a line-scoped in-place sed —
    secrets never read into context — and runs `uv sync`):
@@ -57,6 +58,12 @@ reevo-realtime branch). `—` for a missing sub-repo. No `EnterWorktree`. If non
 
 ## Notes
 
+- **`create` is what keeps the primary checkouts current.** They are never developed in, so
+  nothing else advances their `main`. Step 0 of the setup script fetches and fast-forwards
+  `main` in all four (`mt-devkit` + the three sub-repos) — which is why a new worktree branches
+  off genuinely fresh `origin/main`, and why `branch_from_main_guard_hook`'s freshness test
+  passes afterwards without a manual pull. Best-effort: offline degrades to a stale base, never
+  to a failed create. A primary that is dirty or off `main` is fetched but not fast-forwarded.
 - **Remote branches are never touched** — they back open PRs; GitHub deletes them on merge.
 - One logical feature branch `mohammad/<name>` in every repo — no ephemeral `wt-<name>`.
 - Worktrees share Docker infra (DB / Redis / Temporal) — only code differs.

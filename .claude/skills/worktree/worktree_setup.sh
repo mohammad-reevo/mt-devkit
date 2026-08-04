@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# worktree_setup.sh — create a worktree of the parent workspace + its sub-repos on a
-# logical feature branch, copy env/settings, fix the frontend→backend path for THIS
-# worktree, and install backend deps.
+# worktree_setup.sh — sync the primary checkouts to fresh main, create a worktree of the
+# parent workspace + its sub-repos on a logical feature branch, copy env/settings, fix the
+# frontend→backend path for THIS worktree, and install backend deps.
 #
 # Usage: worktree_setup.sh <name> <main-repo-abs-path>
 #
@@ -16,6 +16,53 @@ name="${1:?Usage: worktree_setup.sh <name> <main-repo-path>}"
 main="${2:?main repo path required}"
 wt="${main}/worktrees/${name}"
 branch="mohammad/${name}"
+
+# --- 0. Sync every primary checkout to fresh main -------------------------------------------
+# Two problems, one fix. The worktrees below branch off `origin/main`, so that ref has to be
+# current or every new branch starts behind. And the primary checkouts are never developed in,
+# so nothing else ever advances their local `main` — which `branch_from_main_guard_hook` reads
+# to decide whether a branch may be created at all. Fetch, then fast-forward `main` where safe.
+#
+# Best-effort by design: this script runs under `set -e`, and an unreachable origin (offline,
+# VPN down) must degrade to "slightly stale base", never "no worktree at all".
+sync_primary() {
+    local repo="$1" label="$2"
+    [[ -d "${repo}/.git" ]] || return 0
+
+    git -C "$repo" fetch origin --prune --quiet || {
+        echo "  ${label}: fetch failed — continuing with last-known origin/main" >&2
+        return 0
+    }
+
+    # Fast-forwarding is only safe on a clean checkout that is actually on main; a primary that
+    # is mid-something keeps the fresh origin/main (which is what the branch base needs anyway).
+    local cur
+    cur="$(git -C "$repo" branch --show-current 2>/dev/null || true)"
+    if [[ "$cur" != "main" ]]; then
+        echo "  ${label}: fetched; skipped fast-forward (on '${cur:-detached HEAD}')" >&2
+        return 0
+    fi
+    if ! git -C "$repo" diff --quiet || ! git -C "$repo" diff --cached --quiet; then
+        echo "  ${label}: fetched; skipped fast-forward (uncommitted changes)" >&2
+        return 0
+    fi
+
+    local behind
+    behind="$(git -C "$repo" rev-list --count main..origin/main 2>/dev/null || echo 0)"
+    if [[ "$behind" == "0" ]]; then
+        echo "  ${label}: up to date" >&2
+    elif git -C "$repo" merge --ff-only --quiet origin/main; then
+        echo "  ${label}: main fast-forwarded +${behind}" >&2
+    else
+        echo "  ${label}: fast-forward failed — left as-is" >&2
+    fi
+}
+
+echo "syncing primary checkouts to fresh main:" >&2
+sync_primary "$main" "$(basename "$main")"
+for subrepo in salestech-be frontend-monorepo reevo-realtime; do
+    sync_primary "${main}/${subrepo}" "$subrepo"
+done
 
 # --- 1. Parent-workspace worktree (container: holds the sub-repo worktrees) -----------------
 # A directory that exists but is NOT a registered worktree is a stale leftover from a partial
