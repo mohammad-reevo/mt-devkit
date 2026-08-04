@@ -20,8 +20,8 @@ scope → plan → implement → verify → babysit → done   (conducted by wor
 - **babysit** — watch CI + PR review threads (opt-in; never auto-starts).
 - **done** — gate the PR (CI green + threads resolved), then tear down the worktree.
 
-Standalone tools: `worktree`, `db` (local/dev Postgres), `populate-dev-data`, `env-manager`,
-`spinup-local-db`.
+Standalone tools: `worktree`, `db` (local/dev Postgres), `snowflake` (reporting warehouse),
+`populate-dev-data`, `env-manager`, `spinup-local-db`.
 
 ## Principles
 
