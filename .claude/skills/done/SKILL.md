@@ -29,15 +29,26 @@ archiving, no records, no session state. The PR is the source of truth.
    (run from that sub-repo so the repo is inferred).
 
 ## Normal mode — the gate (every resolved PR must pass BOTH)
-- **CI green:** `gh pr view <n> --json statusCheckRollup` — every check `conclusion` is success.
+- **CI green:** `gh pr view <n> --json statusCheckRollup,autoMergeRequest,state` — every check
+  `conclusion` is success.
+  - **Exception — the PR is already queued to merge:** then checks that are merely
+    **incomplete** (pending / queued / in-progress / no `conclusion` yet) **don't block the
+    gate** — GitHub won't land it until they pass, so there's nothing left for me to watch.
+    Queued = `autoMergeRequest` non-null (auto-merge, "Merge when ready") **or**
+    `isInMergeQueue: true` **or** `state: MERGED` (it already landed).
+  - A check that actually **failed** (`failure`/`timed_out`/`cancelled`/`action_required`)
+    still fails the gate **even when queued** — a queued PR sitting on a red check will never
+    merge, so tearing its worktree down would strand it.
 - **All review threads resolved:** query **every** thread and check `isResolved` directly —
-  never a filtered "unresolved" list (an `isOutdated` thread is still OPEN):
+  never a filtered "unresolved" list (an `isOutdated` thread is still OPEN). Same query picks
+  up the merge-queue flag above:
   ```bash
   gh api graphql -f query='query { repository(owner:"<owner>",name:"<repo>") {
-    pullRequest(number:<n>) { reviewThreads(first:100) {
+    pullRequest(number:<n>) { isInMergeQueue reviewThreads(first:100) {
       nodes { isResolved isOutdated path } } } } }'
   ```
-  Any `isResolved:false` (regardless of `isOutdated`) = fail.
+  Any `isResolved:false` (regardless of `isOutdated`) = fail — **queued-to-merge never excuses
+  an open thread.**
 
 Collect **all** failures across **all** PRs and report at once. If anything fails → **stop,
 tear down nothing.** No merge requirement — a passing-but-unmerged PR closes out fine (merge
@@ -58,12 +69,15 @@ happens separately from your queue).
 
 ## Report
 What was closed: the PR link(s), which spec files were deleted, and that the worktree was
-removed.
+removed. If a PR passed on the queued-to-merge exception, **say so and name the checks still
+running** — I'm closing out before CI finished, and GitHub will land it unattended.
 
 ## Guardrails
 - **Explicit only.** Never auto-run — only on my `/done`.
 - **Gate is all-or-nothing.** Any PR failing CI or with an open thread → stop, tear down
   nothing. Report every failure at once (don't fail on the first).
+- **Queued-to-merge waives only *incomplete* CI** — never a red check, never an open thread.
+  It's a wait-skip (the merge is already committed to), not a quality bypass.
 - **All threads, not a filtered list.** Query every thread's `isResolved`; outdated counts as
   open (per `github.md`).
 - **Local branches only.** Never delete or push a remote branch.
