@@ -13,6 +13,10 @@ description: Query Postgres from my personal harness — the LOCAL Docker DB by 
 **Default to the LOCAL Docker DB.** Only target dev when I explicitly say "dev" (or "dev db",
 "on dev", "the shared dev database"). When in doubt it's local — never hit dev on a guess.
 
+**There is no prod target here.** This skill reaches local and dev Postgres only. Production data
+is read through the **`snowflake`** skill, which queries the reporting warehouse's copy of prod —
+never by pointing this script at a prod Postgres. If I ask for prod data, switch to `snowflake`.
+
 ## How to run
 
 ```
