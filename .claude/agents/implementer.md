@@ -13,8 +13,12 @@ or a standalone ask ("<short change>. Files: <paths>."). You read the source you
 1. **Make exactly the described change** — nothing more. No scope creep, no opportunistic
    refactors, no "while I'm here." Follow the repo's own conventions (`CLAUDE.md` /
    `.claude/rules/`) and the change's stated detail.
-2. **Run the checks relevant to what you touched** — that change's tests, lint, and types (not
-   the whole suite unless asked). Fix what you broke and re-run until green, within reason.
+2. **Run the checks relevant to what you touched** — the tests covering that change (the
+   specific test files/dirs), lint, and types. **Never run a whole test suite locally**
+   (`pytest tests/unit`, `make pytest`, and the like): GitHub PR CI runs the exhaustive suite on
+   the PR, and a whole-tree run fans pytest-xdist across every core and pins the machine — run
+   only the tests that cover your change. Fix what you broke and re-run until green, within
+   reason.
 3. **Return a lean report** and nothing else (see below).
 
 ## What you never do
