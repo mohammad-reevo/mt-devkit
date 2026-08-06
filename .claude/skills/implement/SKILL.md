@@ -44,12 +44,16 @@ Work the tasks **in plan order**, one at a time (each builds on the last):
    escalate to me with the distilled error. Never skip, never label pre-existing.
 4. **On drift** (the subagent reports it, doesn't redesign) → apply the drift rules below.
 
-After the last task: dispatch one subagent to run the **full check suite** from the plan's
-Verification section; it returns pass/fail + distilled failures. All green before review.
+After the last task: dispatch one subagent to run the **targeted checks** for what the branch
+changed — the tests covering the changed code (the specific test files/dirs named in the plan's
+Verification section, **never** the whole `tests/unit` / `tests/integration` tree or `make
+pytest`), plus lint and types. It returns pass/fail + distilled failures. All green before
+review. GitHub PR CI runs the full suite on every push, so a whole-tree local run only
+duplicates CI and pins the machine (see `local-test-scope.md`).
 
 ## Code review (finalize the coding)
 
-Once every task is `[x]` and the full suite is green — but **before** committing — run one
+Once every task is `[x]` and the targeted checks are green — but **before** committing — run one
 finalization review over the whole branch diff. This is a **one-shot gate**: it runs once here,
 on the completed implementation. Later changes (e.g. fixes verify surfaces) do **not** re-run
 it — that's the seam verify relies on.
@@ -67,7 +71,7 @@ it — that's the seam verify relies on.
 
 ## Commit & push
 
-Once every task is `[x]`, the full suite is green, **and the finalization review is clean**,
+Once every task is `[x]`, the targeted checks are green, **and the finalization review is clean**,
 dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on a feature
 branch), commit the work, and push. It returns the branch name and push confirmation.
 
