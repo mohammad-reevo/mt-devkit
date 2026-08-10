@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Build phase of my personal dev workflow. Consumes ~/.claude/spec/<slug>-plan.md and conducts the build — dispatches a subagent per task to implement it and run its checks (keeping raw code and check output out of main context), tracks progress in the plan file, runs a final code-review subagent to finalize all coding, then commits and pushes a reviewed green branch. Hands off to verify for verification and the PR. Use after plan has produced an approved plan.
+description: Build phase of my personal dev workflow. Consumes ~/.claude/spec/<slug>-plan.md and conducts the build — dispatches a subagent per task to implement it and run its checks (keeping raw code and check output out of main context), tracks progress in the plan file, runs a final review over the branch via the shared `reviewer` agent to finalize all coding, then commits and pushes a reviewed green branch. Hands off to verify for verification and the PR. Use after plan has produced an approved plan.
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -58,14 +58,17 @@ finalization review over the whole branch diff. This is a **one-shot gate**: it 
 on the completed implementation. Later changes (e.g. fixes verify surfaces) do **not** re-run
 it — that's the seam verify relies on.
 
-1. **Dispatch one review subagent** (`general-purpose`, in the plan's repo) over the branch
-   diff. Tell it to review against **the repo's own conventions** (its `CLAUDE.md` /
-   `.claude/rules/` if present) **plus general quality** — correctness, clarity / dead-code,
-   single-source-of-truth duplication, and plausible-but-shallow defects. It returns a
-   **verdict** (clean / issues) + findings (each: what, where, why), and does **not** edit code.
-2. **Clean** → proceed to commit.
+1. **Dispatch the `reviewer` trio** over the branch — three subagents (`subagent_type: reviewer`,
+   in the plan's repo), one per lens (`correctness`, `house-rules`, `duplication`), sent in a
+   single message so they run concurrently. Give each one the lens name, the repo, and the
+   target: **the branch and its working tree** — nothing is committed yet at this point, and the
+   new files an implementer just created are still untracked. The agent derives the diff and
+   selects the repo's own rules itself, and carries the rest of the contract (lens briefs,
+   never-edit/never-post, report shape), so don't restate it inline. This is the same reviewer
+   `/pr-review` uses — one definition, two entry points.
+2. **Clean** (all three) → proceed to commit.
 3. **Issues** → dispatch an `implementer` subagent to fix the findings, then re-dispatch the
-   reviewer over the new diff. Bounded to **~2 fix→re-review cycles**; still flagging real issues after that →
+   trio over the new diff. Bounded to **~2 fix→re-review cycles**; still flagging real issues after that →
    stop and escalate to me with the distilled findings. Same discipline as a check failure — a
    finding is fixed or escalated, never waved through.
 
