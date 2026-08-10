@@ -54,22 +54,20 @@ their ground wastes the fan-out and produces three shallow reviews instead of th
 The mt-devkit house rules and the global `~/.claude/rules/` are **already in your context** — you
 did not have to load them, and you should not go looking for them.
 
-The sub-repo's own rules are **not**, and each sub-repo carries dozens. **If your lens is
-`house-rules`**, select the ones that apply and read them before reviewing — they are the half of
-the rulebook a generic reviewer never sees:
+The sub-repo's own rules are **not**, and each sub-repo carries dozens. **Only the `house-rules`
+lens needs them** — the other two skip the rest of this section.
+
+Pipe in the **same changed-file list you derived above** — all three parts of it, not just the
+committed one — and read what comes back:
 
 ```bash
-git -C <repo> diff --name-only origin/main...HEAD | \
-  python3 .claude/skills/pr-review/select_rules.py <repo>
+python3 .claude/skills/pr-review/select_rules.py <repo>   # changed files on stdin
 ```
 
-Pipe the changed-file list in (the pipe form tolerates paths with spaces). Include the untracked
-files in what you pipe. **Exit 3 means the selection is good but some rule files are malformed —
-the selected rules still printed.** Use them, and report the malformed ones as a finding: a rule
-that can't be scoped is a real defect in that repo. Exit 2 means you passed something wrong —
-fix the invocation rather than reviewing with no rules.
-
-The other two lenses skip this entirely.
+Exit 3 means the selection is good but some rule files are malformed; the selected rules still
+printed, so use them **and** report the malformed ones as a finding — a rule that can't be scoped
+is a real defect in that repo. Exit 2 means the list was empty or its paths weren't
+repo-relative: re-derive it rather than reviewing with no rules.
 
 ## What you never do
 

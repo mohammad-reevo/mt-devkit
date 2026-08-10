@@ -61,11 +61,10 @@ it — that's the seam verify relies on.
 1. **Dispatch the `reviewer` trio** over the branch — three subagents (`subagent_type: reviewer`,
    in the plan's repo), one per lens (`correctness`, `house-rules`, `duplication`), sent in a
    single message so they run concurrently. Give each one the lens name, the repo, and the
-   target: **the branch and its working tree** — nothing is committed yet at this point, and the
-   new files an implementer just created are still untracked. The agent derives the diff and
-   selects the repo's own rules itself, and carries the rest of the contract (lens briefs,
-   never-edit/never-post, report shape), so don't restate it inline. This is the same reviewer
-   `/pr-review` uses — one definition, two entry points.
+   target: **the branch and its working tree** (nothing is committed yet at this point). The
+   agent derives the diff and selects the repo's own rules itself, and carries the rest of the
+   contract — so don't restate it inline. This is the same reviewer `/pr-review` uses — one
+   definition, two entry points.
 2. **Clean** (all three) → proceed to commit.
 3. **Issues** → dispatch an `implementer` subagent to fix the findings, then re-dispatch the
    trio over the new diff. Bounded to **~2 fix→re-review cycles**; still flagging real issues after that →

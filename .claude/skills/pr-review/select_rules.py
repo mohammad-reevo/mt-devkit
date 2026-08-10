@@ -2,7 +2,7 @@
 """Select the rule files that apply to a set of changed files.
 
     select_rules.py <repo-root> <changed-file>...
-    git diff --name-only main... | select_rules.py <repo-root>
+    git diff --name-only origin/main...HEAD | select_rules.py <repo-root>
 
 Prints, one path per line, every rule under ``<repo-root>/.claude/rules/`` whose
 ``paths:`` frontmatter globs match at least one changed file. A rule with no

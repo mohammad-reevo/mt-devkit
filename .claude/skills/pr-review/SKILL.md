@@ -19,7 +19,8 @@ to do.
 
 **Fixed by design.** Every run is the same three lenses — no effort levels, no state carried from
 the last run, no routing to a background fleet, no behavior that varies by model. That
-predictability is why this skill exists.
+predictability is why this skill exists. If a run feels shallow, sharpen the lens briefs in
+`reviewer.md`; don't add a dial.
 
 ## Input check (always first)
 
@@ -32,7 +33,7 @@ predictability is why this skill exists.
 **Which repo.** The session usually sits at the mt-devkit worktree root with the sub-repos nested
 inside. Check `salestech-be`, `frontend-monorepo`, `reevo-realtime`, and the parent for changes on
 the current branch. Exactly one → that's the target. More than one → ask me; don't guess or
-silently review just the first.
+silently review just the first. A review of the wrong tree looks exactly like a clean one.
 
 **A bare `/pr-review <n>` is ambiguous** — a PR number alone doesn't say which repo, and the
 change-scanning above is meaningless for someone else's branch. Ask me which repo rather than
@@ -82,12 +83,3 @@ that rule:
 
 Then stop. Don't propose a fix plan unless I ask, and don't start fixing.
 
-## Guardrails
-
-- **Report-only.** No edits, no GitHub writes. There is no `--fix` and no `--comment`; if I want
-  a fix I'll say so, and it goes through the `implementer` agent.
-- **Fixed trio, no knobs.** If a run feels shallow, sharpen the lens briefs in `reviewer.md` —
-  don't add a dial.
-- **Never review in a primary checkout.** PR targets get a throwaway worktree; the primary trees
-  stay on clean `main`.
-- **Ask rather than assume** which repo. A review of the wrong tree looks exactly like a clean one.
