@@ -88,7 +88,8 @@ the PR's CI / comment lifecycle; **done** gates then tears the worktree down.
 
 ## Standalone tools (outside the funnel)
 - **`pr-review`** — the `reviewer` trio on demand: my diff, my branch, or a teammate's PR.
-  Report-only. Shares its agent with implement's finalization gate.
+  Reports the change, its files, and tiered candidate comments; posts inline only on my explicit
+  go, then re-reviews the revision. Shares its agent with implement's finalization gate.
 - **`mt-worktree`** — copy of devkit's worktree skill, rebuilt with my own instructions/spin.
 - **`mt-db`** — one Postgres query skill; **local Docker** target by default, **dev** (Aurora
   writer; Tailscale + chamber) when specified.

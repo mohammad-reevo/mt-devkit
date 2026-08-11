@@ -4,9 +4,14 @@
 When composing a user-facing reply that **aggregates the output of multiple agents** — a code review across reviewers, a multi-axis audit, a fan-out investigation — or any reply where you are tempted to dump everything you found. Does NOT apply to ordinary conversational answers; those are already at altitude.
 
 ## The Core Idea
-**How much detail to include is a judgment call you make every time — think about it.** It is part of the work, not an afterthought. Sometimes the reader needs depth right there in the reply; sometimes a one-line verdict is the whole answer. Read the situation and decide. There is no fixed format and no fixed length — there is the right altitude for *this* question, and your job is to find it.
+**How much detail to include is a judgment call you make every time — think about it.** It is part of the work, not an afterthought. Sometimes the reader needs depth right there in the reply; sometimes a one-line verdict is the whole answer. Read the situation and decide. Absent a format defined elsewhere (see below), there is no fixed format and no fixed length — there is the right altitude for *this* question, and your job is to find it.
 
 The failure this rule fixes is dumping the entire investigation into the reply — every finding wrapped in `Finding / Severity / Status: ✅ Verified — file:line`, axis-by-axis prose, the bottom line buried at the end. Unreadable. But the opposite failure is just as bad: stripping the reply down to a verdict and shoving everything that justifies it into a file the reader now has to open. **Do not make the reader open a file to learn the essence.** The reply must stand on its own.
+
+## When a Skill Defines the Format
+A skill may prescribe the shape of its own report — sections, order, a numbered list. **That shape wins**; this rule is the default for replies nothing more specific covers, not an argument against a defined format. Don't "restore" a skill's report to a free-form synthesis on the strength of the paragraph above.
+
+Everything else here still binds *inside* that shape: lead with the point, keep load-bearing detail in the reply, no finding-card decoration, and never shorten by checking less. And a skill's format governs its **normal** case — when the situation doesn't fit its assumptions (an empty diff, a one-line change), fall back to the judgment this rule describes rather than filling out a template that has nothing to hold.
 
 ## Verification Is Separate From Volume
 The reply gets shorter by saying less, never by *checking* less. An agent that verified ten claims against real `file:line` did that work whether or not all ten appear in the message. Calibrating altitude is about what you *show*, not what you *do*. If you ever shorten a reply by skipping a verification step, you have misread this rule — the premise-resolution and data-freshness discipline stays in full force underneath it.
