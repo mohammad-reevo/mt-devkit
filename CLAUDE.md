@@ -14,14 +14,15 @@ scope → plan → implement → verify → babysit → done   (conducted by wor
 
 - **scope** — brainstorm a raw idea / Linear ticket into a converged direction (no task breakdown).
 - **plan** — descend to a concrete, file-level task breakdown; set up the feature worktree.
-- **implement** — conduct the build via one subagent per task, finalize with a code-review
-  subagent, then commit + push a reviewed green branch.
+- **implement** — conduct the build via one subagent per task, finalize with the `reviewer`
+  trio, then commit + push a reviewed green branch.
 - **verify** — prove it works (user-directed), then open the PR.
 - **babysit** — watch CI + PR review threads (opt-in; never auto-starts).
 - **done** — gate the PR (CI green + threads resolved), then tear down the worktree.
 
-Standalone tools: `worktree`, `db` (local/dev Postgres), `snowflake` (reporting warehouse),
-`populate-dev-data`, `env-manager`, `spinup-local-db`.
+Standalone tools: `pr-review` (review a diff or a teammate's PR), `worktree`, `db` (local/dev
+Postgres), `snowflake` (reporting warehouse), `populate-dev-data`, `env-manager`,
+`spinup-local-db`.
 
 ## Principles
 

@@ -68,7 +68,7 @@ if something comes up.
 2. **`mt-plan`** — *strategy / detail.* Consumes the scope. Concrete goals, task breakdown,
    file-level detail, how-to-verify. → plan file.
 3. **`mt-implement`** — *build (all coding).* Conducts the plan via per-task subagents (edits
-   + checks), then a **code-review subagent finalizes all coding**, then commit + push. →
+   + checks), then the **`reviewer` trio finalizes all coding**, then commit + push. →
    a pushed, reviewed, green branch. **No PR.** (Code review is one-shot after full-plan
    implementation; later fixes don't re-run it.)
 4. **`mt-verify`** — *prove it, then open the PR.* Manual testing / verification of the branch,
@@ -87,6 +87,8 @@ Seams: **implement** owns all *coding* (correctness + review) and ends at a push
 the PR's CI / comment lifecycle; **done** gates then tears the worktree down.
 
 ## Standalone tools (outside the funnel)
+- **`pr-review`** — the `reviewer` trio on demand: my diff, my branch, or a teammate's PR.
+  Report-only. Shares its agent with implement's finalization gate.
 - **`mt-worktree`** — copy of devkit's worktree skill, rebuilt with my own instructions/spin.
 - **`mt-db`** — one Postgres query skill; **local Docker** target by default, **dev** (Aurora
   writer; Tailscale + chamber) when specified.
