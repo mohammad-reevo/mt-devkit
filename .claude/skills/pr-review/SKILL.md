@@ -75,10 +75,8 @@ don't spawn extra finders to be thorough. A fixed trio is what makes two runs co
 
 ## Report
 
-**Three parts, in this order, every run.** This is a deliberate fixed format — it overrides
-`response-altitude.md`'s "no fixed format, no fixed length" for this skill only. That rule's
-substance still binds inside each part: lead with the point, load-bearing detail in the message,
-no `Finding:/Severity:/Status:` cards, don't make me open a file to learn the essence. Don't
+**Three parts, in this order, every run.** A defined format, per `response-altitude.md`
+§ When a Skill Defines the Format — whose substance still binds inside each part. Don't
 "restore" this section to a free-form synthesis.
 
 The failure this replaces: a severity-ordered dump of everything three lenses found, with no
