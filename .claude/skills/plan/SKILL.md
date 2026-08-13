@@ -51,8 +51,9 @@ in it (and the worktree gate is satisfied):
 ### 1. Deep research
 This is where real investigation happens — dispatch Explore agent(s) to map the actual code
 the plan will touch: exact files, existing patterns to follow, integration points, what the
-tests around this area look like. Unlike scope's reconnaissance, depth is the point —
-the plan's tasks must name real files and real seams, not guesses.
+tests around this area look like. Scope investigated only far enough to explain the cause and
+check each approach's load-bearing assumption; here depth is the point — the plan's tasks must
+name real files and real seams, not guesses.
 
 ### 2. Resolve and break down
 - **Resolve every open question** from the scope — by research where the code answers it,
