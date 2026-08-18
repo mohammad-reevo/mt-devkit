@@ -64,9 +64,24 @@ session that needs its own isolated tree.
 
 The Edit/Write gate can't see a review (reviews don't mutate files). So for
 reviewing a PR/branch, **don't `git checkout` the branch in the primary
-checkout** — that dirties `main`. Add a worktree for the branch
-(`git worktree add ../review-<branch> <branch>`), review there, and remove it
-when done.
+checkout** — that dirties `main`.
+
+**In this workspace**, create the review tree with the `worktree` skill's
+`create-review <name> <subrepo> <ref>` mode and tear it down with `/done` —
+the same way in and the same way out as every other worktree. It builds the
+parent plus only the repo under review, detached at that ref, skipping env and
+`uv sync` (a review runs nothing), so it costs ~390M rather than the ~4-6G of a
+feature worktree. **The reviewer never removes it**; leaving teardown to `/done`
+is what keeps it reachable for posting and re-review, and what stops review
+checkouts accumulating unowned.
+
+Two things that must not drift: the tree is **detached**, never on a local
+branch — a branch tracking the author's ref makes `/done` gate *their* PR, so my
+cleanup would wait on their CI and their threads — and the session enters the
+**parent**, never the sub-repo, which loads its own Bash-blocking hook.
+
+In **other** repos with no `worktree` skill, use a plain
+`git worktree add ../review-<branch> <branch>` and remove it when done.
 
 ## Why
 
