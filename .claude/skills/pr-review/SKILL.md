@@ -39,26 +39,33 @@ silently review just the first. A review of the wrong tree looks exactly like a 
 change-scanning above is meaningless for someone else's branch. Ask me which repo rather than
 picking one.
 
-## PR targets: review in a throwaway worktree
+## PR targets: review in a review worktree
 
 A teammate's branch needs to be **on disk** — the lenses read surrounding code, not just the
-diff — and it must never be checked out in a primary checkout ([[worktrees]] § Reviews). Use a
-plain `git worktree add`, **not** the `worktree` skill: that skill creates feature branches across
-all sub-repos, which is wrong for reading one repo at one ref.
+diff — and it must never be checked out in a primary checkout ([[worktrees]] § Reviews). Create
+it with the `worktree` skill's **`create-review`** mode, which builds a read-only tree: the
+parent plus only the repo being reviewed, detached at the PR head, no env and no deps.
 
 ```bash
 gh pr view <n> --repo <org>/<repo> --json headRefName,baseRefName
-git -C <repo> fetch origin
-git -C <repo> worktree add ~/.claude/tmp/pr-review/pr-<n> origin/<headRefName>
+bash $HOME/Desktop/code/mt-devkit/.claude/skills/worktree/worktree_setup.sh \
+  "review-<n>" "$MAIN" --review <repo> origin/<headRefName>
 ```
 
-Hand the agent that path as the repo and the PR's base ref as its base. **Report the findings
-before removing the worktree**, so a teardown failure never costs me the review.
+Then `EnterWorktree(path: "$MAIN/worktrees/review-<n>")` — the **parent**, never the sub-repo.
+Hand the agent `$MAIN/worktrees/review-<n>/<repo>` as the repo and the PR's base ref as its
+base. **Report the findings before anything else**, so nothing downstream can cost me the
+review.
 
-**Keep the worktree until the review is closed out** — posting needs it (step 2 verifies claims
-against the code) and so does a re-review. Tearing it down at the end of the report means
-rebuilding a full checkout to post a comment ten minutes later. Remove it once I've posted or
-dropped the comments and there's no revision pending.
+**You never tear a review worktree down.** It has to outlive the report — posting re-verifies
+claims against the code (§ Posting step 2), and a re-review diffs the author's revision against
+the head you reviewed. Teardown is `/done`, on my word, same as any other worktree: it removes
+the tree, the local branch, and the `~/.claude/tmp/review-<n>/` scratch dir in one go. Don't
+offer to clean it up, and don't leave it somewhere `/done` can't reach.
+
+Because the sub-repo is **detached**, `/done`'s PR gate finds no branch and passes vacuously —
+that's deliberate. Gating a review tree on the *author's* PR would block my cleanup on their CI
+and their unresolved threads. See `worktree` § `create-review`.
 
 ## Run the trio
 
@@ -159,6 +166,8 @@ When I do say so, for each comment:
 3. **Post inline, on the diff line**, per `github.md` — a resolvable thread, never a top-level
    conversation comment. `POST repos/<org>/<repo>/pulls/<n>/comments` with `commit_id`, `path`,
    `line`, `side=RIGHT`, `body`, via `--input <file.json>` for bodies with backticks or newlines.
+   Write those payloads to **`~/.claude/tmp/review-<n>/`** — the slug dir `/done` deletes on
+   teardown ([[scratch-files]]). Anywhere else and they outlive the review forever.
 
 Write comments to the author, not to me: state the finding, the evidence, and what would resolve
 it, and leave room for them to disagree — you may be missing context they have. Consolidate the

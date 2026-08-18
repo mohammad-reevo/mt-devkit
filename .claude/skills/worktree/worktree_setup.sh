@@ -4,18 +4,40 @@
 # frontend→backend path for THIS worktree, and install backend deps.
 #
 # Usage: worktree_setup.sh <name> <main-repo-abs-path>
+#        worktree_setup.sh <name> <main-repo-abs-path> --review <subrepo> <ref>
 #
 # Personal rebuild of devkit's worktree_setup.sh — self-contained. Self-contained:
 # no devkit hooks. Idempotent-ish: skips sub-repos/env files that already exist.
 #
 # Secrets: env files are copied and path-fixed ON DISK. The one path key is rewritten with a
 # line-scoped in-place sed; the file's contents (API keys, etc.) are never read into context.
+#
+# --review builds a READ-ONLY review tree instead of a feature tree: the parent worktree plus
+# ONE sub-repo checked out DETACHED at <ref> (someone else's PR head), with no env copy and no
+# `uv sync`. Three deliberate differences from a feature worktree:
+#   * One sub-repo, not three — a review reads one repo; the other two would be dead weight.
+#   * No env / no deps — nothing is executed in a review tree, so a 3.6G `.venv` buys nothing.
+#     This is the whole point: a review tree is ~380M instead of ~4-5G.
+#   * DETACHED, never a local branch — `done` resolves each sub-repo's checked-out branch and
+#     gates the open PR for it. On a named branch tracking the author's ref that resolves
+#     THEIR PR, so tearing down my own review tree would block on their CI and their unresolved
+#     threads. Detached makes `git branch --show-current` empty, so no PR resolves and the gate
+#     is a no-op. Do not "improve" this into a named branch.
+# The parent worktree is still a real worktree on `mohammad/<name>` (EnterWorktree needs one),
+# and teardown is unchanged — worktree_teardown.sh already skips absent sub-repos.
 set -euo pipefail
 
-name="${1:?Usage: worktree_setup.sh <name> <main-repo-path>}"
+name="${1:?Usage: worktree_setup.sh <name> <main-repo-path> [--review <subrepo> <ref>]}"
 main="${2:?main repo path required}"
 wt="${main}/worktrees/${name}"
 branch="mohammad/${name}"
+
+review_subrepo=""
+review_ref=""
+if [[ "${3:-}" == "--review" ]]; then
+    review_subrepo="${4:?--review requires <subrepo>}"
+    review_ref="${5:?--review requires <ref>}"
+fi
 
 # --- 0. Sync every primary checkout to fresh main -------------------------------------------
 # Two problems, one fix. The worktrees below branch off `origin/main`, so that ref has to be
@@ -89,11 +111,24 @@ fix_backend_path() {
 }
 
 # --- 2. Sub-repo worktrees + env + fix + deps ----------------------------------------------
-for subrepo in salestech-be frontend-monorepo reevo-realtime; do
+# Review mode narrows this to the single repo being reviewed; everything else is unchanged.
+subrepos=(salestech-be frontend-monorepo reevo-realtime)
+if [[ -n "$review_subrepo" ]]; then
+    subrepos=("$review_subrepo")
+fi
+
+for subrepo in "${subrepos[@]}"; do
     src="${main}/${subrepo}"
     dst="${wt}/${subrepo}"
     [[ -d "$src" ]] || continue
     [[ -d "$dst" ]] && continue
+
+    if [[ -n "$review_ref" ]]; then
+        # Detached at the author's head — see the --review note at the top for why this must
+        # not become a local branch. No env copy, no deps: nothing runs in a review tree.
+        git -C "$src" worktree add --detach "$dst" "$review_ref" >&2
+        continue
+    fi
 
     git -C "$src" branch -D "$branch" 2>/dev/null || true
     git -C "$src" worktree add -b "$branch" "$dst" origin/main >&2
@@ -131,8 +166,12 @@ fi
 mkdir -p "${wt}/tmp"
 
 be_wt="${wt}/salestech-be"
-if [[ -f "${be_wt}/pyproject.toml" ]]; then
+if [[ -z "$review_ref" && -f "${be_wt}/pyproject.toml" ]]; then
     (cd "$be_wt" && uv sync --quiet)
 fi
 
-echo "worktree setup complete: ${wt}" >&2
+if [[ -n "$review_ref" ]]; then
+    echo "review worktree ready: ${wt} (${review_subrepo} detached at ${review_ref})" >&2
+else
+    echo "worktree setup complete: ${wt}" >&2
+fi
