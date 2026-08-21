@@ -1,6 +1,7 @@
 ---
 name: pr-review
-description: Review a diff through a fixed trio of parallel lenses — correctness, house-rules conformance, and duplication/dead-code — and report back what the change is, which files carry it, and the candidate comments tiered into must-leave / minor / skip. Works on my uncommitted working tree, my branch vs main, or a teammate's PR. Never edits code; posts inline PR comments only when I explicitly say so, then re-reviews the author's revision. Replaces my use of the built-in /code-review, which has effort levels, remembered state, and background workflow routing I don't want. Triggers on "review this", "review my diff", "review this branch", "review PR <n>", "/pr-review", "re-review", "did they address the comments".
+description: Review a diff through a fixed trio of parallel lenses — correctness, house-rules conformance, and duplication/dead-code — and report back what the change is, which files carry it, and the candidate comments tiered into must-leave / minor / skip. Works on my uncommitted working tree, my branch vs main, or a teammate's PR. Two modes I pick, never the skill — the default full trio of parallel subagents, or `mini`, the same three lenses in one main-thread pass with no subagents, for a small diff. Never edits code; posts inline PR comments only when I explicitly say so, then re-reviews the author's revision. Replaces my use of the built-in /code-review, which has effort levels, remembered state, and background workflow routing I don't want. Triggers on "review this", "review my diff", "review this branch", "review PR <n>", "/pr-review", "/pr-review mini", "re-review", "did they address the comments".
+argument-hint: '[mini] [branch | repo#n]'
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -22,6 +23,13 @@ the last run, no routing to a background fleet, no behavior that varies by model
 predictability is why this skill exists. If a run feels shallow, sharpen the lens briefs in
 `reviewer.md`; don't add a dial.
 
+**`mini` is not a dial.** The trio is fixed *within* a mode: mini runs the same three
+lenses, against the same rules, and reports in the same format — it just runs them in one
+main-thread pass instead of three subagents. What changes is where the work happens, not how deep
+it goes. It's a cost choice about whether a change is worth three fan-outs, which is why **I** make
+it and the skill never infers it. Two runs in the same mode stay comparable; that's the property
+being protected, and it's what a depth dial would have destroyed.
+
 ## Input check (always first)
 
 | Invocation | Target |
@@ -29,6 +37,17 @@ predictability is why this skill exists. If a run feels shallow, sharpen the len
 | `/pr-review` | The current repo's branch and working tree (the agent unions committed, uncommitted, and untracked). |
 | `/pr-review <branch>` | That branch vs `origin/main`. |
 | `/pr-review <repo>#<n>` | That repo's PR #`<n>` — usually a teammate's. |
+
+**Mode.** A leading bare `mini` selects mini mode; anything else is full. It's a separate
+axis from the target and composes with every row above — `/pr-review mini`,
+`/pr-review mini <branch>`, `/pr-review mini <repo>#<n>`. Everything downstream is shared:
+same target resolution, same review worktree for a PR, same report, same posting rules.
+
+**The mode is mine to pick, never yours.** Don't infer it from how the diff looks, don't upgrade a
+`mini` run to the trio because the change turned out hairy, and don't downgrade a full run
+because the diff is two lines. If mini was the wrong call, finish the pass and say so in the
+report (§ 3) — I'll re-run. A mode that drifts on its own is a mode that makes two runs
+incomparable, which is the same failure the fixed trio exists to prevent.
 
 **Which repo.** The session usually sits at the mt-devkit worktree root with the sub-repos nested
 inside. Check `salestech-be`, `frontend-monorepo`, `reevo-realtime`, and the parent for changes on
@@ -67,7 +86,9 @@ Because the sub-repo is **detached**, `/done`'s PR gate finds no branch and pass
 that's deliberate. Gating a review tree on the *author's* PR would block my cleanup on their CI
 and their unresolved threads. See `worktree` § `create-review`.
 
-## Run the trio
+## Run the trio (full mode)
+
+Full mode only — in `mini` skip this section entirely and use § Mini mode instead.
 
 Dispatch **three `reviewer` subagents in parallel** — one per lens: `correctness`, `house-rules`,
 `duplication` — in a single message so they actually run concurrently.
@@ -80,9 +101,42 @@ restate it inline.
 Three lenses, every time. Don't add a fourth, don't drop one because the diff looks small, and
 don't spawn extra finders to be thorough. A fixed trio is what makes two runs comparable.
 
+## Mini mode — one pass, in the main thread
+
+Same three lenses, same rules, same report — no subagents. You read the diff and apply
+correctness, house-rules, and duplication to it yourself, in one pass. This is the machinery
+§ Re-review already uses, pointed at the whole diff instead of an incremental one.
+
+1. **Derive the diff exactly as `reviewer.md` § Get the diff does** — the union of all three
+   commands (committed, staged + unstaged, untracked), or the PR's base ref for a PR target. A
+   new file has no diff; read it whole. All three empty → say so and stop, same as the agent.
+2. **Select the rules.** Pipe that same changed-file list — all three parts of it — into
+   `python3 .claude/skills/pr-review/select_rules.py <repo>` and read what comes back. Exit 3
+   means the selection is good but some rule files are malformed: use the selected ones **and**
+   report the malformed ones as a finding. Exit 2 means the list was empty or its paths weren't
+   repo-relative — re-derive it rather than reviewing with no rules. Skipping this step is the
+   one thing mini must never do: the sub-repo's own rules aren't in your context either, so
+   without it the house-rules lens silently reviews against nothing.
+3. **Apply the three lenses** using the briefs in `reviewer.md` § Your lens as written — they are
+   the same lenses, and restating them here would let the two drift. Its § What you never do
+   binds you too: never edit, never post, never report what CI already catches, never redesign,
+   never pad. A lens with nothing to say is `clean`, and `unconfirmed` still means unconfirmed.
+4. **Report in the § Report format** — all three parts, numbered and tiered the same way. The
+   arrow diagram usually drops out on its own; § Report already says to skip it at one or two
+   files.
+
+Then **hold**, exactly as full mode does. § Posting is unchanged — the mode decides how the
+review was produced, never what may be done with it, and approval still has to arrive in the
+message that asks for it.
+
+**If mini was the wrong call, say so rather than escalating.** A diff that turns out to be
+large, to span repos, or to need the surrounding-code reading a lens does properly: finish the
+pass, then put it in § 3 as a recommendation to re-run full. Silently spawning the trio breaks
+the one guarantee mini makes, and a half-review reported as done is worse than either mode.
+
 ## Report
 
-**Three parts, in this order, every run.** A defined format, per `response-altitude.md`
+**Three parts, in this order, every run.** Both modes. A defined format, per `response-altitude.md`
 § When a Skill Defines the Format — whose substance still binds inside each part. Don't
 "restore" this section to a free-form synthesis.
 
