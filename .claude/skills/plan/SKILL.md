@@ -67,14 +67,24 @@ name real files and real seams, not guesses.
 
 ### 3. Converge and write
 **Draw the shape when it earns one.** If the design is a pipeline with more than one consumer,
-or ≥3 steps where each step's output feeds the next, invoke **`make-diagram`** and put its
-diagram in the presentation — a fork is far clearer drawn than described, and this is the moment
-I'm deciding whether the design is right. That skill owns the grammar *and* the call on when not
-to draw; don't hand-roll a diagram here, and don't force one onto a plan that's a list of
-independent edits.
+or ≥3 steps where each step's output feeds the next, invoke **`make-diagram`** and include its
+diagram in the walkthrough you hand me with the finished plan — a fork is far clearer drawn than
+described, and that walkthrough is where I decide whether the design is right. That skill owns
+the grammar *and* the call on when not to draw; don't hand-roll a diagram here, and don't force
+one onto a plan that's a list of independent edits.
 
-Present the full plan in conversation first. Discuss; I approve. Only then write
-`~/.claude/spec/<slug>-plan.md`:
+**Write the file, then ask — not the other way round.** Write
+`~/.claude/spec/<slug>-plan.md` and review it with me from there. Don't render the whole plan
+into a chat message and hold the write until I approve: a plan I have to reconstruct from prose
+is harder to read than the file, and revising a written plan costs nothing. The file existing
+is not a commitment to it.
+
+The one thing that *does* come before the write is a **genuine open question that isn't the
+whole plan** — a judgment call left over from *Resolve and break down*, a direction that turned
+out ambiguous, a decision only I can make. Ask that on its own and get the answer. Don't dress
+the entire plan up as a question in order to ask it.
+
+The file:
 
 ```markdown
 # <Idea title> — Plan
@@ -109,10 +119,11 @@ can run out of order.
   browser flows, API calls, data states.
 ```
 
-Close by telling me the plan path (we're already in the worktree). Then **stop**. A written plan
-is not a green light: approving the breakdown in conversation is me agreeing it's *right*, not
-me saying start building. I want a beat to sit with it — implement is mine to trigger, and
-`/workflow` enforces the same gate from the conductor's side.
+Close by telling me the plan path (we're already in the worktree) and walking me through what
+landed — the shape of the work, and the diagram if you drew one. Then **stop**. A written plan
+is not a green light: agreeing the plan is *right* is not me saying start building. I want a
+beat to sit with it — implement is mine to trigger, and `/workflow` enforces the same gate from
+the conductor's side. If I come back with changes, revise the file in place.
 
 ## Guardrails
 
