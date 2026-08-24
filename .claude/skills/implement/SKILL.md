@@ -34,7 +34,10 @@ finished work.
 Work the tasks **in plan order**, one at a time (each builds on the last):
 
 1. **Dispatch an `implementer` subagent** (`subagent_type: implementer`, working in the plan's
-   repo) for the task. Give it the task verbatim — files, what changes, the done-signal. The
+   repo) for the task. Give it the task verbatim — files, what changes, the done-signal — and
+   **the test targets from the plan's Verification section that cover this task, as its ceiling**
+   ("run these; wider coverage is drift, report it"). The plan already names them; passing them
+   is what makes them binding instead of advisory. The
    `implementer` agent already carries the contract (make exactly that change, run the checks
    for what it touched, return a lean report, never touch the plan file, report drift rather
    than redesign) — don't restate it inline.
@@ -44,12 +47,16 @@ Work the tasks **in plan order**, one at a time (each builds on the last):
    escalate to me with the distilled error. Never skip, never label pre-existing.
 4. **On drift** (the subagent reports it, doesn't redesign) → apply the drift rules below.
 
-After the last task: dispatch one subagent to run the **targeted checks** for what the branch
-changed — the tests covering the changed code (the specific test files/dirs named in the plan's
-Verification section, **never** the whole `tests/unit` / `tests/integration` tree or `make
-pytest`), plus lint and types. It returns pass/fail + distilled failures. All green before
-review. GitHub PR CI runs the full suite on every push, so a whole-tree local run only
-duplicates CI and pins the machine (see `local-test-scope.md`).
+After the last task: dispatch **one** subagent to run the **targeted checks** for what the branch
+changed — exactly the test files named in the plan's Verification section (that list is the
+ceiling, not a starting point — **never** a whole tree, a broad directory above them, or `make
+pytest`), plus lint and types. It returns pass/fail + distilled failures. All green before review.
+GitHub PR CI runs the full suite on every push, so a broad local run only duplicates CI and pins
+the machine (see `local-test-scope.md`, hard-enforced at 25 test files per run).
+
+**Don't start a run of your own while that subagent is working** — you can't see its processes,
+and two suites against the same local Postgres/Redis/Temporal both pin the machine and make any
+failure ambiguous. Wait for its report.
 
 ## Code review (finalize the coding)
 
