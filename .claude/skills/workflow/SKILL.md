@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with a hard post-scope gate (summary + my approval) and kickback routing, then stops at explicit done. Detects phase from the spec files + git/PR state. Also a status view across every in-flight idea. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
+description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with two hard gates (after scope and after plan, each needing my explicit go-ahead) and kickback routing, then stops at explicit done. Detects phase from the spec files + git/PR state. Also a status view across every in-flight idea. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -14,7 +14,7 @@ handoffs — you never do their work. Compose, never duplicate: each phase's log
 own skill. The spec files + git/PR state **are** the state (Wave 1: no session file).
 
 Purpose: drive an idea from raw idea to a **PR that's open and being watched** (scope → plan →
-implement → verify → babysit), enforce the one hard gate, route kickbacks — then stop at the
+implement → verify → babysit), enforce both hard gates, route kickbacks — then stop at the
 explicit close-out (done).
 
 ## Two modes
@@ -69,8 +69,11 @@ Invoke each phase skill and let it run to completion — each handles its own in
     just pick.
 
   Then wait for my **explicit go-ahead** before starting plan. Never cross this on your own.
-- **plan → implement — no gate.** plan already got my approval before writing the plan; that
-  *is* the checkpoint. Flow straight in. (plan creates + enters the worktree at its start.)
+- **plan → implement — HARD GATE.** Plan approval covers the *breakdown* — it is me agreeing the
+  design is right, not me saying start building. After the plan file lands, **stop** and wait for
+  my explicit go-ahead. Report the plan path, and if plan drew a `make-diagram` diagram, leave it
+  in view: that's what I'm reading before I commit to the build. Never cross this on your own.
+  (plan creates + enters the worktree at its start.)
 - **implement → verify — no gate, but verify is user-directed.** implement ends at a pushed,
   reviewed, green branch (no PR). Flow into verify — it pulls me in to direct the testing and
   then opens the PR. This is my post-implement touchpoint.
@@ -98,6 +101,8 @@ back up.
   always through the owning skill.
 - **The post-scope gate is real** — a genuine summary + my actual go-ahead, never a rubber-stamp.
   Scope earns the commitment to plan.
+- **So is the post-plan gate.** A written plan is not consent to build. Wait for the word, even
+  when the plan is obviously good and the tasks are obviously next.
 - **babysit auto-runs as the tail; done never does.** Flowing verify → babysit is the drive
   finishing its job. `/done` is the one transition that stays mine — the workflow only surfaces it.
 - **No new state.** Detect from spec files + git/PR every time; never cache the phase or invent a
