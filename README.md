@@ -16,13 +16,15 @@ scope → plan → implement → verify → babysit → done
 ```
 
 - **scope** — brainstorm a raw idea (or Linear ticket) into a converged direction.
-- **plan** — descend to a concrete, file-level task breakdown (sets up the worktree).
+- **plan** — descend to a concrete, file-level task breakdown (sets up the worktree), then stops
+  for an explicit go-ahead.
 - **implement** — conduct the build via per-task subagents, review, and push a green branch.
 - **verify** — prove it works, then open the PR.
 - **babysit** — watch CI + PR review threads (opt-in).
 - **done** — close out and tear down the worktree.
 
-Plus standalone tools: `worktree`, `db`, `populate-dev-data`, `env-manager`, and others.
+Plus standalone tools: `worktree`, `db`, `make-diagram`, `populate-dev-data`, `env-manager`, and
+others.
 
 ## Principles
 
