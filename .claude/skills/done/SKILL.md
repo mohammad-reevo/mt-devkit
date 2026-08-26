@@ -62,9 +62,12 @@ happens separately from your queue).
    `rm -r` for the scratch dir — **never `rm -rf`** (the `-f` flag is permission-blocked and
    treated as dangerous; it gets denied).
 2. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
-   the worktree first, removes the sub-repo + parent worktrees, deletes the **local**
-   `mohammad/<slug>` branches). **Remote branches are never touched** — they back the open PRs
-   and GitHub deletes them on merge.
+   the worktree first, removes the sub-repo + parent worktrees, and deletes the **local**
+   feature branches: `mohammad/<slug>` **and** whatever each tree actually had checked out).
+   Those differ whenever a session splits its work — one sub-repo ends up on a branch named
+   for the second PR rather than for the worktree, and matching on the worktree name alone
+   strands it in the primary checkout. **Remote branches are never touched** — they back the
+   open PRs and GitHub deletes them on merge.
 3. **Don't touch or pull main** — I handle that separately.
 
 ## Report

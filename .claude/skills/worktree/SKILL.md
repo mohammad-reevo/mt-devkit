@@ -82,7 +82,9 @@ reevo-realtime branch). `—` for a missing sub-repo. No `EnterWorktree`. If non
    bash $HOME/Desktop/code/mt-devkit/.claude/skills/worktree/worktree_teardown.sh "<name>" "$MAIN"
    ```
    It removes each sub-repo worktree + the parent worktree and deletes the **local**
-   `mohammad/<name>` branches.
+   feature branches — `mohammad/<name>` **and** whatever each tree actually had checked out,
+   which differ once a session splits its work across two branches. Only the `mohammad/`
+   namespace is eligible, so a tree left on `main` or a teammate's branch is never touched.
 3. Report what was removed.
 
 ## Notes
