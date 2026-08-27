@@ -1,6 +1,6 @@
 ---
 name: make-diagram
-description: Draw a design, a plan, or a change as an ASCII diagram that shows the real mechanism — module boxes carrying each function's in/out contract, the data flowing top-to-bottom, and an explicit marked line wherever a shared path forks per consumer. ASCII by default, because the output has to survive a plan file, a PR description, and a terminal with no rendering step; mermaid only when I ask for it by name. Ships one shape today (pipeline-with-a-fork) and is built to grow more. Also owns the call on when NOT to draw one. Standalone, and reached for by `plan`. Triggers on "draw this", "diagram this", "visualize the design", "show me the structure", "/make-diagram".
+description: Draw a design, a plan, or a change as an ASCII diagram that shows the real mechanism — module boxes carrying each function's in/out contract, the data flowing top-to-bottom, and an explicit marked line wherever a shared path forks per consumer. ASCII by default, because it needs no renderer and holds detail auto-layout drops; mermaid when I ask for it by name, which renders in VS Code's markdown preview and natively in GitHub PR bodies. Ships two shapes (pipeline-with-a-fork, call-chain-spine) and is built to grow more. Also owns the call on when NOT to draw one. Standalone, and reached for by `plan`. Triggers on "draw this", "diagram this", "visualize the design", "show me the structure", "/make-diagram".
 argument-hint: '[what to draw]'
 ---
 
@@ -14,15 +14,23 @@ You turn a design, a plan, or a change into an **ASCII diagram of how the thing 
 works**: module boxes carrying each function's input/output contract, the data flowing
 top-to-bottom, and an explicit marked line wherever a shared path forks per consumer.
 
-Where make-diagram ends: **a diagram, in the conversation.** You don't write it to a file, you
-don't edit code, and you don't decide where it goes — the caller does.
+Where make-diagram ends: **a diagram, in the conversation.** You don't edit code, and you don't
+decide where it goes — the caller does. The one file you may write is a scratch file under
+`~/.claude/tmp/<slug>/`: to measure the geometry, and to carry a mermaid version somewhere VS
+Code can render it. That is a workbench, not a destination.
 
 ## Why ASCII
 
 Default to ASCII, always. The output has to survive a plan file, a PR description, a terminal,
-and a markdown code fence with no rendering step in between. Mermaid is live in an Artifact and
-dead text everywhere this skill's output actually lands. Emit mermaid **only when I ask for it
-by name** — and then give me the ASCII too, unless I say not to.
+and a markdown code fence with no rendering step in between — and the terminal is where I read
+it first. Emit mermaid **only when I ask for it by name** — and then give me the ASCII too,
+unless I say not to.
+
+**Don't defend that default by claiming mermaid renders nowhere.** It renders in two of the
+places this skill's output actually lands: **GitHub natively** (PR descriptions, issues) and
+**VS Code's markdown preview** via `bierner.markdown-mermaid`. ASCII leads because it needs no
+renderer at all and because auto-layout throws away detail a hand-drawn spine keeps — not
+because mermaid is dead text. See "Mermaid, when I ask for it" below.
 
 Render inside a bare code fence with **no language tag**. A language tag invites syntax
 highlighting, and highlighting mangles box-drawing characters.
@@ -62,8 +70,9 @@ no diagram, because it will be believed.
 
 ## The grammar — pipeline with a fork
 
-One shape ships today. **Read `references/pipeline-fork.md` before drawing your first one** — it
-carries the full worked example this grammar was derived from. The rules below are the summary.
+Two shapes ship today; this is the one for **"where do the consumers diverge"**. **Read
+`references/pipeline-fork.md` before drawing your first one** — it carries the full worked
+example this grammar was derived from. The rules below are the summary.
 
 ### Module boxes — when the design spans files
 
@@ -136,17 +145,123 @@ Cap the flow at **80 columns**; module boxes may run to **100**. Every box in on
 same width — ragged widths read as sloppy and break the column alignment below the fork. Nothing
 may wrap: a wrapped line inside a code fence destroys the drawing, so measure before committing.
 
+**Measure characters, not bytes.** `awk '{ print length($0) }'` counts BYTES, and every
+box-drawing character (`│ ┌ ─ ▼ ►`) is three bytes in UTF-8 — a clean 78-column line reports as
+143, and you will "fix" a drawing that was never broken. Write the diagram to a file under
+`~/.claude/tmp/<slug>/` and measure it there:
+
+```python
+p = "<path>"
+for i, l in enumerate(open(p), 1):
+    n = len(l.rstrip("\n"))
+    if n > 78:
+        print(i, n)
+```
+
+**Verify any vertical rail lands in ONE column.** Hand-counting a rail that runs past a block
+drifts by one and the drawing looks broken. Print the column index of every `│ ┐ ┤ ▼` on the
+rail lines and confirm they're all equal *before* showing it — off-by-ones are invisible while
+you're writing and glaring once rendered.
+
+## The grammar — call-chain spine
+
+The second shape, for **"what calls what, across all these files, in order"** — a PR
+walkthrough, or tracing an entry point down to its leaf. Pipeline-with-a-fork answers *where do
+consumers diverge*; this answers *what is the sequence, and which file owns each step*. **Read
+`references/call-chain-spine.md` before drawing your first one.**
+
+```
+SECTION ── file.py :LINE ─────────────────────────────────────────────────────
+
+  function(args) -> ReturnType                                    NEW  [+27]
+        │
+        │  one line of what happens here
+        │  a second line only when it changes a decision
+        ▼
+  next_file.py                                              NEW FILE  [+98]
+  next_function(args)
+```
+
+- **Section headers name the phase AND the file:line** — `SURFACE B ── node_service.py :310`.
+  The phase is the reader's spine; the `file:line` is what makes it checkable.
+- **Annotate every file with its diff stat** — `[+27]`, `[+108/-14]`, `NEW FILE`. This is what
+  turns a call chain into a PR explanation: it says where the change actually *is*, and it
+  exposes the files that are pure wiring.
+- **Call out lines that are re-indentation, not change.** A `-40` that is really the old code
+  moved into an `else:` will otherwise dominate the reader's sense of the diff — say so on the
+  branch it belongs to.
+- **An unchanged branch says it is unchanged**, in the drawing: `^ untouched, today's behaviour`.
+- **When one call travels past a later section**, carry it on a rail in a fixed right-hand
+  column and merge with `┤`. Break the intervening section headers around the rail rather than
+  overwriting it. Verify the column per **Width** above.
+- **Entry points are plural more often than you expect.** If two callers reach the same spine
+  and only one of them sets some state, draw both and label the difference — that asymmetry is
+  usually the most load-bearing thing on the page.
+
 ## Growing the skill
 
-One shape ships today. When a design needs a shape this grammar can't hold — a state machine, a
+Two shapes ship today. When a design needs a shape neither grammar can hold — a state machine, a
 layered architecture, a sequence across services — **add it here as its own section with its own
-worked example**. Don't stretch the pipeline grammar over a shape it doesn't fit; a bent grammar
+worked example**. Don't stretch an existing grammar over a shape it doesn't fit; a bent grammar
 reads worse than no diagram at all.
+
+## Mermaid, when I ask for it
+
+**Where it renders** — the whole reason it's worth emitting:
+
+- **GitHub, natively.** A mermaid fence in a PR description renders for reviewers.
+- **VS Code**, via `bierner.markdown-mermaid`. Write the `.md`, then `code <path>` to open it;
+  ⌘⇧V previews, ⌘K V side-by-side. Confirm the extension is installed
+  (`code --list-extensions`) rather than assuming — if it isn't, say so instead of shipping a
+  file that renders as raw text.
+- **Not an Artifact.** An artifact is a browser-hosted claude.ai page, not an in-editor render.
+  Don't reach for one just to make a diagram pretty.
+
+Write it to `~/.claude/tmp/<slug>/<name>.md` (per `scratch-files.md`) with the ASCII in the same
+file underneath, so one path carries both.
+
+**Syntax traps that break the parse silently** — full list, worked example, and a lint script in
+`references/mermaid.md`:
+
+- **`{{` is hexagon-node syntax.** A literal `{{template}}` in a label breaks the whole diagram.
+  Same family: `((`, `[[`, `>`. Describe the braces in words instead of showing them.
+- **Quote every label** — `A["text"]`, always. Unquoted labels break on `(`, `:`, `,`.
+- **`<br/>` for line breaks, and no other HTML.** `<b>`/`<i>` depend on `htmlLabels` and can
+  render as literal tags.
+- **`classDef` must set `fill` AND `color`.** Fill-only is unreadable in the opposite VS Code
+  theme, and the theme belongs to the viewer, not to you.
+
+**Lint before you show it.** A typo'd node id doesn't error — mermaid silently creates a blank
+phantom node. Check that every edge endpoint and every `class` target is a defined node, and
+that `subgraph` and `end` counts match.
+
+**Then actually render it, don't just lint it.** A structural lint proves the ids line up, not
+that mermaid accepts the file — and "it doesn't render" is otherwise unfalsifiable from your
+side, so you end up guessing at syntax while the real fault is in the editor:
+
+```
+npx -y -p @mermaid-js/mermaid-cli mmdc -i <file>.md -o <out>.md
+```
+
+It prints `Found N mermaid charts` and writes one SVG per chart. Exit 0 with an SVG means the
+syntax is **proven** good — so if it still isn't rendering for me, stop editing the diagram and
+look at VS Code (Restricted Mode disables the extension; a preview opened before the extension
+activated needs a window reload).
+
+**The SVG it produces is the zero-dependency fallback.** VS Code previews `.svg` natively — no
+extension, no workspace trust. When the markdown preview is being difficult, hand me the SVG and
+move on. (`timeout` doesn't exist on macOS — don't wrap the command in it.)
+
+**Say what mermaid lost.** Auto-layout has no notion of depth: two calls at different depths of
+one traversal come out as siblings. When that relationship IS the payload, ship the ASCII
+alongside and name what the rendered version flattened.
 
 ## Guardrails
 
 - **Render, don't route.** Output the diagram in the conversation. Writing it into a plan file, a
-  PR description, or an eng doc is the caller's call, never a side effect of drawing.
+  PR description, or an eng doc is the caller's call, never a side effect of drawing. A scratch
+  file under `~/.claude/tmp/<slug>/` is not routing — it's the workbench for measuring geometry
+  and for the mermaid version. Anywhere someone else would read it needs my say-so.
 - **Never edit code**, and never fix something you noticed while tracing the flow. Surface it in
   a line under the diagram instead.
 - **Refusing to draw is a real answer.** See the "Don't draw when" list — use it.
