@@ -52,24 +52,33 @@ if [[ -z "$SQL" ]]; then
 fi
 
 # Read-only guard runs before any connection checks so that refusing a dangerous statement
-# never depends on local setup state. Splits on ';' and checks the leading keyword of every
-# statement, so a trailing write can't ride along behind a leading SELECT. A ';' inside a
-# string literal can trip this into a false refusal — use --write when that happens.
+# never depends on local setup state. Comments are stripped and newlines folded to spaces
+# BEFORE ';' becomes the separator, so a statement is a whole statement rather than one
+# physical line — a multi-line SELECT is a single statement, and a trailing write still
+# can't ride along behind a leading SELECT. A ';' inside a string literal can trip this into
+# a false refusal — use --write when that happens.
 if [[ "$ALLOW_WRITE" -eq 0 ]]; then
+  # /* */ blocks go first (they may span lines), then -- line comments, and only then are
+  # newlines folded. Order matters: folding first would let one -- comment swallow the rest
+  # of the query, and leaving comments in would let one hide a statement from the check.
   while IFS= read -r statement; do
-    keyword=$(printf '%s' "$statement" | sed -E 's/^[[:space:](]+//' | awk '{print tolower($1)}')
-    [[ -z "$keyword" ]] && continue
+    trimmed=$(printf '%s' "$statement" | sed -E 's/^[[:space:](]+//; s/[[:space:]]+$//')
+    [[ -z "$trimmed" ]] && continue
+    keyword=$(printf '%s' "$trimmed" | awk '{print tolower($1)}')
     case "$keyword" in
       select|with|show|describe|desc|explain|use) ;;
       *)
-        echo "Error: refusing to run a non-read statement (\"$keyword\") without --write." >&2
+        excerpt="$trimmed"
+        [[ ${#excerpt} -gt 80 ]] && excerpt="${excerpt:0:80}..."
+        echo "Error: refusing to run a non-read statement without --write:" >&2
+        echo "  $excerpt" >&2
         echo "This warehouse holds a copy of production data. Re-run with --write if you meant it." >&2
         exit 1
         ;;
     esac
-    # The trailing newline is load-bearing: `read` returns non-zero on a final line without
-    # one, which would silently skip the check for a query that has no trailing ';'.
-  done < <(printf '%s\n' "$SQL" | tr ';' '\n')
+    # The here-string's trailing newline is load-bearing: `read` returns non-zero on a final
+    # line without one, which would silently skip the check for a query with no trailing ';'.
+  done <<< "$(printf '%s' "$SQL" | perl -0777 -pe 's{/\*.*?\*/}{ }gs' | sed -E 's/--.*$//' | tr '\n' ' ' | tr ';' '\n')"
 fi
 
 if ! command -v snow &>/dev/null; then
