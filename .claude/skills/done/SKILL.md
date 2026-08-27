@@ -1,18 +1,20 @@
 ---
 name: done
-description: Close out the current worktree — gate the PR(s) for its checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, then tear down the worktree + local branches. Manual only. `/done cancel` abandons an idea without the gate. Use when a PR is ready to close out of your active set (merge happens separately). Triggers on "/done", "close this out", "done with this".
+description: Close out the session's worktree(s) — gate the PR(s) for each one's checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, then tear down the worktrees + local branches. Manual only. `/done cancel` abandons an idea without the gate. Use when a PR is ready to close out of your active set (merge happens separately). Triggers on "/done", "close this out", "done with this".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
 > Funnel tail: **… → verify → babysit → done** (see `~/.claude/spec/my-devkit-design.md`).
 
-# done — close out the worktree
+# done — close out the session's worktrees
 
 **Manual only.** Runs only when I explicitly invoke `/done`. Never auto — I review the PRs.
 
-You close out the **current worktree**: gate the PR(s) for whatever branches are checked out,
-delete their plan/scope spec files, and tear the worktree down. Deliberately minimal — no
-archiving, no records, no session state. The PR is the source of truth.
+You close out **every worktree this session worked in** — usually one, but a session that
+reviewed two PRs or split its work has several, and closing only the one you happen to be
+standing in strands the rest. For each: gate the PR(s) for whatever branches are checked out,
+delete their plan/scope spec files, and tear it down. Deliberately minimal — no archiving, no
+records, no session state. The PR is the source of truth.
 
 ## Two modes
 - **`/done`** — normal close-out (runs the gate).
@@ -20,8 +22,15 @@ archiving, no records, no session state. The PR is the source of truth.
   superseded direction). No reason arg.
 
 ## Resolve what's being closed
-1. Confirm the session is inside a worktree (cwd under `…/worktrees/<name>/`). If not → stop,
-   "not in a worktree, nothing to close." Capture `<name>`.
+1. **Name every worktree this session worked in** — the one the cwd sits under
+   (`…/worktrees/<name>/`) **and** every other one this session created or entered. You know
+   these from the conversation; there is no session state on disk to read them from. If the
+   session entered none → stop, "not in a worktree, nothing to close." Capture each `<name>`,
+   then run steps 2–3 and the gate **once per worktree**.
+
+   **Never enumerate `$MAIN/worktrees/` and close what's there.** That directory also holds
+   other sessions' in-flight trees; only the ones *this* session created or entered are
+   eligible. When there's more than one, list them before tearing any down.
 2. For each sub-repo, get the **currently-checked-out** branch:
    `git -C "<worktree>/<subrepo>" branch --show-current`. These **0–2 branches** (normally
    `mohammad/<slug>`) are *exactly* what this close-out handles — nothing else.
@@ -50,11 +59,16 @@ archiving, no records, no session state. The PR is the source of truth.
   Any `isResolved:false` (regardless of `isOutdated`) = fail — **queued-to-merge never excuses
   an open thread.**
 
-Collect **all** failures across **all** PRs and report at once. If anything fails → **stop,
-tear down nothing.** No merge requirement — a passing-but-unmerged PR closes out fine (merge
-happens separately from your queue).
+Collect **all** failures across **all** PRs of **all** worktrees and report at once. The gate is
+all-or-nothing **within** a worktree — one failing PR → tear down nothing of that worktree — but
+**independent across** worktrees: one whose own PRs all pass still closes out, since tearing it
+down can only strand its own PRs. No merge requirement — a passing-but-unmerged PR closes out
+fine (merge happens separately from your queue).
 
 ## Tear down (after the gate passes; immediately in cancel mode)
+
+Run these **per worktree**, for each one that passed its own gate.
+
 1. **Delete matching spec + scratch files** — for each branch, strip `mohammad/` → `<slug>`;
    delete `~/.claude/spec/<slug>-plan.md` and `<slug>-scope.md` if present, and remove the
    scratch dir `~/.claude/tmp/<slug>/` if present (see `scratch-files.md`). Plan-optional: a
@@ -71,14 +85,20 @@ happens separately from your queue).
 3. **Don't touch or pull main** — I handle that separately.
 
 ## Report
-What was closed: the PR link(s), which spec files were deleted, and that the worktree was
-removed. If a PR passed on the queued-to-merge exception, **say so and name the checks still
-running** — I'm closing out before CI finished, and GitHub will land it unattended.
+What was closed, **per worktree**: the PR link(s), which spec files were deleted, and that the
+worktree was removed. If a PR passed on the queued-to-merge exception, **say so and name the
+checks still running** — I'm closing out before CI finished, and GitHub will land it unattended.
+Name any worktree left standing because its own gate failed, so nothing is silently skipped.
 
 ## Guardrails
 - **Explicit only.** Never auto-run — only on my `/done`.
-- **Gate is all-or-nothing.** Any PR failing CI or with an open thread → stop, tear down
-  nothing. Report every failure at once (don't fail on the first).
+- **Every worktree the session worked in, not just the current one.** A session that reviewed
+  two PRs or split its work has several; closing only the cwd's leaves the rest orphaned with
+  nothing pointing at them. Take the list from the conversation — **never** by enumerating
+  `$MAIN/worktrees/`, which also holds other sessions' in-flight trees.
+- **Gate is all-or-nothing within a worktree**, independent across them. Any PR failing CI or
+  with an open thread → tear down nothing *of that worktree*; the others still close out.
+  Report every failure at once (don't fail on the first).
 - **Queued-to-merge waives only *incomplete* CI** — never a red check, never an open thread.
   It's a wait-skip (the merge is already committed to), not a quality bypass.
 - **All threads, not a filtered list.** Query every thread's `isResolved`; outdated counts as
