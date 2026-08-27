@@ -1,39 +1,57 @@
-# Reference — mermaid, when I ask for it
+# Reference — mermaid mechanics
 
-ASCII is still the default (SKILL.md → "Why ASCII"). This file is the how, for when I've asked
-for a rendered version by name.
+How to write, lint, render, and hand over a diagram. The shapes themselves are in
+`shapes.md`.
 
-## Where it renders
-
-| Target | Needs | Notes |
-|---|---|---|
-| GitHub PR description / issue | nothing | renders natively — the highest-value target |
-| VS Code markdown preview | `bierner.markdown-mermaid` | ⌘⇧V preview, ⌘K V side-by-side |
-| VS Code, `.svg` file | nothing | built-in image preview; the fallback that always works |
-| Artifact | — | a browser-hosted claude.ai page, **not** an in-editor render |
-
-Confirm the extension before promising the preview:
+## The loop
 
 ```
-code --list-extensions | grep -i mermaid
+write  ~/.claude/tmp/<slug>/<name>.md      one ```mermaid fence
+lint   phantom nodes, subgraph/end balance
+render npx -y -p @mermaid-js/mermaid-cli mmdc -i <file>.md -o <out>.md
+hand   print the SVG path — never open it
 ```
 
-Write the `.md` under `~/.claude/tmp/<slug>/` (per `scratch-files.md`), put the ASCII in the
-same file underneath, then `code <path>` to open it.
+`mmdc` prints `Found N mermaid charts` and writes one SVG per chart, named `<out>-N.svg`.
+Rename it to match the diagram before handing it over.
+
+**Exit 0 with an SVG means the syntax is proven good.** That matters more than it sounds: without
+it, "it isn't rendering" is unfalsifiable from your side and the instinct is to start editing
+valid mermaid. Render first, then blame the viewer.
+
+`timeout` does not exist on macOS — don't wrap the command in it, or you get a silent exit 0 and
+no render. First run downloads Chromium (~1 min); subsequent runs are fast.
+
+## Where it renders, if I ask
+
+| Target | Needs |
+|---|---|
+| `.svg` in VS Code | nothing — built-in image preview |
+| GitHub PR description / issue | nothing — renders the fence natively |
+| VS Code markdown preview | `bierner.markdown-mermaid` |
+
+If the markdown preview doesn't work but `mmdc` rendered fine, it's the editor: Restricted Mode
+disables extensions, and a preview opened before an extension was installed needs a window
+reload. The `.svg` sidesteps both.
 
 ## Syntax traps
 
-Each of these breaks the parse or the reading, and none of them errors loudly.
+None of these error loudly. All are verified against `mmdc`.
 
-- **`{{` opens a hexagon node.** A literal `{{template}}` inside a label kills the diagram.
-  Same family: `((` (circle), `[[` (subroutine), `>` (asymmetric). Describe the braces in
-  words — "every reference becomes the literal 0" — rather than showing them.
-- **Quote every label.** `A["text"]`. Unquoted labels break on `(`, `:`, `,`.
-- **`<br/>` is the only HTML to rely on.** `<b>` / `<i>` depend on `htmlLabels` and can render
-  as literal tags.
-- **`classDef` must set `fill` AND `color`.** Fill-only is unreadable in the opposite VS Code
-  theme, and the theme belongs to the viewer.
+- **`{{` opens a hexagon node.** A literal `{{template}}` in a label kills the diagram. Same
+  family: `((` circle, `[[` subroutine, `>` asymmetric. Describe the braces in words. A *single*
+  `{curly}` inside a quoted label is fine.
+- **`->` and `=>` are eaten** in label text — they vanish from the rendered output. Use `→`.
+- **Quote every label** — `A["text"]`. Unquoted labels break on `(`, `:`, `,`.
+- **`<br/>` is the only HTML to rely on.** `<b>` / `<i>` depend on `htmlLabels` and can render as
+  literal tags.
 - **A typo'd node id creates a blank phantom node**, silently. It never errors.
+- **`classDef` must set `fill` AND `color`.** Fill-only is unreadable in the opposite editor
+  theme, and the theme belongs to the viewer.
+
+**Verified safe inside a quoted label** — these all render intact, so contracts can be written
+naturally: `list[str]`, `dict[str, int]`, `str | None`, `tuple[A, B]`, `Result(config, changed)`,
+`{curly}`, `"quoted"`, `50%`, `#`, `:`, `;`, `,`.
 
 ## Palette that survives both themes
 
@@ -46,12 +64,12 @@ classDef caution   fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
 ```
 
 Explicit `color:` on every class is what makes these theme-independent. Give the colours a
-*meaning* and state it in a key under the diagram — on a PR walkthrough, "new / untouched /
-shared / the one risky bit" is most of the argument.
+*meaning* and state the key in the walkthrough — on a PR walkthrough "new / untouched / shared /
+the one risky bit" is most of the argument. Colour with no stated meaning is noise.
 
-## Lint, then render
+## Lint
 
-**Lint** — catches phantom nodes and unbalanced subgraphs:
+Catches phantom nodes and unbalanced subgraphs before you spend a render on them.
 
 ```python
 import re
@@ -69,23 +87,16 @@ print("subgraph:", len(re.findall(r"^\s*subgraph\b", m, re.M)),
 print("stray braces:", [i + 1 for i, l in enumerate(m.split("\n")) if "{{" in l])
 ```
 
-**Render** — the lint proves the ids line up, not that mermaid accepts the file:
+The lint proves the ids line up. It does not prove mermaid accepts the file — only `mmdc` does
+that, so always do both.
 
-```
-npx -y -p @mermaid-js/mermaid-cli mmdc -i <file>.md -o <out>.md
-```
+## What auto-layout costs you
 
-Prints `Found N mermaid charts` and writes one SVG per chart. **Exit 0 with an SVG means the
-syntax is proven good** — so if it still isn't rendering in the editor, stop editing the diagram
-and look at VS Code: Restricted Mode disables extensions, and a preview opened before the
-extension activated needs a window reload. Hand over the SVG in the meantime; it needs nothing.
+Mermaid places nodes; you don't. Two consequences, both permanent:
 
-`timeout` does not exist on macOS — don't wrap the command in it, or you get a silent exit 0
-and no render.
+- **No notion of depth.** Two calls at different depths of one traversal render as siblings.
+- **No margins.** Anything that isn't a node — a cross-reference, a count, "these deleted lines
+  are re-indentation" — has nowhere to live.
 
-## Say what mermaid lost
-
-Auto-layout has no notion of depth. Two calls at different depths of one traversal come out as
-siblings, and any annotation that isn't a node (diff stats, "these deleted lines are
-re-indentation", a rail travelling past a block) has nowhere to live. When that relationship is
-the payload, ship the ASCII alongside and name what the rendered version flattened.
+Neither is a reason to avoid a shape. Both are reasons the walkthrough carries the sentences the
+picture can't. See SKILL.md → *The reply contract*.
