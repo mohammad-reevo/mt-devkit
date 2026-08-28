@@ -56,16 +56,41 @@ naturally: `list[str]`, `dict[str, int]`, `str | None`, `tuple[A, B]`, `Result(c
 ## Palette that survives both themes
 
 ```
-classDef newcode   fill:#dcfce7,stroke:#16a34a,color:#14532d
-classDef untouched fill:#f1f5f9,stroke:#94a3b8,color:#334155
-classDef flagnode  fill:#fef3c7,stroke:#d97706,color:#78350f
-classDef shared    fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+classDef newfile   fill:#dcfce7,stroke:#16a34a,color:#14532d
+classDef changed   fill:#fef3c7,stroke:#d97706,color:#78350f
+classDef unchanged fill:#f1f5f9,stroke:#94a3b8,color:#334155
+classDef forknode  fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
 classDef caution   fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
 ```
 
-Explicit `color:` on every class is what makes these theme-independent. Give the colours a
-*meaning* and state the key in the walkthrough — on a PR walkthrough "new / untouched / shared /
-the one risky bit" is most of the argument. Colour with no stated meaning is noise.
+Explicit `color:` on every class is what makes these theme-independent.
+
+## Change-status diagrams
+
+Whenever the diagram explains a **change** — a plan, a PR, a refactor — colour answers one
+question only: *what is this change touching?* The first four classes above are that key.
+`caution` is for the one genuinely risky node and is used sparingly or not at all.
+
+**Do not mix axes.** A key of *new / untouched / shared / risky* is three questions wearing one
+coat: "shared" is about topology, "risky" is about judgement, and only "new"/"untouched" answer
+the change question. The reader cannot tell which question a given colour is answering, so the
+whole palette stops carrying information. Topology and risk belong in the **label**.
+
+Four labelling rules do the work colour can't. Each exists because leaving it out produced a
+diagram that had to be redrawn:
+
+- **Name the file and what it gains.** `FieldDescriptorFormRenderer.tsx · CHANGED` is half an
+  answer; `· CHANGED — PURE WIRING, forwards 2 props to 6 call sites` is the whole one.
+- **Mark pure wiring as pure wiring.** The file with the largest diff is often the one with no
+  logic in it. Unmarked, it's where a reviewer starts reading.
+- **Draw the node where the new thing actually appears**, even when it is an unremarkable
+  existing component. Omitting it hides the answer to "so where does the user see this?" — the
+  question the diagram was drawn to answer.
+- **Annotate reachability on the new arm.** `only reachable once a token exists` states the
+  safety property in three words: existing inputs still take the old path, so nothing can regress.
+  That claim is usually the reason the change is safe, and it is invisible in topology alone.
+
+The key still goes in the walkthrough — the SVG has no legend.
 
 ## Lint
 

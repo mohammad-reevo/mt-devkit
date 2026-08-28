@@ -120,15 +120,19 @@ flowchart TD
   B --> VFT
   A -->|flag ON| VFT
 
-  classDef newcode fill:#dcfce7,stroke:#16a34a,color:#14532d
-  classDef untouched fill:#f1f5f9,stroke:#94a3b8,color:#334155
-  classDef flagnode fill:#fef3c7,stroke:#d97706,color:#78350f
-  classDef shared fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
-  class FF,SVC flagnode
-  class IFH,B,VFT,BRT newcode
-  class AOFF,MW untouched
-  class VFWT shared
+  classDef newfile fill:#dcfce7,stroke:#16a34a,color:#14532d
+  classDef changed fill:#fef3c7,stroke:#d97706,color:#78350f
+  classDef unchanged fill:#f1f5f9,stroke:#94a3b8,color:#334155
+  class BRT newfile
+  class FF,SVC,IFH,B,VFT,VFWT,A changed
+  class AOFF,MW unchanged
 ```
+
+The palette keys **change status only** — see `mermaid.md` → *Change-status diagrams*. Note what
+that costs and buys here: "this is the shared method both surfaces call" loses its colour, and is
+carried by the `SHARED` subgraph title and the two edges converging on `VFT` instead. Topology was
+always better served by position than by fill; freeing the palette is what lets `AOFF` and `MW`
+read unambiguously as *today's behaviour, untouched*.
 
 ## What each element buys
 
@@ -137,7 +141,7 @@ flowchart TD
 | `subgraph "PHASE — file.py :LINE"` | The phase is the reader's spine; the `file:line` is what makes every claim checkable. Neither works alone — a phase with no location is a vibe, a location with no phase is a stack trace. |
 | Diff stat on every file (`+27`, `+108/-14`, `NEW FILE +98`) | Turns a call chain into a *PR* explanation. Shows at a glance which files are wiring and which hold the change. |
 | Naming re-indentation explicitly | The single most useful line in the source case — it dissolved the author's impression that logic had been migrated out of a file when nothing had moved. |
-| `untouched` class on the flag-off branch | A flag-gated PR has a whole column that is today's behaviour. Saying so is what makes the other column readable as *the change*. |
+| `unchanged` class on the flag-off branch | A flag-gated PR has a whole column that is today's behaviour. Saying so is what makes the other column readable as *the change*. |
 | Two entry points drawn side by side | The asymmetry — one caller resolves the flag, one leaves it at its default — was the most load-bearing fact in the PR, and it appeared nowhere in the diff *as* a diff. |
 | Edge labels `flag OFF` / `flag ON` | The fork, in a shape that has no single fork node. |
 
