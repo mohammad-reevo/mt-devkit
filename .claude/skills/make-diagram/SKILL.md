@@ -155,7 +155,7 @@ flowchart TD
   turns a call chain into a *PR* explanation: it says where the change actually is, and exposes
   which files are pure wiring.
 - **Call out lines that are re-indentation, not change**, and **mark unchanged branches as
-  unchanged** (the `untouched` class). A flag-gated PR has a whole column that is today's
+  unchanged** (the `unchanged` class). A flag-gated PR has a whole column that is today's
   behaviour; saying so is what makes the other column readable as *the change*.
 - **Entry points are plural more often than you expect.** If two callers reach one spine and
   only one of them sets some state, draw both and label the difference — that asymmetry is
@@ -167,8 +167,17 @@ flowchart TD
   that's the diagram doing its job. Don't smooth it into a shared node that isn't in the code.
 - **No invented steps.** Diagram only what the source states. A gap in the design shows up as a
   gap in the diagram — say so in the walkthrough rather than filling it in.
-- **Colour carries the argument or it isn't used.** Give each class a meaning (new / untouched /
-  shared / the one risky bit) and state the key in the walkthrough. Decorative colour is noise.
+- **Colour keys exactly ONE axis — and when the diagram explains a change, that axis is change
+  status.** `NEW FILE` / `CHANGED` / `UNCHANGED`, nothing else, key stated in the walkthrough.
+  Mixing axes is the failure that looks fine while you draw it and reads as mush to everyone
+  else: a key like *new / untouched / shared / risky* asks the reader to hold three questions at
+  once, and no colour tells them which one it is answering. If "shared" or "risky" is load-bearing,
+  it goes in the **label**, never in the palette. Decorative colour is noise; a class with no
+  stated meaning shouldn't exist.
+- **Every node on a change diagram says which file it is and what that file gains.** `PURE
+  WIRING` is worth its own annotation — the biggest-looking edit is often the least interesting,
+  and saying so is what stops a reviewer starting there. See `references/mermaid.md` →
+  *Change-status diagrams*.
 
 ## Growing the skill
 
