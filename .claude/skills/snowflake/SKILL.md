@@ -1,13 +1,13 @@
 ---
 name: snowflake
-description: Query Reevo's Snowflake account (a copy of production data) from my personal harness — both the reporting warehouse (`REPORTING_DB_*`, per-org CRM object model) and the CDC replica of the app Postgres (`POSTGRES_DB_*`, raw application tables). Self-contained `snow` CLI wrapper, read-only by default. Use for reporting/analytics investigation, checking warehouse state, verifying what the reporting pipeline landed, or reading prod application tables that `db` can't reach — including the workflow/flow-engine tables (`user_flow`, `flow_definition`, `flow_run`, `user_flow_folder`). Distinct from `db`, which queries live Postgres (local/dev only). Triggers on "query snowflake", "check the warehouse", "look up X in snowflake", "query the reporting data", "how many flows/flow runs", "query user_flow / flow_definition / flow_run".
+description: Query Reevo's Snowflake account (a copy of production data) from my personal harness — both the reporting warehouse (`REPORTING_DB_*`, per-org CRM object model) and the CDC replica of the app Postgres (`POSTGRES_DB_*`, raw application tables). Runs through the Snowflake MCP connector — no login, works in background sessions. Use for reporting/analytics investigation, checking warehouse state, verifying what the reporting pipeline landed, or reading prod application tables that `db` can't reach — including the workflow/flow-engine tables (`user_flow`, `flow_definition`, `flow_run`, `user_flow_folder`). Distinct from `db`, which queries live Postgres (local/dev only). Triggers on "query snowflake", "check the warehouse", "look up X in snowflake", "query the reporting data", "how many flows/flow runs", "query user_flow / flow_definition / flow_run".
 ---
 
 # snowflake — query the reporting warehouse + app-Postgres replica
 
-> Personal harness tool, self-contained. Wraps the official `snow` CLI the same way `db` wraps
-> `psql`. Auth lives in the CLI's own config (`~/Library/Application Support/snowflake/config.toml`
-> on macOS); no credentials in this repo.
+> Personal harness tool. Queries go through the **Snowflake MCP connector**, which authenticates
+> with a self-refreshing OAuth token — no browser step, and it works in a background session.
+> No credentials in this repo.
 
 ## Target
 
@@ -22,21 +22,22 @@ Both hold a **copy of production data**. There is no local Snowflake. Treat ever
 touching real prod-shaped data.
 
 The **`db`** skill queries *live* Postgres — local Docker or shared Dev Aurora — and **cannot
-reach prod**. So `POSTGRES_DB_PROD` here is the only read path to prod application tables.
+reach prod**. So `POSTGRES_DB_PROD` here is the only prod read path I can reach on my own — but it
+is a lagging copy, so for anything time-sensitive ask the user instead (see below).
 
 ## How to run
 
+Call **`mcp__claude_ai_Snowflake__sql_exec_tool`** with a single SQL statement. That is the whole
+interface — there is no wrapper script and no `snow` CLI.
+
 ```
-bash $HOME/Desktop/code/mt-devkit/.claude/skills/snowflake/snowquery.sh [--csv|--json] [--write] "SQL"
+mcp__claude_ai_Snowflake__sql_exec_tool(sql: "SELECT current_account(), current_role()")
 ```
 
-- **Default:** `bash $HOME/Desktop/code/mt-devkit/.claude/skills/snowflake/snowquery.sh "SELECT current_account(), current_role();"`
-- `--csv` / `--json` for machine-readable rows (default is a human table).
-- `-c <name>` to target a different named connection (default `reevo`, override with
-  `$SNOWFLAKE_CONNECTION`).
+The session runs as your own user with role `ACCOUNT_READONLY`, on warehouse `COMPUTE_WH`.
 
-The script resolves the connection itself — never construct a raw `snow sql` command or pass
-credentials on the command line.
+**If the tool isn't there**, the connector isn't set up or Claude Code hasn't restarted since it
+was — see [Prereqs](#prereqs).
 
 ## Finding your way around — reporting warehouse
 
@@ -153,33 +154,43 @@ GROUP BY 1 ORDER BY 1;
 **Deprecated:** `WORKFLOW_TRIGGER_EVENT` sits in the same schema but is dead — last synced
 2026-07-23, newest row created 2025-11-13. Don't build on it.
 
+## Snowflake lags prod — don't use it for fresh incidents
+
+Snowflake is a **synced copy**, not the live database. Rows arrive after a delay, so anything that
+happened very recently may be missing or stale here.
+
+**When recency matters — a live incident, a bug reported minutes ago, "did this just change?" —
+say so and ask me to run the query against the prod Postgres directly.** Don't present
+possibly-stale Snowflake numbers as the current state of prod. The `db` skill only reaches
+local/dev, so I am the only path to live prod.
+
+For `POSTGRES_DB_*` tables, `max(_synced_at)` shows how current the replica is — check it before
+trusting a count.
+
 ## Guardrails
 
-- **Read-only by default.** The script checks the leading keyword of *every* `;`-separated
-  statement and refuses anything that isn't `SELECT` / `WITH` / `SHOW` / `DESCRIBE` / `EXPLAIN` /
-  `USE`. Pass `--write` to override deliberately.
-- That check is a **seatbelt against typos, not a security boundary** — a `;` inside a string
-  literal can trip a false refusal, and it is trivially bypassed with `--write`. The real
-  protection is connecting with a **read-only Snowflake role**.
+- **Nothing screens your SQL.** There is no client-side read-only check — whatever you send is
+  what runs. The only thing standing between a typo and production is the `ACCOUNT_READONLY` role.
+  Read the statement before you send it.
+- **This is a copy of production data.** Treat every query as touching real customer rows.
 - **Prefer `LIMIT`.** Warehouse tables are large and every query burns warehouse credits.
 
 ## Prereqs
 
 | | |
 |---|---|
-| CLI | `brew install snowflake-cli` (provides `snow`) |
-| Connection | `reevo` — account `VOB45637`, warehouse `REPORTING_PROD_WH`, database `REPORTING_DB_PROD`, `externalbrowser` auth. Recreate with `snow connection add -n reevo -a VOB45637 -u <you> -w REPORTING_PROD_WH -d REPORTING_DB_PROD -A externalbrowser`. |
-| Role | Not pinned on the connection — the session uses your Snowflake default role. `REPORTING_PROD_ROLE` is the backend *service* role; don't assume it's granted to a human user. Check with `SELECT current_role()`. |
-| Auth | SSO via browser. Needs a browser reachable from the terminal — **the first login must happen in an interactive session**, not a background job. |
-| Re-auth | The cached token covers roughly a working session; when it expires the script surfaces the CLI's auth error and you re-run the login. |
+| Setup | Add the Snowflake connector in **Claude Desktop** → Connectors → Add → Browse connectors → Snowflake. Fill Server URL / Client ID / Client Secret from the 1Password item *"Snowflake MCP OAuth client ID / secret"*. It then propagates to Claude Code. Steps live in the team SOP, *"[SOP] Snowflake MCP — Personal Pro Max Setup"*. |
+| Server URL | `https://rfykuqb-okb87613.snowflakecomputing.com/api/v2/databases/FIVETRAN_DATABASE/schemas/MCP/mcp-servers/CLAUDE_MCP_SERVER` |
+| Auth | OAuth, self-refreshing. No browser step after the one-time setup, so it works in a background session. |
+| Role | `ACCOUNT_READONLY` — reaches `REPORTING_DB_*`, `POSTGRES_DB_*`, `FIVETRAN_DATABASE`, `AI_TRACES` and the rest. Confirm with `SELECT current_role()`. |
+| Don't use `claude mcp add` | The CLI flow's `localhost` callback is not in the integration's allowed redirect URIs, so authorization fails with *"There is a mismatch in the given redirect uri with the one in the registered OAuth client integration."* Desktop's callback is registered; the CLI's is not. |
 
 ## Failure hints
 
-- `snow: command not found` → `brew install snowflake-cli`.
-- `no Snowflake connection named 'reevo'` → run the `snow connection add` line above. The script
-  asks `snow connection list` rather than probing a config path, since that path is
-  platform-dependent.
-- Auth / token errors → re-run the browser login interactively; a background session cannot
-  complete SSO.
-- `refusing to run a non-read statement` → intended. Re-read the SQL; add `--write` only if the
-  mutation is genuinely what you want.
+- **Tool not available** → the connector isn't set up, or Claude Code hasn't been restarted since
+  it was. The MCP list is read at session start.
+- **Redirect-uri mismatch during authorization** → you registered the server via `claude mcp add`
+  instead of the Desktop connector. Remove it (`claude mcp remove snowflake -s user`) and set it
+  up in Desktop.
+- **Empty result from an unqualified table name** → reporting data is per-org; fully qualify as
+  `<database>.<schema>.<table>`.
