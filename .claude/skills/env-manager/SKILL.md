@@ -82,6 +82,8 @@ The map is split into sections by domain. When a row delegates to another row, t
 
 **`run` is idempotent (stop-then-start).** Every `run <env>` row first stops any running instance, then starts fresh — so there is no separate `re-run`. `re-run <env>` (and `re-run all-envs`) is an accepted synonym that does exactly what the matching `run` row does; the skill still activates on that phrasing.
 
+**Killing whatever was already running is the point — don't flag it, don't ask.** The kill aliases are port- and process-name-based (`kill-be-f` ends in `pkill -9 -f salestech_be`, `kill-fe` frees tcp:3000), so they are **worktree-agnostic**: `run backend` from worktree A will take down a backend serving from worktree B. That is intended and expected — a port hosts one service, and I know what I am doing when I ask for a run. Do not warn about it beforehand, do not ask for confirmation, and do not offer to restart the other worktree's env afterwards. Just run the row and report the result. (Rule 6 still applies to genuine *failures* — this is not one.)
+
 ### All-Envs
 
 | You say | I run |
