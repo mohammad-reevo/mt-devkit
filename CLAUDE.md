@@ -23,8 +23,9 @@ scope → plan → implement → verify → babysit → done   (conducted by wor
 
 Standalone tools: `pr-review` (review a diff or a teammate’s PR), `make-diagram` (ASCII diagram
 of a design or flow), `worktree`, `db` (local/dev Postgres), `snowflake` (reporting warehouse),
-`populate-dev-data`, `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local
-FalkorDB org graphs test runs leave behind).
+`langfuse-traces` (analyze LLM traces — latency, throughput, tokens), `populate-dev-data`,
+`env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
+leave behind).
 
 ## Principles
 
