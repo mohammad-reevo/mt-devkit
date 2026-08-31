@@ -102,12 +102,26 @@ if [[ ! -d "$wt" ]]; then
     git -C "$main" worktree add -b "$branch" "$wt" origin/main >&2
 fi
 
-# Rewrite REEVO_BACKEND_PATH in a frontend env file to this worktree's own backend.
-# Line-scoped: only that key changes; no secret line is read or altered. BSD sed (macOS).
+# Point REEVO_BACKEND_PATH in a frontend env file at this worktree's own backend.
+# Line-scoped: only that key is touched; no secret line is read, printed, or altered. The
+# grep is a pattern test, so nothing from the file reaches stdout either way. BSD sed (macOS).
+#
+# Rewrite OR append: a bare `sed s/^KEY=.*/.../` silently no-ops when the key is absent, which
+# leaves the worktree's frontend with no backend path at all — it then resolves against whatever
+# default applies (in practice the main checkout), and the only symptom is `run-fe-2`'s token-gen
+# hitting the wrong backend so :3000 never comes up. Appending when the key is missing makes this
+# hold regardless of what the copied env happened to contain.
 fix_backend_path() {
     local f="$1"
     [[ -f "$f" ]] || return 0
-    sed -i '' -E "s#^REEVO_BACKEND_PATH=.*#REEVO_BACKEND_PATH=${wt}/salestech-be#" "$f"
+    if grep -q '^REEVO_BACKEND_PATH=' "$f"; then
+        sed -i '' -E "s#^REEVO_BACKEND_PATH=.*#REEVO_BACKEND_PATH=${wt}/salestech-be#" "$f"
+    else
+        # Guard the newline: appending to a file whose last line lacks one would otherwise
+        # concatenate onto it and corrupt both keys.
+        [[ -s "$f" && -n "$(tail -c 1 "$f")" ]] && printf '\n' >> "$f"
+        printf 'REEVO_BACKEND_PATH=%s/salestech-be\n' "${wt}" >> "$f"
+    fi
 }
 
 # --- 2. Sub-repo worktrees + env + fix + deps ----------------------------------------------

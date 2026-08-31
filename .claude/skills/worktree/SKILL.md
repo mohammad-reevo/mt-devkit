@@ -24,9 +24,10 @@ the first entry of `git worktree list` in the parent repo; fall back to
 
 1. Run the setup script (it **syncs all four primary checkouts to fresh main** first, then
    creates the parent + sub-repo worktrees on `mohammad/<name>`,
-   copies `.env*` + nested frontend env + `settings.local.json`, **rewrites `REEVO_BACKEND_PATH`**
-   in the worktree's frontend env to `<worktree>/salestech-be` via a line-scoped in-place sed —
-   secrets never read into context — and runs `uv sync`):
+   copies `.env*` + nested frontend env + `settings.local.json`, **sets `REEVO_BACKEND_PATH`**
+   in the worktree's frontend env to `<worktree>/salestech-be` — rewriting the key in place, or
+   appending it when the copied env doesn't carry it, so the path is set either way; line-scoped,
+   so secrets are never read into context — and runs `uv sync`):
    ```bash
    bash $HOME/Desktop/code/mt-devkit/.claude/skills/worktree/worktree_setup.sh "<name>" "$MAIN"
    ```
