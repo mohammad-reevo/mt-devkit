@@ -64,10 +64,18 @@ you run the verification.
 - **Scripts-only** → run the script/flow (directly or via a subagent), capture pass/fail + the
   key output.
 - **N/A** → note "no manual verification needed: `<reason>`".
-- **In-app** → bring the local env up via env-manager **`run all-envs`** (the whole stack in one
-  command — not individual `run backend` / `run frontend`), then drive the app live (browser MCP)
-  with **me directing**: you propose a check, run it when I say go, we look at the result together,
-  I call pass/fail. You can suggest checks; I steer. Capture a screenshot for UI changes.
+- **In-app** → bring the local env up via env-manager **`run backend`** — standalone, that row
+  already chains `run frontend` after it (the frontend caches a token the backend mints at startup,
+  so it must be restarted against the fresh backend). Don't use `run all-envs` here: it additionally
+  recycles docker and realtime, which a webapp check doesn't need and which costs minutes.
+  Then drive the app live (browser MCP) with **me directing**: you propose a check, run it when I
+  say go, we look at the result together, I call pass/fail. You can suggest checks; I steer.
+  Capture a screenshot for UI changes.
+
+  **Check whose services are already running first.** Ports 8000/3000 are shared across worktrees,
+  so another session's stack may hold them — and verifying against it proves nothing about your
+  branch. Resolve each listening pid's worktree (`lsof -p <pid> -a -d cwd -Fn`) before trusting it,
+  and if the stack belongs to another worktree, ask me before taking the ports.
 
 **No workarounds** — if something needs a hack to test (flag off, missing data, auth), that's a
 failure to surface and stop on, not a step to route around.
