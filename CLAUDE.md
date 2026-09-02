@@ -22,7 +22,8 @@ scope → plan → implement → verify → babysit → done   (conducted by wor
 - **done** — gate the PR (CI green + threads resolved), then tear down the worktree.
 
 Standalone tools: `pr-review` (review a diff or a teammate’s PR), `make-diagram` (ASCII diagram
-of a design or flow), `worktree`, `db` (local/dev Postgres), `snowflake` (reporting warehouse),
+of a design or flow), `kb` (the cross-session knowledge base), `worktree`, `db` (local/dev
+Postgres), `snowflake` (reporting warehouse),
 `langfuse-traces` (analyze LLM traces — latency, throughput, tokens), `populate-dev-data`,
 `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
 leave behind).
@@ -55,6 +56,9 @@ durable things worth not explaining twice. Design: `spec/knowledge-base-design.m
 you're working on as a signal to open that entry — you won't otherwise know it exists. If you
 find yourself investigating something an entry already covers, the index line was written badly;
 say so rather than silently re-deriving it.
+
+Reading an entry is free. **Writing goes through the `kb` skill**, which shows a diff and waits —
+never hand-edit the store.
 
 @knowledge-base/INDEX.md
 
