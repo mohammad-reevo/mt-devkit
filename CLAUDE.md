@@ -42,7 +42,21 @@ leave behind).
 - `.claude/` — the harness: `skills/`, `rules/`, `hooks/`.
 - `spec/` — design docs + per-idea scope/plan files.
 - `tasks/` — deferred tooling chores (the `claude-task` system).
+- `knowledge-base/` — context that outlives a session (gitignored; see below).
 - Product sub-repos (`salestech-be`, `frontend-monorepo`, …) are gitignored siblings.
+
+## Knowledge base
+
+`knowledge-base/` carries what would otherwise be re-derived or re-explained every session:
+`projects/` for where a project stands and what its tickets actually cover, `concepts/` for
+durable things worth not explaining twice. Design: `spec/knowledge-base-design.md`.
+
+**Its index is imported below, so every session sees it.** Treat a line that matches what
+you're working on as a signal to open that entry — you won't otherwise know it exists. If you
+find yourself investigating something an entry already covers, the index line was written badly;
+say so rather than silently re-deriving it.
+
+@knowledge-base/INDEX.md
 
 ## Status — migration in progress
 

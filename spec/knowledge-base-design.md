@@ -129,7 +129,15 @@ where knowledge bases fill with junk.
 
 ## Open items
 
-- **Verify the `@` import resolves a gitignored path** (PR 1). Fallback is a `SessionStart` hook.
+- **The `@` import is partly unverified** (checked against the Claude Code docs, PR 1). Confirmed:
+  imports are recursive to a **depth of 4 hops**, and **`/context` lists loaded memory files** —
+  that is how to verify the index actually entered a session. **Undocumented, and therefore a
+  real risk:** whether import resolution respects `.gitignore` (nothing suggests it is git-aware;
+  it reads as a plain filesystem read), and **what happens when the target is missing** — silent
+  no-op, warning, or an error that breaks the rest of `CLAUDE.md`. Because the worst case takes
+  the whole harness down rather than just the KB, **`INDEX.md` must always exist**; the `kb`
+  skill is responsible for guaranteeing that. Fallback if the import proves unreliable: a
+  `SessionStart` hook that injects the file.
 - **Backup.** Gitignored means a machine loss loses the KB. If that matters later, the fix is
   small: its own private repo inside the ignored directory.
 - **Seeding is local, non-PR work.** The KB content is gitignored, so these four PRs ship only
