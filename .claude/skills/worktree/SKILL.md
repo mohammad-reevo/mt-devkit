@@ -27,7 +27,8 @@ the first entry of `git worktree list` in the parent repo; fall back to
    copies `.env*` + nested frontend env + `settings.local.json`, **sets `REEVO_BACKEND_PATH`**
    in the worktree's frontend env to `<worktree>/salestech-be` — rewriting the key in place, or
    appending it when the copied env doesn't carry it, so the path is set either way; line-scoped,
-   so secrets are never read into context — and runs `uv sync`):
+   so secrets are never read into context — **symlinks `knowledge-base/` back to the primary
+   checkout**, and runs `uv sync`):
    ```bash
    bash $HOME/Desktop/code/mt-devkit/.claude/skills/worktree/worktree_setup.sh "<name>" "$MAIN"
    ```
@@ -97,6 +98,10 @@ reevo-realtime branch). `—` for a missing sub-repo. No `EnterWorktree`. If non
   passes afterwards without a manual pull. Best-effort: offline degrades to a stale base, never
   to a failed create. A primary that is dirty or off `main` is fetched but not fast-forwarded.
 - **Remote branches are never touched** — they back open PRs; GitHub deletes them on merge.
+- **`knowledge-base/` is a symlink, not a copy.** There is one store, in the primary checkout.
+  A copy would fork per worktree and whichever half happened to get written would win by
+  accident; and without the link there'd be no `INDEX.md` for `CLAUDE.md` to import, in every
+  worktree — which is every funnel session. Teardown removes the link, never the store.
 - One logical feature branch `mohammad/<name>` in every repo — no ephemeral `wt-<name>`.
 - Worktrees share Docker infra (DB / Redis / Temporal) — only code differs.
 - `.env` is copied + path-fixed on disk by the script, never read into the conversation.

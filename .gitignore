@@ -13,7 +13,7 @@ __pycache__/
 
 # Claude artifacts
 spec/
-knowledge-base/
+knowledge-base
 
 # Worktrees
 worktrees/
