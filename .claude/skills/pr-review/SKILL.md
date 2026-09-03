@@ -90,6 +90,12 @@ and their unresolved threads. See `worktree` § `create-review`.
 
 Full mode only — in `mini` skip this section entirely and use § Mini mode instead.
 
+**Check the knowledge base first.** Scan the index in your context for anything covering the area
+under review — why a thing is shaped the way it is, a gotcha, what a project's scope actually
+covers. If it fires, read the entry and **put what it says in the lens briefs**. A reviewer that
+doesn't know a design was deliberate reports it as a finding, and that false positive costs more
+than the lookup did.
+
 Dispatch **three `reviewer` subagents in parallel** — one per lens: `correctness`, `house-rules`,
 `duplication` — in a single message so they actually run concurrently.
 

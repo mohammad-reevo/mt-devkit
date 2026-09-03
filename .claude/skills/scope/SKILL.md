@@ -58,6 +58,13 @@ not as established fact, and not as part of the frame.
 The real first research pass. Its job is not "what exists in this area" — it's **what is
 actually true here**: how does this work today, and where does it actually break.
 
+**Check the knowledge base before dispatching anything.** An entry may already hold what a
+research pass is about to re-derive — how a subsystem fits together, why something is shaped the
+way it is, what a project's tickets actually cover. Scan the index in your context; if nothing
+there fires but the area feels previously-trodden, invoke **`kb`** `search`. This is cheap and it
+runs before the expensive part, which is the entire point — re-investigating what the KB already
+holds is the cost this store exists to remove.
+
 Read-only. Dispatch Explore agent(s), **scaled to the idea** — one for a single-surface
 change, more when it spans repos or both backend and frontend. Keep the grounding they return
 (which components are shared, how many consumers, which call sites); that detail is what the
