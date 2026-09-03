@@ -69,24 +69,32 @@ fine (merge happens separately from your queue).
 
 Run these **per worktree**, for each one that passed its own gate.
 
-1. **Delete matching spec + scratch files** — for each branch, strip `mohammad/` → `<slug>`;
+1. **Capture what outlives the worktree.** If this work belongs to a project with an entry under
+   `knowledge-base/projects/`, invoke **`kb`** `update` to record what this PR actually changed —
+   scope that shifted, decisions taken while implementing, anything I'd otherwise have to
+   re-explain next session. If the **project itself** is finished (not just this PR), invoke
+   **`kb`** `graduate <project>` so its durable residue reaches `concepts/` first.
+   **This step is first because step 2 deletes the scope and plan files**, which is where that
+   reasoning currently lives — after that it isn't recoverable. No project entry and nothing
+   worth keeping is a fine answer: say so in one line. Don't manufacture an entry per PR.
+2. **Delete matching spec + scratch files** — for each branch, strip `mohammad/` → `<slug>`;
    delete `~/.claude/spec/<slug>-plan.md` and `<slug>-scope.md` if present, and remove the
    scratch dir `~/.claude/tmp/<slug>/` if present (see `scratch-files.md`). Plan-optional: a
    branch with no spec files just skips the spec part. Use plain `rm` for the spec files and
    `rm -r` for the scratch dir — **never `rm -rf`** (the `-f` flag is permission-blocked and
    treated as dangerous; it gets denied).
-2. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
+3. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
    the worktree first, removes the sub-repo + parent worktrees, and deletes the **local**
    feature branches: `mohammad/<slug>` **and** whatever each tree actually had checked out).
    Those differ whenever a session splits its work — one sub-repo ends up on a branch named
    for the second PR rather than for the worktree, and matching on the worktree name alone
    strands it in the primary checkout. **Remote branches are never touched** — they back the
    open PRs and GitHub deletes them on merge.
-3. **Don't touch or pull main** — I handle that separately.
+4. **Don't touch or pull main** — I handle that separately.
 
 ## Report
-What was closed, **per worktree**: the PR link(s), which spec files were deleted, and that the
-worktree was removed. If a PR passed on the queued-to-merge exception, **say so and name the
+What was closed, **per worktree**: the PR link(s), what went into the knowledge base (or that
+nothing did), which spec files were deleted, and that the worktree was removed. If a PR passed on the queued-to-merge exception, **say so and name the
 checks still running** — I'm closing out before CI finished, and GitHub will land it unattended.
 Name any worktree left standing because its own gate failed, so nothing is silently skipped.
 

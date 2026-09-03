@@ -129,6 +129,11 @@ where knowledge bases fill with junk.
 
 ## Open items
 
+- **RESOLVED 2026-09-02 — the import works, including for a gitignored target.** A session's
+  instruction re-read listed `knowledge-base/INDEX.md` with its content inlined, which settles
+  the load-bearing question below: import resolution is a plain filesystem read and is **not**
+  git-aware. Still open, and still the reason `INDEX.md` must always exist: what happens when the
+  target is **missing**. Original note follows.
 - **The `@` import is partly unverified** (checked against the Claude Code docs, PR 1). Confirmed:
   imports are recursive to a **depth of 4 hops**, and **`/context` lists loaded memory files** —
   that is how to verify the index actually entered a session. **Undocumented, and therefore a
