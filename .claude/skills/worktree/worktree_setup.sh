@@ -179,6 +179,18 @@ fi
 
 mkdir -p "${wt}/tmp"
 
+# Knowledge base: ONE store, symlinked in rather than copied.
+#
+# CLAUDE.md imports @knowledge-base/INDEX.md, and the store is gitignored, so a
+# fresh worktree has no such file -- a missing import target in every worktree,
+# which is every funnel session. A copy would be worse than the break: the store
+# would fork per worktree, and whichever half got written to would win by accident.
+# So link, and let the primary checkout hold the only copy.
+mkdir -p "${main}/knowledge-base"
+if [[ ! -e "${wt}/knowledge-base" ]]; then
+    ln -s "${main}/knowledge-base" "${wt}/knowledge-base"
+fi
+
 be_wt="${wt}/salestech-be"
 if [[ -z "$review_ref" && -f "${be_wt}/pyproject.toml" ]]; then
     (cd "$be_wt" && uv sync --quiet)

@@ -149,3 +149,32 @@ where knowledge bases fill with junk.
   machinery — no entry ever appears in a diff. First entries to write by hand: the
   inline-computed-fields project doc, and the flow concepts (`flow_definition` / `user_flow` /
   `flow_run` structure, system errors, common queries).
+
+## Defect found on merge (2026-09-03) — the store is single-instance, symlinked into worktrees
+
+Shipping PRs 1–4 exposed a hole the design didn't anticipate: **`knowledge-base/` is a
+per-checkout directory, and it is gitignored.** So the primary checkout had no
+`knowledge-base/INDEX.md` at all (the file only ever existed in the authoring worktree), and
+`CLAUDE.md` there imported a target that wasn't on disk — the exact missing-target case flagged
+as the residual risk. Four of five existing worktrees were in the same state, and
+`worktree_setup.sh` would have reproduced it for every future one.
+
+That is worse than it first looks, because **every funnel session runs in a worktree** — so the
+store would have been invisible precisely where it was meant to be used.
+
+**Fix: one store, in the primary checkout, symlinked into each worktree** by `worktree_setup.sh`.
+Copying was rejected deliberately — a copy forks per worktree, and whichever half happened to get
+written to would win by accident, which is a silent-divergence bug in a store whose whole purpose
+is being the single place a fact lives.
+
+Verified rather than assumed, since the target is the only copy: `rm -r` on a directory
+containing a symlink removes the link and leaves the target intact, so `worktree_teardown.sh`
+(which ends in `rm -r "$wt"`) cannot destroy the store.
+
+The write gate is unaffected — `kb_write_gate_hook.py` matches on the `knowledge-base` path
+*segment* and does not resolve symlinks, so a write through a worktree's link still gates.
+
+One gotcha the switch surfaced: the ignore pattern had to lose its trailing slash.
+`knowledge-base/` matches a directory but **not a symlink**, so each worktree's link was
+offered up for commit — a machine-specific absolute path. `knowledge-base` (no slash)
+covers both.
