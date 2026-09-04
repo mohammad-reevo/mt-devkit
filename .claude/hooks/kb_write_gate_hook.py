@@ -19,6 +19,21 @@ from meaningless. The store was consequently unwritable from anywhere.
 So the `kb` skill writes through the shell instead, which those guards do not
 police, and this gate moved with it.
 
+WHY IT DENIES RATHER THAN ASKS
+------------------------------
+It first used permissionDecision "ask", which is a NO-OP here: verified by probe
+on 2026-09-04 -- the hook fired and returned "ask" for the exact command, and the
+write went through with no confirmation, because these sessions run with
+defaultMode "bypassPermissions". "deny" is honoured in that mode (the worktree
+gate blocks writes in bypass sessions all day), so the gate denies by default and
+recognises one visible escape: a literal MT_KB_WRITE=1 prefix on the command.
+
+Be clear about what that buys. The marker is added by the agent, so it is a
+declaration, not a lock -- it cannot stop a determined write. What it does stop
+is an INCIDENTAL one: no KB change can happen without a deliberate, visible token
+in the command, which is exactly the "I always know when the store changed"
+requirement. Same shape as MT_TEST_SCOPE_GATE=0.
+
 WHAT IT CAN AND CANNOT SEE
 --------------------------
 Recognising "this arbitrary shell command writes to the KB" is not decidable --
@@ -41,8 +56,11 @@ import json
 import re
 import sys
 
-# Kept identical to the constant of the same name in worktree_gate_hook.py.
 KB_DIR_SEGMENT = "knowledge-base"
+
+# The one sanctioned escape: a literal prefix, visible in the command itself, so
+# a write is never invisible in the transcript.
+WRITE_MARKER = "MT_KB_WRITE=1"
 
 # Write operators worth recognising. Read-only commands (grep/ls/cat-without-
 # redirect) deliberately do not appear -- reading the store is free.
@@ -62,12 +80,12 @@ def _allow():
     sys.exit(0)
 
 
-def _ask(reason):
+def _deny(reason):
     json.dump(
         {
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
-                "permissionDecision": "ask",
+                "permissionDecision": "deny",
                 "permissionDecisionReason": reason,
             }
         },
@@ -95,13 +113,18 @@ def main():
     if not _looks_like_kb_write(command):
         _allow()
 
-    _ask(
+    if WRITE_MARKER in command:
+        _allow()  # deliberate and visible -- that is the whole bar
+
+    _deny(
         "KB write gate: this writes to the knowledge base, which is gitignored -- "
-        "nothing after the fact will show it changed, so it gets confirmed now.\n"
-        "  Before applying, show the change as a fenced ```diff block "
-        "(- old, + new), then apply what was agreed.\n"
-        "  The `kb` skill does this for you and owns the index-line and one-page "
-        "rules; prefer it over a hand-rolled write."
+        "nothing after the fact will show it changed, so no write happens "
+        "unseen.\n"
+        "  1. Show the change as a fenced ```diff block (- old, + new).\n"
+        "  2. Get an explicit yes.\n"
+        "  3. Re-run the command prefixed with {marker} .\n"
+        "  The `kb` skill does all three and owns the index-line and one-page "
+        "rules; prefer it over a hand-rolled write.".format(marker=WRITE_MARKER)
     )
 
 

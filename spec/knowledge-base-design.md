@@ -251,3 +251,30 @@ not a wall; the behaviour comes from the skill and the `doc-edit-diff-first` rul
 constraint surfaced, because each was verified against the layer I had just written rather than
 through the real path. A guard's behaviour is only established by exercising the actual operation
 in the actual context — anything else tests your model of the system, not the system.
+
+## Measured 2026-09-04 — `ask` is a no-op under bypassPermissions; the gate now denies
+
+The open question since PR 3 is answered, and the answer is the unwelcome one.
+
+Probe, run through the real path: the hook is live, wired on the `Bash` matcher, and the write
+matched its patterns — and the heredoc executed with **no confirmation at all**. Disambiguated by
+piping that exact command at the hook directly, which returned
+`{"permissionDecision": "ask", ...}`. So the hook fired and the decision was swallowed, because
+these sessions run `defaultMode: "bypassPermissions"`. An `ask` gate in this setup is theatre.
+
+`deny` **is** honoured in bypass mode — observable all session, since `worktree_gate_hook` blocked
+writes repeatedly throughout it.
+
+**So the gate denies by default and recognises one escape: a literal `MT_KB_WRITE=1` prefix.**
+The `kb` sequence is now fixed: diff → explicit yes → marked write.
+
+What that buys, stated honestly: the marker is added by the agent, so it is a declaration, not a
+lock, and it cannot stop a determined write. What it does stop is an **incidental** one — nothing
+reaches the store without a deliberate token sitting in plain sight in the command. That is the
+"I always know when the store changed" requirement, met by a mechanism that actually functions in
+the mode these sessions run in. Same shape as `MT_TEST_SCOPE_GATE=0`.
+
+**Worth generalising:** a hook's decision *type* is not a free choice — `ask` and `deny` are not
+two flavours of the same thing here, because permission mode silently removes one of them. Any
+future gate in this harness that wants to interrupt rather than block should assume `ask` does
+nothing until proven otherwise on this machine.
