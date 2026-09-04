@@ -180,17 +180,21 @@ alias awssso='"$MT_ENVCTL" awssso'
 alias alembic-up='"$MT_ENVCTL" alembic-up'
 alias d-up='"$MT_ENVCTL" d-up'
 alias d-down='"$MT_ENVCTL" d-down'
+alias d-cleanup='"$MT_ENVCTL" d-cleanup'
 alias gen-be='"$MT_ENVCTL" gen-be'
 alias run-be='"$MT_ENVCTL" run-be'
+alias kill-be='"$MT_ENVCTL" kill-be'
 alias kill-be-f='"$MT_ENVCTL" kill-be-f'
 alias gen-fe='"$MT_ENVCTL" gen-fe'
+alias run-fe='"$MT_ENVCTL" run-fe'
 alias run-fe-2='"$MT_ENVCTL" run-fe-2'
 alias kill-fe='"$MT_ENVCTL" kill-fe'
 alias run-rt='"$MT_ENVCTL" run-rt'
 alias kill-rt='"$MT_ENVCTL" kill-rt'
 ```
 
-`kill-be`, `run-fe`, `d-cleanup`, `gpu`, `sz` are untouched — this skill never calls them.
+`kill-be`, `run-fe` and `d-cleanup` are in the script even though no row here calls them — so that
+every local-env command has one home, rather than three living by different rules.
 
 One behaviour change to expect: `run-be` now backgrounds its processes from a script rather than from
 the interactive shell, so they reparent to `init` and survive closing the terminal. Output still goes

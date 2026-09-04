@@ -20,8 +20,9 @@ usage() {
   cat <<'USAGE'
 Usage: envctl.sh <command>   (run from the relevant sub-repo — cwd matters)
 
-  salestech-be:      run-be  kill-be-f  gen-be  alembic-up  awssso  d-up  d-down
-  frontend-monorepo: run-fe-2  kill-fe  gen-fe
+  salestech-be:      run-be  kill-be  kill-be-f  gen-be  alembic-up  awssso
+                     d-up  d-down  d-cleanup
+  frontend-monorepo: run-fe  run-fe-2  kill-fe  gen-fe
   reevo-realtime:    run-rt  kill-rt
 USAGE
 }
@@ -37,6 +38,7 @@ case "$cmd" in
     uv run python -m salestech_be.temporal.workers.chat > logs/chat_worker_logs.txt 2>&1 &
     make start-flow-dep LOG_DIR=logs &
     ;;
+  kill-be)     pkill -f salestech_be ;;
   kill-be-f)
     lsof -ti tcp:8000 | xargs kill -9 2>/dev/null
     pkill -9 -f salestech_be 2>/dev/null
@@ -52,6 +54,11 @@ case "$cmd" in
   d-down)
     mkdir -p logs
     make docker-suspend-dep > logs/docker_down_logs.txt 2>&1
+    ;;
+  d-cleanup)   make docker-cleanup-dep ;;
+  run-fe)
+    mkdir -p logs
+    pnpm dev:webapp > logs/frontend_logs.txt 2>&1 &
     ;;
   run-fe-2)
     mkdir -p logs
