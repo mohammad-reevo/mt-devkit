@@ -18,8 +18,6 @@ Allow (gate does not fire) when:
     UNLESS that worktree is on `main`/`master` (on-main guard -- feature work
     belongs on a feature branch, so those are denied too)
   - target is under ~/.claude         (config must stay editable, incl. this hook)
-  - target is inside knowledge-base/  (one gitignored store, symlinked into every
-                                       worktree; gated by kb_write_gate_hook instead)
 
 Runs under /usr/bin/python3 (macOS system Python 3.9): keep 3.9-compatible
 (no PEP 604 unions, no match/case).
@@ -29,11 +27,6 @@ from __future__ import annotations
 import json
 import os
 import sys
-
-# Kept identical to kb_write_gate_hook.py's constant of the same name: the two
-# hooks must agree on what counts as knowledge-base content, or a write is
-# either double-gated or ungated.
-KB_DIR_SEGMENT = "knowledge-base"
 
 
 def _allow():
@@ -132,21 +125,6 @@ def main():
     # ~/.claude config must always be editable (this hook, rules, settings).
     claude_home = os.path.realpath(os.path.expanduser("~/.claude"))
     if abs_path == claude_home or abs_path.startswith(claude_home + os.sep):
-        _allow()
-
-    # The knowledge base is a single gitignored store living in the primary
-    # checkout, symlinked into every worktree. `realpath` above resolves that
-    # link, so without this exemption a KB write from a worktree looks like a
-    # primary-checkout edit and gets denied -- which made the store unwritable
-    # from anywhere, and `kb` / `done`'s close-out step dead on arrival.
-    #
-    # The exemption is principled, not a patch: this gate keeps TRACKED,
-    # branch-relevant files pristine so parallel branches don't collide. A
-    # gitignored store with exactly one copy has no branch dimension, so there
-    # is nothing to collide -- the same reason ~/.claude is exempt above.
-    # Writes there are gated instead by kb_write_gate_hook.py, which confirms
-    # each one.
-    if KB_DIR_SEGMENT in abs_path.split(os.sep):
         _allow()
 
     repo_root, marker = _enclosing_git_marker(_nearest_existing_dir(abs_path))
