@@ -178,3 +178,38 @@ One gotcha the switch surfaced: the ignore pattern had to lose its trailing slas
 `knowledge-base/` matches a directory but **not a symlink**, so each worktree's link was
 offered up for commit — a machine-specific absolute path. `knowledge-base` (no slash)
 covers both.
+
+## Second defect (2026-09-03) — the store was unwritable from everywhere
+
+The symlink fix above made the KB *readable* everywhere and *writable* nowhere.
+
+`worktree_gate_hook.py` calls `os.path.realpath` on the target before deciding. That resolves a
+worktree's `knowledge-base` symlink back to the primary checkout, so a KB write from inside a
+worktree looked exactly like an edit to the pristine primary and was denied. From the primary
+checkout it was denied too — by that same gate, and in background sessions by Claude Code's own
+isolation guard, which runs *ahead* of user hooks. Net effect: `kb` could never write, and
+`done`'s close-out step was dead on arrival.
+
+The PR-5 claim that "the write gate still fires through a link" was true and irrelevant — it
+verified `kb_write_gate_hook.py`, which indeed does not resolve symlinks, while the hook that
+actually decided the outcome ran earlier in the chain and does.
+
+**Fix: exempt `knowledge-base` from the worktree gate**, beside the existing `~/.claude`
+exemption. This is principled rather than a patch — that gate exists to keep **tracked,
+branch-relevant** files pristine so parallel branches don't collide, and a gitignored store with
+exactly one copy has no branch dimension to collide on. Writes there are gated by
+`kb_write_gate_hook.py` instead, which confirms each one.
+
+Verified by running both hook versions against the same payloads:
+
+| path | before | after |
+|---|---|---|
+| KB via a worktree symlink | DENY | allow |
+| KB in the primary directly | DENY | allow |
+| tracked file in the primary | DENY | DENY |
+| tracked file in a worktree | allow | allow |
+
+**The lesson, and it generalises past this store:** verifying *your* hook is not verifying the
+outcome. Hooks run as a chain, and an earlier one can decide before yours is ever consulted — so
+a gate's behaviour has to be tested through the real path, not by piping a payload at the hook
+you happen to have written.
