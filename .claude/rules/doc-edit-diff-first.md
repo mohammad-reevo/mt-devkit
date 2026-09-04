@@ -44,9 +44,13 @@ lands, it is never seen at all. So the review has to happen at write time, or no
 
 ## Enforcement
 
-For `knowledge-base/` there is a backstop: `kb_write_gate_hook.py` (PreToolUse on **Bash**) raises
-a confirmation on a shell command that both names a `knowledge-base` path and carries a write
-operator, and the `kb` skill owns the diff-and-approve flow.
+For `knowledge-base/` there is a backstop: `kb_write_gate_hook.py` (PreToolUse on **Bash**)
+**denies** a shell command that both names a `knowledge-base` path and carries a write operator,
+unless it is prefixed with a literal `MT_KB_WRITE=1`. So the diff comes first, then the yes, then
+a write whose deliberateness is visible in the command itself. The `kb` skill owns that sequence.
+
+It denies rather than prompting because a confirmation prompt is a no-op under
+`bypassPermissions` — measured, not assumed.
 
 Note what that backstop is not. Recognising every possible shell write is undecidable, so the hook
 matches the shapes the skill actually uses plus the obvious hand-rolled ones; an exotic write can

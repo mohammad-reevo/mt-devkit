@@ -23,16 +23,27 @@ is symlinked into every worktree; three separate guards (Claude Code's session i
 checkout, and refuse. They are right to — a symlink that could be followed into the primary would
 make worktree isolation meaningless.
 
-So writes go through Bash, in this shape:
+So writes go through Bash — and the gate **denies** an unmarked one outright, because a
+confirmation prompt is a no-op in bypass-permissions mode (measured, not assumed). The sequence
+is therefore fixed:
+
+1. **Show the change** as a fenced ```diff block — `-` old, `+` new.
+2. **Get an explicit yes.** Not implied consent from the original request.
+3. **Then write**, with the marker:
 
 ```
-cat > knowledge-base/<path>.md <<'KB_EOF'
+MT_KB_WRITE=1 cat > knowledge-base/<path>.md <<'KB_EOF'
 <the entry>
 KB_EOF
 ```
 
-Keep to that shape. `kb_write_gate_hook.py` matches it to raise the confirmation, and a write in
-some other form may slip past the gate — which defeats the point of having one.
+`MT_KB_WRITE=1` is the one sanctioned escape. It is not a lock — you are the one adding it — but
+it makes an *incidental* write impossible: nothing reaches the store without a deliberate token
+sitting in plain sight in the command. **Never add the marker before step 2 has actually
+happened.** Doing so converts the one real safeguard on this store into decoration.
+
+Keep to that shape. A write in some other form may slip past the matcher, which defeats the
+point of having a gate at all.
 
 ## The store
 
