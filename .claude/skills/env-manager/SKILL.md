@@ -1,13 +1,13 @@
 ---
 name: env-manager
-description: Manage local Reevo dev environment (backend, frontend, realtime, docker) using the user's ~/.zshrc aliases. Triggers on "run backend", "kill backend", "re-run backend", "check backend", "generate backend openapi spec", "run frontend", "run frontend with dev", "kill frontend", "re-run frontend", "check frontend", "generate frontend openapi spec", "run realtime", "kill realtime", "re-run realtime", "check realtime", "run all-envs", "kill all-envs", "re-run all-envs", "check all-envs", "run docker", "kill docker", "re-run docker", "restart docker", "check docker", "reload aliases", "pull <env_name>", "checkout <branch_name> <env_name>", "merge <branch_name> <env_name>", "check branch <env_name>".
+description: Manage local Reevo dev environment (backend, frontend, realtime, docker) via envctl.sh, the script the user's ~/.zshrc aliases also wrap. Triggers on "run backend", "kill backend", "re-run backend", "check backend", "generate backend openapi spec", "run frontend", "run frontend with dev", "kill frontend", "re-run frontend", "check frontend", "generate frontend openapi spec", "run realtime", "kill realtime", "re-run realtime", "check realtime", "run all-envs", "kill all-envs", "re-run all-envs", "check all-envs", "run docker", "kill docker", "re-run docker", "restart docker", "check docker", "reload aliases", "pull <env_name>", "checkout <branch_name> <env_name>", "merge <branch_name> <env_name>", "check branch <env_name>".
 ---
 
 # env-manager
 
 ## Purpose
 
-This skill maps verbal commands to exact bash invocations of the user's `~/.zshrc` aliases. The aliases are the source of truth — if one changes, update only the row in the command map, never re-implement the alias body.
+This skill maps verbal commands to exact bash invocations of `envctl.sh`, the script beside this file that holds the local-env command bodies. That script is the source of truth — the user's `~/.zshrc` aliases are thin wrappers around it. If a command changes, change it in `envctl.sh`; never re-implement a body in a row here.
 
 ## Code changes do NOT require a re-run
 
@@ -23,7 +23,7 @@ When the user invokes this skill with a verbal command (e.g. `/env-manager run b
 
 1. **Match exactly one row** in the command map below. The match is on the user's literal words, in order. If no row matches, tell the user and stop — do not guess.
 2. **Run the row's command verbatim.** Do not paraphrase, reorder, or substitute aliases.
-3. **Use `zsh -ic '<chain>'`** for every alias call. This forces a fresh interactive shell that re-sources `~/.zshrc`, so aliases added mid-session are picked up.
+3. **Call `<ENVCTL>` for every stack command — never `zsh -ic '<alias>'`.** `<ENVCTL>` is the literal path `/Users/mohammad/Desktop/code/mt-devkit/.claude/skills/env-manager/envctl.sh` (always the primary checkout, never a worktree copy). It holds the command bodies; the `~/.zshrc` aliases are thin wrappers around that same script, so the shell and this skill cannot drift. **A worktree-isolated session refuses to reach an alias at all** — both `zsh -ic '<alias>'` and `zsh -c 'source ~/.zshrc; …'` are denied, because the guard cannot prove sourced shell text won't run git outside the worktree — and the `worktree` skill enters every funnel worktree via `EnterWorktree`, so that denial covers every drive. A plain script path has nothing to source, so it passes.
 4. **No extra steps.** No health checks, no readiness waits, no `docker ps` confirmations, no log tails — unless the user explicitly asks.
 5. **Kill chains use `;` not `&&`** so the second cleanup runs even when the first finds nothing to kill.
 6. **If something fails**, stop and report exactly what failed. Do not apply silent workarounds, do not retry with different flags, do not skip steps. The user reads logs themselves.
@@ -99,35 +99,35 @@ The map is split into sections by domain. When a row delegates to another row, t
 
 | You say | I run |
 |---|---|
-| merge `<branch_name>` `<env_name>` | `cd <worktree_root> && cd <env_subdir> && zsh -ic 'gpu && git merge origin/<branch_name>'` |
-| pull `<env_name>` | `cd <worktree_root> && cd <env_subdir> && zsh -ic 'gpu'` and report pull output. |
-| checkout `<branch_name>` `<env_name>` | `cd <worktree_root> && cd <env_subdir> && zsh -ic 'git checkout <branch_name>'`. Report checkout output. Then execute **pull `<env_name>`** (this section) — that handles the upstream fast-forward, so checkout doesn't have to duplicate it. |
+| merge `<branch_name>` `<env_name>` | `cd <worktree_root> && cd <env_subdir> && git pull && git merge origin/<branch_name>` |
+| pull `<env_name>` | `cd <worktree_root> && cd <env_subdir> && git pull` and report pull output. |
+| checkout `<branch_name>` `<env_name>` | `cd <worktree_root> && cd <env_subdir> && git checkout <branch_name>`. Report checkout output. Then execute **pull `<env_name>`** (this section) — that handles the upstream fast-forward, so checkout doesn't have to duplicate it. |
 | check branch `<env_name>` | `git -C <worktree_root>/<env_subdir> branch --show-current`. Report a single line: `<env_name>: <branch_name>`. If the sub-repo directory doesn't exist, report `<env_name>: —`. If branch lookup returns empty, use `unknown`. |
 
 ### Backend
 
 | You say | I run |
 |---|---|
-| run backend | **kill backend** (this section) first — a safe no-op if nothing is running — then `cd <worktree_root> && cd salestech-be && uv sync && mkdir -p logs && zsh -ic 'run-be'`. Idempotent: stops any running backend, then starts fresh. **Then always run frontend (Frontend section) too** — the frontend caches an auth token minted by the backend at its own startup, and re-running the backend invalidates that token, leaving any already-running frontend silently unauthenticated. So `run backend` is really `run-be` → `run-fe-2`; the frontend must be (re)started against the fresh backend. Poll-until-listening per Rule 8 for **both** 8000 and 3000. (This coupling is why a bare backend restart used to leave the frontend dead/stale.) **Exception:** when `run backend` is invoked as a step inside a larger composition that already (re)starts the frontend *after* the backend — i.e. `run all-envs` — skip this trailing frontend run; the composition's own frontend step covers it. Only chain the frontend when `run backend` is the standalone command. |
-| kill backend | `cd <worktree_root> && cd salestech-be && zsh -ic 'kill-be-f'` |
+| run backend | **kill backend** (this section) first — a safe no-op if nothing is running — then `cd <worktree_root> && cd salestech-be && uv sync && mkdir -p logs && <ENVCTL> run-be`. Idempotent: stops any running backend, then starts fresh. **Then always run frontend (Frontend section) too** — the frontend caches an auth token minted by the backend at its own startup, and re-running the backend invalidates that token, leaving any already-running frontend silently unauthenticated. So `run backend` is really `run-be` → `run-fe-2`; the frontend must be (re)started against the fresh backend. Poll-until-listening per Rule 8 for **both** 8000 and 3000. (This coupling is why a bare backend restart used to leave the frontend dead/stale.) **Exception:** when `run backend` is invoked as a step inside a larger composition that already (re)starts the frontend *after* the backend — i.e. `run all-envs` — skip this trailing frontend run; the composition's own frontend step covers it. Only chain the frontend when `run backend` is the standalone command. |
+| kill backend | `cd <worktree_root> && cd salestech-be && <ENVCTL> kill-be-f` |
 | check backend | `lsof -iTCP:8000 -sTCP:LISTEN -nP`. If LISTENING, also run the **PID → worktree+branch lookup** helper for the first listening pid. Report a single line: `backend (port 8000): LISTENING — pid <pid>, worktree: <wt_name>, branch: <branch_name>` or `backend (port 8000): NOT LISTENING`. |
-| generate backend openapi spec | `cd <worktree_root> && cd salestech-be && zsh -ic 'gen-be'` |
+| generate backend openapi spec | `cd <worktree_root> && cd salestech-be && <ENVCTL> gen-be` |
 
 ### Frontend
 
 | You say | I run |
 |---|---|
-| run frontend | **kill frontend** (this section) first — a safe no-op if nothing is running — then `cd <worktree_root> && cd frontend-monorepo && { sed -i '' -E "s#^REEVO_BACKEND_PATH=.*#REEVO_BACKEND_PATH=<worktree_root>/salestech-be#" apps/reevo-webapp/.env 2>/dev/null; true; } && pnpm install && mkdir -p logs && zsh -ic 'run-fe-2'`. Idempotent: stops any running frontend, then starts fresh. The `sed` re-points the frontend's `REEVO_BACKEND_PATH` at **this** worktree's own backend before startup — a no-op in the primary checkout (the value already matches), but the fix in a worktree, where the copied `.env` still points at the main checkout and would otherwise leave `run-fe-2`'s token-gen hitting the wrong backend (`:3000` never comes up). Line-scoped `sed`, so no secret in the `.env` is read into context. |
-| kill frontend | `cd <worktree_root> && cd frontend-monorepo && zsh -ic 'kill-fe'` |
+| run frontend | **kill frontend** (this section) first — a safe no-op if nothing is running — then `cd <worktree_root> && cd frontend-monorepo && { sed -i '' -E "s#^REEVO_BACKEND_PATH=.*#REEVO_BACKEND_PATH=<worktree_root>/salestech-be#" apps/reevo-webapp/.env 2>/dev/null; true; } && pnpm install && mkdir -p logs && <ENVCTL> run-fe-2`. Idempotent: stops any running frontend, then starts fresh. The `sed` re-points the frontend's `REEVO_BACKEND_PATH` at **this** worktree's own backend before startup — a no-op in the primary checkout (the value already matches), but the fix in a worktree, where the copied `.env` still points at the main checkout and would otherwise leave `run-fe-2`'s token-gen hitting the wrong backend (`:3000` never comes up). Line-scoped `sed`, so no secret in the `.env` is read into context. |
+| kill frontend | `cd <worktree_root> && cd frontend-monorepo && <ENVCTL> kill-fe` |
 | check frontend | `lsof -iTCP:3000 -sTCP:LISTEN -nP`. If LISTENING, also run the **PID → worktree+branch lookup** helper for the first listening pid. Report a single line: `frontend (port 3000): LISTENING — pid <pid>, worktree: <wt_name>, branch: <branch_name>` or `frontend (port 3000): NOT LISTENING`. |
-| generate frontend openapi spec | `cd <worktree_root> && cd frontend-monorepo && zsh -ic 'gen-fe'` |
+| generate frontend openapi spec | `cd <worktree_root> && cd frontend-monorepo && <ENVCTL> gen-fe` |
 
 ### Realtime
 
 | You say | I run |
 |---|---|
-| run realtime | **kill realtime** (this section) first — a safe no-op if nothing is running — then `cd <worktree_root> && cd reevo-realtime && pnpm install && mkdir -p logs && zsh -ic 'run-rt'`. Idempotent: stops any running realtime, then starts fresh. |
-| kill realtime | `cd <worktree_root> && cd reevo-realtime && zsh -ic 'kill-rt'` |
+| run realtime | **kill realtime** (this section) first — a safe no-op if nothing is running — then `cd <worktree_root> && cd reevo-realtime && pnpm install && mkdir -p logs && <ENVCTL> run-rt`. Idempotent: stops any running realtime, then starts fresh. |
+| kill realtime | `cd <worktree_root> && cd reevo-realtime && <ENVCTL> kill-rt` |
 | check realtime | `lsof -iTCP:8787 -sTCP:LISTEN -nP`. If LISTENING, also run the **PID → worktree+branch lookup** helper for the first listening pid. Report a single line: `realtime (port 8787): LISTENING — pid <pid>, worktree: <wt_name>, branch: <branch_name>` or `realtime (port 8787): NOT LISTENING`. |
 
 ### mt-devkit
@@ -149,8 +149,8 @@ the shared infra at one known baseline.
 
 | You say | I run |
 |---|---|
-| run docker | Ensure `main` is current and the Docker VM is up, then bring the compose deps up fresh — because **kill docker** now stops the VM, `run docker` must boot it first (this replaces the old "kill docker first" delegation, which would now needlessly stop-then-start the VM). (0) **Refresh `main`:** execute **checkout main backend** (Git section) against the primary checkout. The compose file `d-up` reads and the migrations it applies both come from that checkout, so a stale `main` is exactly what leaves the local DB stamped at a revision it cannot locate (`Can't locate revision identified by ...`). (1) **Start the VM if the daemon is down:** `docker info >/dev/null 2>&1 \|\| docker desktop start` — `docker desktop start` is synchronous, returning when the daemon is ready (~10s), and is skipped entirely when the daemon is already up. (2) **Recycle + bring up deps:** `cd <worktree_root> && cd salestech-be && zsh -ic 'd-down'` (clears any existing deps — a no-op right after a fresh VM start), then `zsh -ic 'awssso && d-up'`. (3) **redis-cluster guard:** after `d-up`, check `salestech_be-redis-cluster` — if it is `Restarting`/unhealthy, its persisted cluster state has tripped `[ERR] Node ... not empty` on recreate; reset only that one ephemeral volume and recreate it (named data volumes like Postgres are untouched): `cd <worktree_root> && docker compose -f salestech-be/deploy/docker-compose.yml --project-directory salestech-be --profile local-deps rm -sfv salestech_be-redis-cluster && docker compose -f salestech-be/deploy/docker-compose.yml --project-directory salestech-be --profile local-deps up -d salestech_be-redis-cluster`. Then poll it to `healthy`. (4) **Reap the FalkorDB test-org graphs** (see the `falkor-cleanup` skill for why): `bash $HOME/Desktop/code/mt-devkit/.claude/skills/falkor-cleanup/falkor_reap.sh`. This is the intended window — `d-up` returns only once FalkorDB is healthy (`up --detach --wait`), and the CDC consumers are backend processes that **run backend** has not started yet, so nothing is mid-write. Each org graph costs ~20 MB of index scaffolding and integration tests mint one org per test, so skipping this is what eventually has the host OOM killer take out vite and the backend. The script no-ops when the container is down; report its one-line `N → M graph(s), X → Y` output. |
-| kill docker | Stop the deps **and** the VM, so the ~10 GB the idle Linux VM holds is actually reclaimed — `d-down` alone only removes containers, but the Apple-Virtualization VM keeps its committed guest RAM for its whole lifetime (Activity Monitor's "Virtual Machine Service" stays multi-GB with zero containers). (1) **If the daemon is up** (`docker info >/dev/null 2>&1`): `cd <worktree_root> && cd salestech-be && zsh -ic 'd-down'` to gracefully remove the compose deps so nothing lingers across the VM cycle. (2) `docker desktop stop` (plain command, no cd — synchronous, ~25s; tears down the VM and backend, leaving only the tiny `vmnetd` privileged helper). If `docker info` already fails, the VM is already stopped — nothing to do. Named data volumes persist across the stop, so **run docker** recovers losslessly (Postgres data survives). |
+| run docker | Ensure `main` is current and the Docker VM is up, then bring the compose deps up fresh — because **kill docker** now stops the VM, `run docker` must boot it first (this replaces the old "kill docker first" delegation, which would now needlessly stop-then-start the VM). (0) **Refresh `main`:** execute **checkout main backend** (Git section) against the primary checkout. The compose file `d-up` reads and the migrations it applies both come from that checkout, so a stale `main` is exactly what leaves the local DB stamped at a revision it cannot locate (`Can't locate revision identified by ...`). (1) **Start the VM if the daemon is down:** `docker info >/dev/null 2>&1 \|\| docker desktop start` — `docker desktop start` is synchronous, returning when the daemon is ready (~10s), and is skipped entirely when the daemon is already up. (2) **Recycle + bring up deps:** `cd <worktree_root> && cd salestech-be && <ENVCTL> d-down` (clears any existing deps — a no-op right after a fresh VM start), then `<ENVCTL> awssso && <ENVCTL> d-up`. (3) **redis-cluster guard:** after `d-up`, check `salestech_be-redis-cluster` — if it is `Restarting`/unhealthy, its persisted cluster state has tripped `[ERR] Node ... not empty` on recreate; reset only that one ephemeral volume and recreate it (named data volumes like Postgres are untouched): `cd <worktree_root> && docker compose -f salestech-be/deploy/docker-compose.yml --project-directory salestech-be --profile local-deps rm -sfv salestech_be-redis-cluster && docker compose -f salestech-be/deploy/docker-compose.yml --project-directory salestech-be --profile local-deps up -d salestech_be-redis-cluster`. Then poll it to `healthy`. (4) **Reap the FalkorDB test-org graphs** (see the `falkor-cleanup` skill for why): `bash $HOME/Desktop/code/mt-devkit/.claude/skills/falkor-cleanup/falkor_reap.sh`. This is the intended window — `d-up` returns only once FalkorDB is healthy (`up --detach --wait`), and the CDC consumers are backend processes that **run backend** has not started yet, so nothing is mid-write. Each org graph costs ~20 MB of index scaffolding and integration tests mint one org per test, so skipping this is what eventually has the host OOM killer take out vite and the backend. The script no-ops when the container is down; report its one-line `N → M graph(s), X → Y` output. |
+| kill docker | Stop the deps **and** the VM, so the ~10 GB the idle Linux VM holds is actually reclaimed — `d-down` alone only removes containers, but the Apple-Virtualization VM keeps its committed guest RAM for its whole lifetime (Activity Monitor's "Virtual Machine Service" stays multi-GB with zero containers). (1) **If the daemon is up** (`docker info >/dev/null 2>&1`): `cd <worktree_root> && cd salestech-be && <ENVCTL> d-down` to gracefully remove the compose deps so nothing lingers across the VM cycle. (2) `docker desktop stop` (plain command, no cd — synchronous, ~25s; tears down the VM and backend, leaving only the tiny `vmnetd` privileged helper). If `docker info` already fails, the VM is already stopped — nothing to do. Named data volumes persist across the stop, so **run docker** recovers losslessly (Postgres data survives). |
 | restart docker | `docker desktop restart` (no cd — path-independent; plain command, not a zsh alias). Restarts the Docker Desktop app/VM itself — use when the daemon hiccups or hangs. Distinct from **run docker** (which starts the VM if the daemon is down, then recreates the compose deps) — use **restart docker** when the daemon is wedged and needs a full app-level stop/start rather than a clean start from stopped. After it returns, run **check docker** (this section) and report its line. |
 | check docker | (1) `docker info >/dev/null 2>&1 && echo "Docker daemon: RUNNING" \|\| echo "Docker daemon: NOT RUNNING"`; (2) if daemon is running, `cd <worktree_root> && docker compose -f salestech-be/deploy/docker-compose.yml --project-directory salestech-be --profile local-deps ps --format '{{.Name}}\t{{.Status}}'`. Do NOT `cd` into `salestech-be` — that pollutes the Bash session cwd and trips the workspace-isolation hook on subsequent calls. Report a single line: `Docker: daemon <running\|not running>, deps <all healthy\|<comma-separated unhealthy/non-Up service names>\|none>`. Use `none` if the compose table is empty, `all healthy` if every row's status starts with `Up` and contains `(healthy)`, otherwise list only the unhealthy/non-Up service names. Do not enumerate healthy services. If the daemon is not running, omit the deps segment. |
 
@@ -158,29 +158,46 @@ the shared infra at one known baseline.
 
 | You say | I run |
 |---|---|
-| reload aliases | `zsh -ic 'sz'` (no cd — path-independent) |
+| reload aliases | `source ~/.zshrc` in **your own** shell — I cannot source it for you (Rule 3). Only needed when the *wrapper set* changes; a change to a command **body** in `envctl.sh` takes effect immediately, with no reload. |
 
-## Why `zsh -ic`?
+## Why a script and not the aliases
 
-The Bash tool's shell is non-interactive (and may be `bash`, not `zsh`), so `~/.zshrc` is never sourced and aliases like `gpu` / `run-be` don't exist there. `zsh -ic '<alias>'` spawns an interactive zsh, which sources `~/.zshrc` and resolves the alias before exiting. Also covers the case where `~/.zshrc` was edited mid-session — the parent shell would still hold the old aliases.
+The Bash tool's shell is non-interactive (and may be `bash`, not `zsh`), so `~/.zshrc` is never sourced and aliases like `run-be` don't exist there. The old bridge was `zsh -ic '<alias>'` — spawn an interactive zsh, let it source `~/.zshrc`, resolve the alias. That is **refused outright in a worktree-isolated session**: the guard cannot prove sourced shell text won't run git outside the worktree, and it rejects `zsh -c 'source ~/.zshrc; …'` on the same grounds. Because the `worktree` skill enters every funnel worktree via `EnterWorktree`, this made every row here unusable during exactly the work the funnel exists to drive — you could not start, stop, or even check the local stack from inside a drive.
 
-## Alias reference (snapshot of `~/.zshrc`)
+So the bodies live in `envctl.sh`, which both callers reach: this skill by path, the user's shell through one-line `~/.zshrc` wrappers (`alias run-be='"$MT_ENVCTL" run-be'`). One definition, so the two cannot drift — the snapshot table this section replaced had silently drifted in three places before anyone noticed (`run-be`'s falkor temporal workers, `awssso`'s `env -u BROWSER`, `kill-be-f`'s `-sTCP:LISTEN`).
 
-Reference only — the live `~/.zshrc` is the source of truth. If a row drifts, update this section.
+## Shell wrappers (one-time `~/.zshrc` setup)
 
-| Alias | Expansion |
-|---|---|
-| `gpu` | `git pull` |
-| `sz` | `source ~/.zshrc` |
-| `alembic-up` | `uv run alembic upgrade head` |
-| `awssso` | `aws sso login --profile $AWS_PROFILE` (where `AWS_PROFILE=workflow`) |
-| `d-up` | `mkdir -p logs && make docker-start-dep > logs/docker_up_logs.txt 2>&1` |
-| `d-down` | `mkdir -p logs && make docker-suspend-dep > logs/docker_down_logs.txt 2>&1` |
-| `gen-be` | `uv run generate_openapi.py` |
-| `run-be` | Backgrounds: `salestech_be` API + temporal workers (`integrity_job`, `chat`) + `make start-flow-dep LOG_DIR=logs` (which itself backgrounds `flow_engine --worker all`, `flow_change_consumer`, `debezium_consumer_v2`, `cdc-partitioner`, and the three `falkor` CDC event consumers — cdc / index / write). Each process redirected to its own `logs/*.txt` (or `logs/*.log` for the make-dispatched ones). The temporal `falkor` workers (workflow & activity) are intentionally NOT started — they only handle on-demand bulk ops (`IndexAll/SpecificOrganizationsWorkflow`, `Validate*Workflow`, `CleanupOrphanedAuthzSetsWorkflow`, `DeleteAllOrganizationsWorkflow`, etc.) triggered from `local_test_helpers/trigger_falkordb_*.py`. Start them manually only when running those helpers: `uv run python -m salestech_be.temporal.workers.falkor --worker workflow` and `--worker activity`. |
-| `kill-be-f` | `lsof -ti tcp:8000 -sTCP:LISTEN \| xargs kill -9 2>/dev/null; pkill -9 -f salestech_be 2>/dev/null; true` |
-| `gen-fe` | `pnpm generate-openapi-client:local` |
-| `run-fe-2` | `pnpm -F ./apps/reevo-webapp dev > logs/frontend_logs.txt 2>&1 &` |
-| `kill-fe` | `lsof -ti tcp:3000 -sTCP:LISTEN \| xargs kill -9 2>/dev/null; true` |
-| `run-rt` | `pnpm dev > logs/dev.log 2>&1 &` |
-| `kill-rt` | `pkill -f "pnpm.*dev" 2>/dev/null; true` |
+This skill works without this step — it calls `envctl.sh` by path. The step exists so the user's own
+shell shares the same definition instead of keeping a second copy that drifts. **Apply it only once
+this change is merged**, since the aliases point at the primary checkout, and pointing them at a file
+that isn't there yet breaks every new terminal:
+
+```zsh
+export MT_ENVCTL="$HOME/Desktop/code/mt-devkit/.claude/skills/env-manager/envctl.sh"
+
+alias awssso='"$MT_ENVCTL" awssso'
+alias alembic-up='"$MT_ENVCTL" alembic-up'
+alias d-up='"$MT_ENVCTL" d-up'
+alias d-down='"$MT_ENVCTL" d-down'
+alias gen-be='"$MT_ENVCTL" gen-be'
+alias run-be='"$MT_ENVCTL" run-be'
+alias kill-be-f='"$MT_ENVCTL" kill-be-f'
+alias gen-fe='"$MT_ENVCTL" gen-fe'
+alias run-fe-2='"$MT_ENVCTL" run-fe-2'
+alias kill-fe='"$MT_ENVCTL" kill-fe'
+alias run-rt='"$MT_ENVCTL" run-rt'
+alias kill-rt='"$MT_ENVCTL" kill-rt'
+```
+
+`kill-be`, `run-fe`, `d-cleanup`, `gpu`, `sz` are untouched — this skill never calls them.
+
+One behaviour change to expect: `run-be` now backgrounds its processes from a script rather than from
+the interactive shell, so they reparent to `init` and survive closing the terminal. Output still goes
+to the same `logs/*.txt` files, and `kill-be-f` still stops them.
+
+## Command reference
+
+`envctl.sh` **is** the reference — read it, not a copy of it; `envctl.sh --help` lists the subcommands. Every one is cwd-dependent: run it from the sub-repo it belongs to, which is what Rule 7's `cd <worktree_root> && cd <subdir>` prefix establishes.
+
+`gpu` and `sz` are deliberately absent from the script: `gpu` is plain `git pull`, which the Git rows now call directly, and `sz` must source into the caller's own interactive shell — something no script can do.
