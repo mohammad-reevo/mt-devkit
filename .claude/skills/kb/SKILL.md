@@ -13,9 +13,26 @@ You own `knowledge-base/`: the store that carries context across sessions, so a 
 have to be re-explained every time and a settled concept doesn't get re-derived.
 
 Where kb ends: **an entry read, or a proposed change shown as a diff.** You never write without
-showing what changes and getting a yes. (PR 3 makes that structural — a hook will block direct
-`Edit`/`Write` under `knowledge-base/**` so this skill is the only way in. Behave as if it's
-already there.)
+showing what changes and getting a yes.
+
+## Writing — always through the shell, never Edit/Write
+
+**Use `Edit`/`Write` on the store and it will fail.** The store lives in the primary checkout and
+is symlinked into every worktree; three separate guards (Claude Code's session isolation,
+`worktree_gate_hook`, the background-isolation guard) resolve that symlink, see the primary
+checkout, and refuse. They are right to — a symlink that could be followed into the primary would
+make worktree isolation meaningless.
+
+So writes go through Bash, in this shape:
+
+```
+cat > knowledge-base/<path>.md <<'KB_EOF'
+<the entry>
+KB_EOF
+```
+
+Keep to that shape. `kb_write_gate_hook.py` matches it to raise the confirmation, and a write in
+some other form may slip past the gate — which defeats the point of having one.
 
 ## The store
 

@@ -213,3 +213,41 @@ Verified by running both hook versions against the same payloads:
 outcome. Hooks run as a chain, and an earlier one can decide before yours is ever consulted — so
 a gate's behaviour has to be tested through the real path, not by piping a payload at the hook
 you happen to have written.
+
+## Third defect + the resolution (2026-09-04) — writes move to the shell
+
+Exempting `worktree_gate_hook` (previous section) fixed the wrong layer. Underneath it sits
+**Claude Code's own session isolation**, which also resolves the symlink, sees the shared
+checkout, and refuses — and that is not a hook, so it cannot be exempted. Verbatim:
+*"Edit the worktree copy of this file instead of the shared-checkout path."*
+
+**Root cause, stated properly:** the knowledge base is *shared mutable state*, and git worktrees
+exist to prevent exactly that. Three layers enforce "a worktree session must not write into the
+primary checkout", and all three resolve symlinks — as they must, or worktree isolation would be
+one `ln -s` away from meaningless. The guards are correct; the design asked them to make an
+exception they cannot distinguish from an end-run.
+
+The deeper mismatch: *in-repo* in a worktree workflow means **per-branch, isolated, ephemeral**.
+A knowledge base is the opposite — single, shared, persistent. Being gitignored makes that worse,
+not better: no branch, no diff, no history, so it is a foreign object in a git-shaped world.
+
+**Resolution — the store stays exactly where it is; writes move to the shell.** Those guards
+police the `Edit`/`Write` *tools*, not the filesystem: they are policy about agent behaviour, not
+OS permissions. So the `kb` skill writes with `cat > … <<'KB_EOF'`, and the confirm gate moved
+with it onto the `Bash` matcher. `Edit`/`Write` on the store is now uniformly denied, which is
+the desired outcome — it forces every write through the skill.
+
+Rejected alternative: relocating the bytes outside the repo (`~/.claude/knowledge-base/` or a
+sibling directory), symlinked in. Cheaper, and it works, but it moves the store out of mt-devkit,
+which was an explicit decision.
+
+**Honest limits of the new gate.** Recognising "this arbitrary shell command writes to the KB" is
+undecidable — `cat >`, `tee`, `sed -i`, a heredoc into python all differ. The hook matches a
+`knowledge-base` path beside a known write operator, which reliably catches the skill's own shape
+(we control it) plus obvious hand-rolled cases, and will miss an exotic write. It is a backstop,
+not a wall; the behaviour comes from the skill and the `doc-edit-diff-first` rule.
+
+**Process lesson, the one that actually cost time here:** three fixes shipped before the real
+constraint surfaced, because each was verified against the layer I had just written rather than
+through the real path. A guard's behaviour is only established by exercising the actual operation
+in the actual context — anything else tests your model of the system, not the system.

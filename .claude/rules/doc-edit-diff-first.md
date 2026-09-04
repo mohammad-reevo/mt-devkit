@@ -44,9 +44,14 @@ lands, it is never seen at all. So the review has to happen at write time, or no
 
 ## Enforcement
 
-For `knowledge-base/` this is enforced rather than trusted: `kb_write_gate_hook.py` (PreToolUse on
-Edit/Write) raises a confirmation on any write whose path has `knowledge-base` as a segment, and
-the `kb` skill owns the diff-and-approve flow. Everywhere else this rule is the only thing
-standing between a doc and a silent rewrite — follow it without being asked.
+For `knowledge-base/` there is a backstop: `kb_write_gate_hook.py` (PreToolUse on **Bash**) raises
+a confirmation on a shell command that both names a `knowledge-base` path and carries a write
+operator, and the `kb` skill owns the diff-and-approve flow.
+
+Note what that backstop is not. Recognising every possible shell write is undecidable, so the hook
+matches the shapes the skill actually uses plus the obvious hand-rolled ones; an exotic write can
+slip past. It is a backstop, not a wall — and everywhere outside `knowledge-base/` there is no
+hook at all. This rule is the thing standing between a doc and a silent rewrite. Follow it
+without being asked.
 
 This applies across all repositories and projects.
