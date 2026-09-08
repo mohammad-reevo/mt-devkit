@@ -55,10 +55,11 @@ durable things worth not explaining twice. Design: `spec/knowledge-base-design.m
 **Its index is imported below, so every session sees it.** Treat a line that matches what
 you're working on as a signal to open that entry — you won't otherwise know it exists. If you
 find yourself investigating something an entry already covers, the index line was written badly;
-say so rather than silently re-deriving it.
+report the line as a bug — that is a fix to the line, not a cue to file anything new.
 
 Reading an entry is free. **Writing goes through the `kb` skill**, which shows a diff and waits —
-never hand-edit the store.
+never hand-edit the store. **Writes happen at `/done` or when I explicitly ask, and nowhere
+else** — don't offer to file things mid-session, however KB-worthy they feel at the time.
 
 @knowledge-base/INDEX.md
 

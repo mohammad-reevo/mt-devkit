@@ -278,3 +278,24 @@ the mode these sessions run in. Same shape as `MT_TEST_SCOPE_GATE=0`.
 two flavours of the same thing here, because permission mode silently removes one of them. Any
 future gate in this harness that wants to interrupt rather than block should assume `ask` does
 nothing until proven otherwise on this machine.
+
+## Fourth defect (2026-09-07) — the write-timing rule above was never shipped
+
+"`concepts/` stays on explicit invoke to start" (§ The four PRs) was written here and reached
+nothing that loads at runtime. The result was a store that asked to be written to after every
+deep dive and every deferred task — and was still empty five days in, `_(none yet)_` under both
+headings, so every one of those offers had been declined.
+
+Nothing *configured* caused it. No hook, no rule; the only wired write trigger is `done`'s
+teardown step, which is the right moment already. The pressure was emergent, from three
+always-loaded prose sources: the skill **description** (in every session's listing) advertising
+`add`/`update` as an anytime action, `CLAUDE.md`'s read-side feedback-loop sentence landing after
+a deep dive as *this store exists to prevent what you just did*, and § What earns an entry — a
+test of **content** with no timing qualifier, which a good deep dive passes at the exact moment
+it happens.
+
+Fix: the two sanctioned write moments (`done` close-out, explicit ask) stated in the skill body,
+**in the skill description**, and in `CLAUDE.md`. The description matters most — it is loaded
+every session while the body loads only on invoke, so a timing rule in the body alone cannot
+govern the moment the model reaches for the skill. The non-funnel gap is closed socially:
+Mohammad runs `/done` on non-funnel sessions too, so nothing needs capturing early.
