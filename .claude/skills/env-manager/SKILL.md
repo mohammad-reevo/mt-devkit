@@ -1,6 +1,6 @@
 ---
 name: env-manager
-description: Manage local Reevo dev environment (backend, frontend, realtime, docker) via envctl.sh, the script the user's ~/.zshrc aliases also wrap. Triggers on "run backend", "kill backend", "re-run backend", "check backend", "generate backend openapi spec", "run frontend", "run frontend with dev", "kill frontend", "re-run frontend", "check frontend", "generate frontend openapi spec", "run realtime", "kill realtime", "re-run realtime", "check realtime", "run all-envs", "kill all-envs", "re-run all-envs", "check all-envs", "run docker", "kill docker", "re-run docker", "restart docker", "check docker", "reload aliases", "pull <env_name>", "checkout <branch_name> <env_name>", "merge <branch_name> <env_name>", "check branch <env_name>".
+description: Manage local Reevo dev environment (backend, frontend, realtime, docker) via envctl.sh, the script the user's ~/.zshrc aliases also wrap. Triggers on "run backend", "kill backend", "re-run backend", "check backend", "generate backend openapi spec", "run frontend", "run frontend with dev", "kill frontend", "re-run frontend", "check frontend", "generate frontend openapi spec", "run realtime", "kill realtime", "re-run realtime", "check realtime", "run all-envs", "kill all-envs", "re-run all-envs", "check all-envs", "run docker", "kill docker", "re-run docker", "restart docker", "check docker", "reset envs", "reload aliases", "pull <env_name>", "checkout <branch_name> <env_name>", "merge <branch_name> <env_name>", "check branch <env_name>".
 ---
 
 # env-manager
@@ -84,6 +84,17 @@ The map is split into sections by domain. When a row delegates to another row, t
 **`run` is idempotent (stop-then-start).** Every `run <env>` row first stops any running instance, then starts fresh — so there is no separate `re-run`. `re-run <env>` (and `re-run all-envs`) is an accepted synonym that does exactly what the matching `run` row does; the skill still activates on that phrasing.
 
 **Killing whatever was already running is the point — don't flag it, don't ask.** The kill aliases are port- and process-name-based (`kill-be-f` ends in `pkill -9 -f salestech_be`, `kill-fe` frees tcp:3000), so they are **worktree-agnostic**: `run backend` from worktree A will take down a backend serving from worktree B. That is intended and expected — a port hosts one service, and I know what I am doing when I ask for a run. Do not warn about it beforehand, do not ask for confirmation, and do not offer to restart the other worktree's env afterwards. Just run the row and report the result. (Rule 6 still applies to genuine *failures* — this is not one.)
+
+### Shortcuts
+
+Named compositions of other rows — one phrase for a sequence I run often. A shortcut owns no
+command bodies of its own: it delegates, and **every delegated row runs in full**, exactly as if
+I had invoked each one myself. Never abbreviate or skip a step of a delegated row on the grounds
+that the shortcut is "just a reset".
+
+| You say | I run |
+|---|---|
+| reset envs | **kill all-envs** (All-Envs section) → **run docker** (Docker section), in that order. The morning reset: tear the whole stack down, then bring the shared Docker infra back up against fresh `main`. Both rows run start-to-finish — including `run docker`'s `main` refresh (step 0) and its FalkorDB reap (step 4), which is where a night's accumulated test-org graphs get reclaimed. Leaves backend / frontend / realtime **stopped**: `run docker` starts the compose deps only. |
 
 ### All-Envs
 
