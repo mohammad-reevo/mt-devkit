@@ -64,6 +64,8 @@ Track rerun state per `headSha` (a new push resets it).
 - Unresolved threads: `path:line` + the comment body.
 - Surface what's failing; **I** (or the orchestrator) decide how to fix. Track already-reported
   run IDs + thread IDs so you don't re-report the same thing every loop.
+- Threads are surfaced, never triaged here — **`address-comments` is what acts on them.** Name it
+  once when threads are outstanding; don't run it yourself, and don't summarize what you'd do.
 
 ## Poll cadence
 
