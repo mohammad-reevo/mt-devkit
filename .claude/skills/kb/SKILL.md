@@ -1,6 +1,6 @@
 ---
 name: kb
-description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. Every write shows a diff and waits for a yes. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/kb".
+description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. Every write shows a diff and waits for a yes. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Writing happens at `/done` close-out or on an explicit ask — never offered mid-session, however KB-worthy a deep dive or a deferred task feels at the time. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/kb".
 argument-hint: '[search <query> | add | update <entry> | graduate <project>]'
 ---
 
@@ -14,6 +14,26 @@ have to be re-explained every time and a settled concept doesn't get re-derived.
 
 Where kb ends: **an entry read, or a proposed change shown as a diff.** You never write without
 showing what changes and getting a yes.
+
+## When to offer a write
+
+**Two moments, and no others: `/done` close-out, and Mohammad explicitly asking.** Reading is
+always fine; *offering to write* is not.
+
+Everything else is a read-only session as far as this store is concerned — a deep dive that
+turned up something hard-won, a deferred task, a debugging session that finally landed. Don't
+offer, don't suggest filing it, don't mention the KB at all. Documenting something while it is
+still being discussed is premature: the shape of what was learned is still moving.
+
+The pull is structural, so name it. § What earns an entry is a test of **content**, and a good
+deep dive passes it at the exact moment it happens — which is why timing is a separate rule.
+Content worth keeping is not the same as a moment to file it, and a finding that genuinely earns
+an entry still earns it at `/done`. Nothing is lost by waiting, and the judgment is better once
+the work is finished than mid-discussion.
+
+`/done` is the sweep, and it covers **every** session — Mohammad runs it on non-funnel work too,
+not just the funnel. So there is no capture gap to close by asking early. For funnel work it also
+runs before the scope and plan files are deleted, so that reasoning is already carried there.
 
 ## Writing — always through the shell, never Edit/Write
 
