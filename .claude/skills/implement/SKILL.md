@@ -123,5 +123,7 @@ pre-existing, never routed around.
 - **Coding ends here.** Implement is the last phase that writes feature code. The finalization
   review is a **one-shot** gate on the completed implementation; post-implementation fixes
   (surfaced by verify) don't re-run it.
-- **No state, no auto-transition** (Wave 1: I drive). The plan file's checkboxes are the only
-  progress record; verify is a separate phase you hand off to, not auto-run.
+- **No new state** (Wave 1: I drive). The plan file's checkboxes are the only progress record —
+  never cache progress elsewhere or invent a tracking file. This is about state, not about the
+  hand-off: verify is a separate phase — don't do its work yourself; hand back to `workflow`,
+  which starts it once the branch is pushed and green.
