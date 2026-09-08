@@ -22,7 +22,39 @@ steps, backend first:
    `frontend-monorepo/packages/openapi-client/client/` — **not** `generated/`,
    which holds only the gitignored fetched spec and `urlToHookMapping.json`.
 
-## Never hand-push the generated frontend client
+## Push the source, never the generated client
+
+**The hand-written frontend code is committed and pushed as normal** — a cross-repo
+change is not a reason to hold the branch back. Only the regenerated client is held
+back. Stage by path (`git add <source paths>`), never `git add -A`, and confirm the
+generated set is absent from what you're about to push:
+
+```bash
+git diff --name-only origin/main...HEAD -- \
+  'packages/openapi-client/client/*.gen.ts' \
+  'packages/openapi-client/client/services/' \
+  'packages/openapi-client/client/core/' \
+  'packages/openapi-client/client/clientFetch/' \
+  'packages/openapi-client/client/@tanstack/services/' \
+  'packages/openapi-client/client/@tanstack/createApiClient.ts' \
+  'packages/openapi-client/generated/urlToHookMapping.json'
+```
+
+Empty output means the push is clean. Don't widen it to `-- packages/openapi-client`:
+`client/serverClient.ts`, `client/resourceMapping.ts` and most of `client/@tanstack/`
+are hand-authored and are often exactly what you *are* pushing.
+
+**Pushing is not merging.** `openapi-input-output-model-split.md` describes a real
+deadlock — the backend can't merge until the deployed frontend tolerates the change,
+and the frontend client can't be regenerated until the backend deploys. That deadlock
+governs **merge order** only. It does not stop either side being committed, pushed, or
+opened as a PR. Fusing the two into "the branch can't move at all" strands finished,
+reviewable work in a worktree working tree — where `/done` destroys it on teardown —
+and reports the PR as stalled when it isn't.
+
+The frontend PR's `type-check` stays red until the backend merges and deploys. That is
+the expected mechanism (see the last paragraph of this file), not a reason to withhold
+the push.
 
 The generated files under `frontend-monorepo/packages/openapi-client/` are
 **regenerated locally, never hand-edited and never included as a diff in a
@@ -85,8 +117,9 @@ builds the app in-process and writes the spec to a file.
    `gen-fe` is `cross-env OPENAPI_URL=... generate-react-query-openapi-client`,
    so the base script honours whatever `OPENAPI_URL` you set. Kill the static
    server afterwards.
-4. Write the frontend PR against the regenerated types, and leave them dirty —
-   the generated client is tracked, so the never-push rule above still applies.
+4. Write the frontend PR against the regenerated types. Commit and push the
+   hand-written source as normal; leave only the regenerated client dirty — it is
+   tracked, so the push rule above still applies.
 
 **Don't hand-write or widen the type instead.** Reaching for a local
 `SomeGeneratedType & { new_prop?: ... }` on the theory that a regen would drag
