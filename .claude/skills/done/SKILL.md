@@ -1,6 +1,6 @@
 ---
 name: done
-description: Close out the session's worktree(s) — gate the PR(s) for each one's checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, then tear down the worktrees + local branches. Manual only. `/done cancel` abandons an idea without the gate. Use when a PR is ready to close out of your active set (merge happens separately). Triggers on "/done", "close this out", "done with this".
+description: Close out the session's worktree(s) — gate the PR(s) for each one's checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, drain any `~/.claude/tasks/` chore the session actually finished, then tear down the worktrees + local branches. Manual only. `/done cancel` abandons an idea without the gate. Use when a PR is ready to close out of your active set (merge happens separately). Triggers on "/done", "close this out", "done with this".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -84,18 +84,28 @@ Run these **per worktree**, for each one that passed its own gate.
    branch with no spec files just skips the spec part. Use plain `rm` for the spec files and
    `rm -r` for the scratch dir — **never `rm -rf`** (the `-f` flag is permission-blocked and
    treated as dangerous; it gets denied).
-3. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
+3. **Drain any deferred task this session finished.** A `~/.claude/tasks/` chore that this
+   session's PR actually resolves is done once that PR is up — delete `~/.claude/tasks/<slug>.md`
+   **and** its line in `TASKS.md`. That is the `claude-task` protocol; close-out is simply where
+   it fires, so I don't have to remember a task was in flight and drain it by hand.
+   Take the list **from the conversation**, the same way you resolved the worktrees — never infer
+   a task by matching its title against a branch name or a PR summary.
+   **A partly-addressed task is not drained**: if the PR closed one half of a task, leave the file
+   untouched and say which half is still open. Name every task you drained in the report —
+   `~/.claude/tasks/` is not version-controlled, so the delete is permanent.
+4. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
    the worktree first, removes the sub-repo + parent worktrees, and deletes the **local**
    feature branches: `mohammad/<slug>` **and** whatever each tree actually had checked out).
    Those differ whenever a session splits its work — one sub-repo ends up on a branch named
    for the second PR rather than for the worktree, and matching on the worktree name alone
    strands it in the primary checkout. **Remote branches are never touched** — they back the
    open PRs and GitHub deletes them on merge.
-4. **Don't touch or pull main** — I handle that separately.
+5. **Don't touch or pull main** — I handle that separately.
 
 ## Report
 What was closed, **per worktree**: the PR link(s), what went into the knowledge base (or that
-nothing did), which spec files were deleted, and that the worktree was removed. If a PR passed on the queued-to-merge exception, **say so and name the
+nothing did), which spec files were deleted, **which deferred tasks were drained** (by slug, or
+that none were), and that the worktree was removed. If a PR passed on the queued-to-merge exception, **say so and name the
 checks still running** — I'm closing out before CI finished, and GitHub will land it unattended.
 Name any worktree left standing because its own gate failed, so nothing is silently skipped.
 
@@ -113,6 +123,9 @@ Name any worktree left standing because its own gate failed, so nothing is silen
 - **All threads, not a filtered list.** Query every thread's `isResolved`; outdated counts as
   open (per `github.md`).
 - **Local branches only.** Never delete or push a remote branch.
+- **Drain only a task this session actually finished**, taken from the conversation — and only
+  in full. Never title-match a task to a branch, and never drain in **cancel** mode: an abandoned
+  idea delivered nothing, so its task is still open.
 - **Cancel skips the gate but is still a full explicit teardown** — same cleanup, no PR
   assumption (works even with no PR).
 - **No state, no archive** (Wave 1: the files + the PR are the contract).
