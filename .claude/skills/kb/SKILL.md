@@ -1,6 +1,6 @@
 ---
 name: kb
-description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. Every write shows a diff and waits for a yes. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Writing happens at `/done` close-out or on an explicit ask — never offered mid-session, however KB-worthy a deep dive or a deferred task feels at the time. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/kb".
+description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. Every write is explained and approved before anything is drafted, then shown as a diff and approved again. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Writing happens at `/done` close-out or on an explicit ask — never offered mid-session, however KB-worthy a deep dive or a deferred task feels at the time. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/kb".
 argument-hint: '[search <query> | add | update <entry> | graduate <project>]'
 ---
 
@@ -13,12 +13,19 @@ You own `knowledge-base/`: the store that carries context across sessions, so a 
 have to be re-explained every time and a settled concept doesn't get re-derived.
 
 Where kb ends: **an entry read, or a proposed change shown as a diff.** You never write without
-showing what changes and getting a yes.
+first saying what you intend to write, then showing what changes — a yes at each point.
 
 ## When to offer a write
 
 **Two moments, and no others: `/done` close-out, and Mohammad explicitly asking.** Reading is
 always fine; *offering to write* is not.
+
+**"Explicitly" is the load-bearing word.** "I might just save this", "maybe worth writing down",
+"this feels KB-worthy" are Mohammad thinking out loud — an observation, or a question about
+whether it's worth keeping. Answer the question; don't launch the flow. A write starts on an
+instruction ("add this to the KB", "update the project doc"), never on a mention of one. If the
+signal reads as ambivalent, it is ambivalent: say in a line what you'd file, ask whether he wants
+it, and wait. Reading "might" as "do it" is how the store fills with entries nobody asked for.
 
 Everything else is a read-only session as far as this store is concerned — a deep dive that
 turned up something hard-won, a deferred task, a debugging session that finally landed. Don't
@@ -47,9 +54,12 @@ So writes go through Bash — and the gate **denies** an unmarked one outright, 
 confirmation prompt is a no-op in bypass-permissions mode (measured, not assumed). The sequence
 is therefore fixed:
 
-1. **Show the change** as a fenced ```diff block — `-` old, `+` new.
-2. **Get an explicit yes.** Not implied consent from the original request.
-3. **Then write**, with the marker:
+1. **Say what's coming, and wait.** One to three sentences in plain language: which file,
+   `projects/` vs `concepts/`, and what the entry will cover. **Draft nothing yet.**
+2. **Draft it, and show the change** as a fenced ```diff block — `-` old, `+` new.
+3. **Get an explicit yes.** Not implied consent from the original request, and not carried over
+   from step 1 — that yes was for the idea, this one is for the words.
+4. **Then write**, with the marker:
 
 ```
 MT_KB_WRITE=1 cat > knowledge-base/<path>.md <<'KB_EOF'
@@ -57,9 +67,19 @@ MT_KB_WRITE=1 cat > knowledge-base/<path>.md <<'KB_EOF'
 KB_EOF
 ```
 
+**Both gates apply to every write** — a new entry, an `update`, a `graduate` proposal, a one-line
+index-line fix, an `updated:` bump. No write is small enough to skip step 1: a sentence costs
+nothing, and "which writes are small enough?" is exactly the judgment call that erodes a gate.
+
+**Step 1 is the one doing the real work.** A diff shown at the end catches *bad content*, but by
+then the entry exists, and refusing it means throwing away finished work — so the path of least
+resistance is to approve. Stating the intent first makes "actually, don't" cheap, which is the
+only thing that keeps unwanted entries out of the store. It also stops a discarded draft from
+burning context.
+
 `MT_KB_WRITE=1` is the one sanctioned escape. It is not a lock — you are the one adding it — but
 it makes an *incidental* write impossible: nothing reaches the store without a deliberate token
-sitting in plain sight in the command. **Never add the marker before step 2 has actually
+sitting in plain sight in the command. **Never add the marker before step 3 has actually
 happened.** Doing so converts the one real safeguard on this store into decoration.
 
 Keep to that shape. A write in some other form may slip past the matcher, which defeats the
@@ -102,23 +122,30 @@ index gets good; without it, a silently-missed entry looks identical to a missin
 
 ### `add`
 1. **Decide where it goes** — `projects/` or `concepts/<area>/`. Ask if genuinely ambiguous.
-2. **Apply the write gate** (below). If it fails, say why and stop; don't file it anyway.
-3. **Draft the entry** — frontmatter (`name`, `title`, `kind`, `area`, `updated`), then the
+2. **Apply the earns-an-entry test** (§ What earns an entry). If it fails, say why and stop;
+   don't file it anyway.
+3. **Say what you're about to write, and wait** — gate 1 of § Writing. Nothing below this line
+   happens before the yes.
+4. **Draft the entry** — frontmatter (`name`, `title`, `kind`, `area`, `updated`), then the
    body, under a page.
-4. **Write the index line** — see below. This is the part that decides whether the entry is ever
+5. **Write the index line** — see below. This is the part that decides whether the entry is ever
    found, so spend real thought here, not on the prose.
-5. **Show the diff and wait.** The entry and the new index line, both.
+6. **Show the diff and wait.** The entry and the new index line, both.
 
 ### `update <entry>`
-Same gate and same diff-and-wait. Two things to get right: bump `updated`, and **re-read the
-index line** — an entry that has grown or changed direction usually needs a different trigger
-than the one it was filed under.
+Same two gates — what's changing and why, stated before anything is drafted, then diff-and-wait.
+Two things to get right: bump `updated`, and **re-read the index line** — an entry that has grown
+or changed direction usually needs a different trigger than the one it was filed under.
 
 ### `graduate <project>`
 Run when a project ships, **before** its project doc is deleted. Read the project doc, pull out
 what outlives the project — decisions and why, gotchas, the concept-to-code name mappings — and
 propose those as `concepts/` entries. Everything else (status, ticket scope, what's in flight)
 dies with the doc, correctly.
+
+Propose them as a list of one-liners first — that list *is* gate 1, and cutting an entry from it
+is far cheaper than cutting one from three drafted entries. Each survivor then runs `add` from
+step 4.
 
 Without this step, finishing a project deletes exactly the knowledge that was worth keeping.
 
@@ -160,8 +187,11 @@ it, and do not turn this into a debate.
 
 ## Guardrails
 
-- **Never write without showing a diff and getting a yes** — not for a new entry, not for a
-  one-line index fix, not for a `updated:` bump.
+- **Two gates on every write, and no write is too small for either.** Say what's coming and get a
+  yes *before* drafting; then show the diff and get a second yes. This holds for a new entry, a
+  one-line index fix, and an `updated:` bump alike.
+- **An ambivalent mention is not an instruction.** "I might save this" opens a conversation, not
+  a write.
 - **Never edit an entry as a side effect** of reading or searching it.
 - **Don't file what belongs elsewhere.** A behavioral rule goes in `.claude/rules/`; a small
   durable fact goes in the memory store. The KB is for what neither covers.

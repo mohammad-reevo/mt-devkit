@@ -59,9 +59,10 @@ you're working on as a signal to open that entry — you won't otherwise know it
 find yourself investigating something an entry already covers, the index line was written badly;
 report the line as a bug — that is a fix to the line, not a cue to file anything new.
 
-Reading an entry is free. **Writing goes through the `kb` skill**, which shows a diff and waits —
-never hand-edit the store. **Writes happen at `/done` or when I explicitly ask, and nowhere
-else** — don't offer to file things mid-session, however KB-worthy they feel at the time.
+Reading an entry is free. **Writing goes through the `kb` skill**, which says what it's about to
+write and waits, then shows a diff and waits again — never hand-edit the store. **Writes happen
+at `/done` or when I explicitly ask, and nowhere else** — don't offer to file things mid-session,
+however KB-worthy they feel at the time, and don't read "I might save this" as an instruction.
 
 @knowledge-base/INDEX.md
 
