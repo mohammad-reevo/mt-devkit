@@ -1,6 +1,6 @@
 ---
 name: babysit
-description: Watch CI checks + PR review threads for the current worktree's PR(s) in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly). Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) + unresolved threads; reruns a genuinely-flaky failure once. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
+description: Watch CI checks + PR review threads for the current worktree's PR(s) in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly). Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) + unresolved threads, and flags a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
 argument-hint: [--watch-only]
 allowed-tools:
   - Bash
@@ -30,7 +30,8 @@ its PR — so a cross-repo idea (backend + frontend) is watched as one set:
 - PR: `gh pr list --head "<branch>" --json number,url,state`
 
 No PR anywhere yet → report "no PR for `<branch>` yet — nothing to watch" and stop (don't loop).
-No CI run yet (too early after push) → `ScheduleWakeup(120s)` and return (skip in `--watch-only`).
+No CI run yet → **check mergeability before assuming "too early"** (see the *Check* block).
+Not conflicted → `ScheduleWakeup(120s)` and return (skip in `--watch-only`).
 
 ## Each iteration (per PR)
 
@@ -39,6 +40,18 @@ No CI run yet (too early after push) → `ScheduleWakeup(120s)` and return (skip
   jobs,status,conclusion,startedAt` for per-job status/conclusion **and the run's age**, which
   is what picks the next poll interval (see *Poll cadence*). Elapsed = `date -u +%s` minus
   `startedAt`.
+- **Mergeability — why a run may not exist at all.** `gh pr view <n> --json
+  mergeable,mergeStateStatus`. `CONFLICTING` → the PR is dirty, and **a conflicted PR gets no CI
+  runs scheduled at all** — so an absent run means dirty far more often than it means too early.
+  Report it, and poll on the 600s comment-watch cadence, not the 120s waiting-for-a-run one: no
+  run is coming until I resolve the conflict. `UNKNOWN` → GitHub is still computing it; re-poll
+  normally and don't report anything.
+- **Staleness.** Age of the merge-base with the PR's base:
+  `git log -1 --format=%ct $(git merge-base origin/main HEAD)`. Older than **3 days** → report
+  "N days behind `main` — consider `update-branch`". Report only; babysit never merges. Read the
+  base branch first (`gh pr view <n> --json baseRefName`) — on a PR **stacked** on another feature
+  branch the advice is to merge **that parent**, never `main` (`git-merge.md`), and the merge-base
+  to measure is against the parent.
 - **PR threads — ALL of them, incl. outdated.** Query every thread and read `isResolved`
   directly (an `isOutdated` thread is still OPEN — never trust a filtered "unresolved" list,
   per `github.md`):
@@ -59,6 +72,13 @@ you changed) **and** this `headSha` hasn't been rerun yet → `gh run rerun <run
 **once**. If it fails again, or the failing paths overlap your diff → report it as actionable.
 Track rerun state per `headSha` (a new push resets it).
 
+**Same check failing across two pushes → go loud and stop.** Track failing check names per
+`headSha`. Once the same check has failed on **two distinct head SHAs** — a fix was pushed and it
+failed again — drop the quiet mode: print the full `--log-failed` output, say plainly that two
+attempts haven't fixed it, and **stop the loop** (no `ScheduleWakeup`). A loud report that quietly
+re-polls ten minutes later is exactly the failure this exists to prevent. Reruns are not attempts;
+only a new `headSha` is.
+
 **Report** (concise — don't fix, don't dispatch):
 - A small status table: PR / workflow / job / status·conclusion.
 - Unresolved threads: `path:line` + the comment body.
@@ -77,6 +97,7 @@ those can land at any moment, and they're the reason we don't simply sleep for 2
 | Where things stand | Next wakeup |
 |---|---|
 | PR exists, no CI run registered yet | **120s** — only waiting for the run to appear |
+| PR is `CONFLICTING` — no run will ever be scheduled | **600s** — only comments to watch until I resolve it |
 | CI in flight, run age **< 20 min** | **600s** — CI won't be done; this poll is for new review comments |
 | CI in flight, run age **≥ 20 min** | **300s** — inside the expected finish window, tighten up to catch the result |
 | CI finished; only unresolved threads left | **600s** — nothing but comments to watch |
@@ -94,8 +115,9 @@ past (~40 min+), and even then as an observation, not a failure.
 
 - **`--watch-only`** → print the status table + unresolved threads, then exit. No wakeup, no loop.
 - **Loop mode (default)** → all PRs green **and** zero unresolved threads → print "all green" and
-  exit (do **not** invoke done, do **not** write any state). Otherwise schedule the next poll at
-  the *Poll cadence* interval:
+  exit (do **not** invoke done, do **not** write any state). The loop's **only other exit** is the
+  two-failed-pushes escalation above — that one hands back instead of scheduling. Otherwise
+  schedule the next poll at the *Poll cadence* interval:
   `ScheduleWakeup(delaySeconds: <from the table>, reason: "<what we're waiting on — e.g. 'CI ~14 min in of ~25; checking for review comments'>", prompt: "Continue babysit — run one more poll iteration for the current worktree's PR(s).")`
 - **Keep the loop quiet when nothing changed.** At a 10-minute cadence most iterations have no
   news. If no check changed state and no new thread appeared, emit **one line** ("CI still
@@ -110,6 +132,10 @@ past (~40 min+), and even then as an observation, not a failure.
 - **All threads, not a filtered list.** Outdated counts as open (`github.md`).
 - **Flaky rerun is one-shot per headSha,** and only when the failure doesn't overlap your diff.
   After that, report it — never rerun endlessly to force green.
+- **A missing CI run is a symptom, not a state.** Check `mergeStateStatus` before calling it
+  "too early" — a conflicted PR never gets a run, so the 120s wait would loop forever.
+- **Two failed pushes on the same check ends the loop.** Go loud and hand back; don't keep
+  polling something that needs me.
 - **Report, don't fix.** Surface failures + comments; don't dispatch fix agents or close out.
 - **Poll inline, in main orchestration — never delegate the watch.** babysit is a main-loop
   task: one inline `gh` check + `ScheduleWakeup`, nothing more. Never dispatch a subagent to
