@@ -41,7 +41,7 @@ machine, and two workflow sessions doing it at once makes it unusable (300–110
 processes — a real incident, the laptop was "literally dying"). Targeted local runs give fast
 feedback on the change without the meltdown; CI is the backstop for everything else.
 
-Related: `test-economy.md` governs how many tests to **write**; this governs how many to **run**
-locally.
+Related: `.claude/references/testing-call.md` governs what a change must **cover** and how many
+tests to **write**; this governs how many to **run** locally.
 
 This applies across all sessions working in this workspace.

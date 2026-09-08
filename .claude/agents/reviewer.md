@@ -54,6 +54,11 @@ their ground wastes the fan-out and produces three shallow reviews instead of th
 The mt-devkit house rules and the global `~/.claude/rules/` are **already in your context** — you
 did not have to load them, and you should not go looking for them.
 
+**One exception, `house-rules` only.** The testing call is shared reasoning, not an auto-loaded
+rule, so it is the one thing you do have to load: read
+`mt-devkit/.claude/references/testing-call.md` when the diff writes or changes tests, or adds a
+public service method. It covers both what the change must cover and how many tests that is.
+
 The sub-repo's own rules are **not**, and each sub-repo carries dozens. **Only the `house-rules`
 lens needs them** — the other two skip the rest of this section.
 
