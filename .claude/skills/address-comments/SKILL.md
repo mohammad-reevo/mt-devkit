@@ -55,6 +55,10 @@ from a human is still wrong. What differs is the default posture when you're uns
 Don't overcorrect into reflexive dismissal. "The bot said it" is not a reason to skip it, and most
 bot comments that survive verification are worth doing.
 
+**An approval carrying nits is not a gate.** A review that approves while leaving small comments
+still goes through all three steps — the nits get triaged, tiered and resolved like anything else —
+but nothing about the PR is blocked while that happens, so don't report it as if it were.
+
 ## Step 1 — the report
 
 **Number the comments chronologically** — oldest posted is #1, newest is last, regardless of how
@@ -64,16 +68,45 @@ Per comment, three lines at most:
 
 - **#N — `path:line` — <source>** — one line on what it asks.
 - **Holds / doesn't hold / can't tell** — what you checked to decide. A claim you couldn't verify
-  says so; never launder it into certainty.
+  says so; never launder it into certainty. **A question is not a claim** — there is nothing to
+  verify in "why the service layer here?", so don't force it into a verdict; it tiers as *Answer*.
 - **Call** — one or two sentences: what you'd do and why.
 
-Then the action items, one line each, in three tiers reusing `pr-review`'s vocabulary:
+Then the action items, one line each, in four tiers — the first three reusing `pr-review`'s
+vocabulary:
 
 | Tier | Meaning |
 |---|---|
 | **Implement** | Verified, bounded, and I'd obviously want it. |
 | **Push back and resolve** | The claim doesn't hold against this codebase. The reply carries the reasoning. |
+| **Answer** | A question, not a claim. Draft the factual answer here; I decide whether I post it or you do. |
 | **Bring to me** | A large change, or a genuinely hard call either way. |
+
+**Answer, in full.** GitHub carries answers and decisions — never discussions (`github.md`). So an
+*Answer* is a single factual reply that closes the thread, drafted in the report and never posted
+unilaterally: I often want to write it myself. Two things it is not. It is not a negotiation —
+if the honest reply invites a round trip about whether the code *should* be this way, that's a
+discussion, and discussions happen with me or over Slack, so it's a **Bring to me**. And it is
+never invented: if the rationale predates your context, say exactly that instead of reconstructing
+a plausible one.
+
+**A request to talk overrides every tier above it.** "Can we discuss this?", "let's chat about
+the approach", "can we hop on a call" → **Bring to me**, and you author no reply at all. This
+needs saying because such a line usually rides along with a real claim ("this is wrong — can we
+discuss?"), and triaging on the claim alone would answer the code half with a "done!" while
+ignoring what they actually asked for. I handle these offline.
+
+**Scope expansion is its own trigger, independent of size.** "While you're here…", "can you
+also…", "separately, could we…", or a comment on a line this diff doesn't touch → **Bring to
+me**, never silently implemented. A creep ask can be five lines long and still not belong in this
+PR, so size is the wrong axis for it (`no-invented-requirements.md`).
+
+**Read the report as a set before handing it over — reviewers contradict each other.** Two threads
+can each verify individually and ask for opposite things of the same file or symbol; triaging
+comment-by-comment is exactly what hides that. Scan the finished action items for it, and when it
+happens flag the pair together and put **both** in *Bring to me* — never pick a winner. A bot
+contradicting a human is the same check with an easy answer: human intent wins, and it still gets
+flagged.
 
 **Brevity is the requirement, not a nicety** — this is a thing I skim to find the two comments
 that need me. A comment with an obvious answer gets one line, not a paragraph.
@@ -96,8 +129,13 @@ arrives afterwards. A new comment restarts at step 1 for that thread.
    change now needs from `mt-devkit/.claude/references/testing-call.md`. A comment that moves code
    into a new layer is exactly the shape that invalidates the original call.
 3. **Reply, then resolve, every thread** (`github.md`) — including the push-backs, whose reply is
-   the reasoning for not changing anything. A pushed fix with the thread still open is not
-   finished work. Reply via `addPullRequestReviewThreadReply`, resolve via `resolveReviewThread`.
+   the reasoning for not changing anything, and the answers I told you to post. A pushed fix with
+   the thread still open is not finished work. Reply via `addPullRequestReviewThreadReply`, resolve
+   via `resolveReviewThread`.
+   **Voice: terse and factual.** "Done in `<sha>`" is a complete reply. No thanking the reviewer
+   for the catch, no restating their comment back at them, no sign-off. A push-back's reply is the
+   reasoning and nothing else. Length is not politeness here — a thread is a record, not a
+   conversation.
 4. **Re-check the PR title and description** after pushing — comment-driven changes are exactly
    the kind that make a description stale (`github.md`). Edit from the **live** body; never
    rebuild it from a local draft, and never touch attached media.
@@ -110,6 +148,9 @@ arrives afterwards. A new comment restarts at step 1 for that thread.
 - **Verify before you agree, not after.** An action item that says "implement" asserts you checked
   the claim against the code. If you couldn't, it's a *bring to me*.
 - **Escalate rather than pick a side.** A large change or a hard judgment call goes to me in the
-  report — never decided unilaterally in either direction.
+  report — never decided unilaterally in either direction. Contradicting reviewers are the same
+  rule with two threads instead of one.
+- **No discussion happens in GitHub** (`github.md`). Answers and decisions land there; anything
+  that wants a conversation comes to me, and I take it to Slack or we work it out together.
 - **Every thread ends replied-to and resolved**, whichever tier it landed in. `done` gates on it.
 - **Report, don't launder.** If a comment was addressed only partly, say which part.
