@@ -21,7 +21,8 @@ scope → plan → implement → verify → babysit → done   (conducted by wor
 - **babysit** — watch CI + PR review threads (opt-in; never auto-starts).
 - **done** — gate the PR (CI green + threads resolved), then tear down the worktree.
 
-Standalone tools: `pr-review` (review a diff or a teammate’s PR), `make-diagram` (ASCII diagram
+Standalone tools: `pr-review` (review a diff or a teammate’s PR), `address-comments` (triage the
+review comments on my PR, then act on the agreed ones), `make-diagram` (ASCII diagram
 of a design or flow), `kb` (the cross-session knowledge base), `worktree`, `db` (local/dev
 Postgres), `snowflake` (reporting warehouse),
 `langfuse-traces` (analyze LLM traces — latency, throughput, tokens), `populate-dev-data`,

@@ -57,7 +57,8 @@ records, no session state. The PR is the source of truth.
       nodes { isResolved isOutdated path } } } } }'
   ```
   Any `isResolved:false` (regardless of `isOutdated`) = fail — **queued-to-merge never excuses
-  an open thread.**
+  an open thread.** Report the open threads and name `address-comments` as the way through them;
+  never triage or resolve them from here.
 
 Collect **all** failures across **all** PRs of **all** worktrees and report at once. The gate is
 all-or-nothing **within** a worktree — one failing PR → tear down nothing of that worktree — but

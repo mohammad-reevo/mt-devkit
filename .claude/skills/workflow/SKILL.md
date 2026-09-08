@@ -85,6 +85,9 @@ Invoke each phase skill and let it run to completion — each handles its own in
   comments still surface quickly) and reports what it finds — it does **not** fix, and reaching
   green does **not** close anything out. **done stays explicit**: `/done` is mine to invoke once
   CI's green and threads are resolved. Surface it as the next move; never run it.
+- **Review comments → `address-comments`, on my invoke.** When babysit surfaces unresolved
+  threads, name the skill and stop. It triages them into a report, waits for my call, and only
+  then implements and resolves — so it carries its own gate and never auto-runs off a poll.
 
 ### 3. Route kickbacks
 - plan finds the **direction** wrong → back to **scope** (revision) → re-summarize at the
