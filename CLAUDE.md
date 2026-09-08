@@ -40,7 +40,8 @@ leave behind).
 
 ## Layout
 
-- `.claude/` — the harness: `skills/`, `rules/`, `hooks/`.
+- `.claude/` — the harness: `skills/`, `rules/`, `hooks/`, `references/` (prose two or more
+  skills share; `agents/` is the same idea for shared behavior).
 - `spec/` — design docs + per-idea scope/plan files.
 - `tasks/` — deferred tooling chores (the `claude-task` system).
 - `knowledge-base/` — context that outlives a session (gitignored; see below).
