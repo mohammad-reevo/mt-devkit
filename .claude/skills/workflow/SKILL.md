@@ -74,9 +74,10 @@ Invoke each phase skill and let it run to completion — each handles its own in
   my explicit go-ahead. Report the plan path, and if plan drew a `make-diagram` diagram, leave it
   in view: that's what I'm reading before I commit to the build. Never cross this on your own.
   (plan creates + enters the worktree at its start.)
-- **implement → verify — no gate, but verify is user-directed.** implement ends at a pushed,
-  reviewed, green branch (no PR). Flow into verify — it pulls me in to direct the testing and
-  then opens the PR. This is my post-implement touchpoint.
+- **implement → verify — no gate.** implement ends at a pushed, reviewed, green branch (no PR).
+  **Go straight into verify — don't ask, don't wait for me.** Once running, verify is
+  user-directed: it pulls me in to direct the testing and then opens the PR. That's my
+  post-implement touchpoint — the touchpoint is *inside* verify, not a pause before it.
 - **verify → babysit — no gate.** Once verify opens the PR, report the PR link and **go straight
   into babysit** — don't ask, don't wait for me. A freshly-opened PR always needs watching, so
   making me say "yes, watch it" was pure friction; the only thing that ever came of the pause was
@@ -106,6 +107,10 @@ back up.
   Scope earns the commitment to plan.
 - **So is the post-plan gate.** A written plan is not consent to build. Wait for the word, even
   when the plan is obviously good and the tasks are obviously next.
+- **Only those two are gates.** Naming phases when you kick me off ("scope, plan and implement
+  without me") is me listing what's pending, not withholding permission for the rest. A
+  gate-less hop stays gate-less; an incidental phase list in the kickoff never invents a third
+  gate.
 - **babysit auto-runs as the tail; done never does.** Flowing verify → babysit is the drive
   finishing its job. `/done` is the one transition that stays mine — the workflow only surfaces it.
 - **No new state.** Detect from spec files + git/PR every time; never cache the phase or invent a
