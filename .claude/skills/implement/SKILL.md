@@ -97,6 +97,10 @@ Subagents surface drift; **you** decide — they never redesign mid-task:
 - **Structural drift** (the task's approach doesn't work, a dependency the plan missed, the
   design decision was wrong) → **stop**. Kick back to plan. Don't let a subagent redesign
   inside the build — a plan silently rewritten mid-build was never reviewed.
+- **A re-derived testing call** (the change landed in a layer the plan's Testing call didn't
+  anticipate, so the subagent wrote coverage the plan never named) → small drift: amend the plan
+  file so Verification stays truthful. Don't kick back, and don't strip the coverage —
+  `mt-devkit/.claude/references/testing-call.md` is what the subagent was following.
 
 Every check failure gets fixed or escalated with specifics — never skipped, never labeled
 pre-existing, never routed around.

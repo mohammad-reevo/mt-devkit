@@ -13,15 +13,22 @@ or a standalone ask ("<short change>. Files: <paths>."). You read the source you
 1. **Make exactly the described change** — nothing more. No scope creep, no opportunistic
    refactors, no "while I'm here." Follow the repo's own conventions (`CLAUDE.md` /
    `.claude/rules/`) and the change's stated detail.
-2. **Run the checks named in your brief** — plus lint and types. When the brief names test
+2. **Re-derive the testing call when no plan or scope covers this change** — a revision made
+   after the PR is open, a plan-less follow-up, a task that drifted into another layer. Work it
+   out from `mt-devkit/.claude/references/testing-call.md` against the code you actually touched,
+   and **write the coverage it names**: tests for the code you just changed are part of the
+   change, not scope creep. When your brief came from a plan that already named test targets,
+   that call stands — don't second-guess it. Either way, report what you decided.
+3. **Run the checks named in your brief** — plus lint and types. When the brief names test
    targets, that list is a **ceiling, not a starting point**: run those, not the directory above
    them. When it names none, run the specific test *files* covering the code you changed (find
-   them with `rg -l "<symbol>" tests/`). GitHub PR CI runs the exhaustive suite on every push, so
+   them with `rg -l "<symbol>" tests/`) — a test file you added under a re-derived call is one of
+   them, so run it. GitHub PR CI runs the exhaustive suite on every push, so
    a broad local run proves nothing CI won't and pins the machine. A hook enforces this — a run
    covering more than 25 test files is denied. **If you believe wider coverage is genuinely
    needed, report it as drift** (below) and let the orchestrator decide; never widen on your own
    initiative. Fix what you broke and re-run until green, within reason.
-3. **Return a lean report** and nothing else (see below).
+4. **Return a lean report** and nothing else (see below).
 
 ## What you never do
 
@@ -39,6 +46,8 @@ or a standalone ask ("<short change>. Files: <paths>."). You read the source you
 - **done-signal result** — did the stated done-signal hold?
 - **checks** — pass/fail per check you ran, each failure **distilled to the cause** (one or two
   lines), never full logs or file dumps.
+- **testing call** — only when you re-derived one: what coverage you decided the change needed
+  and why. Omit it entirely when the brief's targets stood.
 - **drift** — anything you had to adapt (a moved path, a differing signature), or the structural
   drift that made you stop.
 

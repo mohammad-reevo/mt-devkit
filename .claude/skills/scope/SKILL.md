@@ -120,11 +120,12 @@ Then discuss. This is conversational and may take multiple rounds. I pick the di
 you advocate, you don't decide.
 
 **Testing call (part of the direction).** Before writing the file, settle — at altitude — what
-testing the chosen direction warrants: unit tests for new logic, an integration test for a
-flow, or none for a trivial/refactor change. Name the *kinds* and what they'd cover, never test
-files or cases (that's plan). This is the **one place test-building is scoped** — plan
+testing the chosen direction warrants, reasoning it out from
+`mt-devkit/.claude/references/testing-call.md`. Name the *kinds* and what they'd cover, never test
+files or cases (that's plan). This is where test-building is **first** scoped — plan
 turns it into concrete test tasks and implement builds them; verify does post-build
-verification only and never decides tests.
+verification only and never decides tests. The call is re-derived later only when a change lands
+outside the plan; the reference says when.
 
 ### Write the scope file (only after I've agreed on a direction)
 The discussion is ephemeral; the file is the converged record — not a transcript. Write
