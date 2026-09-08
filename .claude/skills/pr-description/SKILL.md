@@ -45,6 +45,9 @@ workspace root), so read-and-follow is the normal path, not a fallback.
 
 Use the template as the literal skeleton — its headers, its order, nothing renamed.
 
+**Read Overrides below before following the sub-repo skill.** A handful of its instructions
+are wrong; those rules win over anything the sub-repo says.
+
 ## Step 3 — house rules on top
 
 These are mine and apply to every repo:
@@ -80,6 +83,42 @@ happened *outside* `/verify`, on a bare `gh pr create` — a skill step is skipp
 skipping it is exactly the bug. It is fail-open: no validator, no resolvable repo, or any
 crash allows the call.
 
+## Overrides — where my rule beats the sub-repo's
+
+Step 2 says to read the sub-repo's skill and follow it. These are the points where I don't.
+On any conflict between a rule here and the sub-repo skill, **the rule here wins**.
+
+**Each override is written as a standing rule, not as a rebuttal.** That is deliberate: a
+rebuttal ("ignore the sentence that says X") dies the moment upstream edits the sentence,
+leaving a dangling reference and no behaviour. A standing rule keeps working whatever
+upstream does — if upstream comes to agree, the rule is merely redundant, never dangling.
+So: state the behaviour I want, in the imperative, self-contained. Never phrase an override
+as a pointer to upstream text.
+
+The `supersedes:` line is **context, not the rule.** It is allowed to go stale and its
+staleness is harmless. If it no longer matches what upstream says, that changes nothing
+about whether the rule applies — do not treat upstream agreeing as a reason to re-derive
+the opposite, and do not delete a rule because its `supersedes:` line no longer resolves.
+
+Adding one: put it here if it changes **what I do** in the face of a sub-repo instruction.
+A caveat about a *tool's output* rather than an instruction belongs in Known traps below.
+
+### Never claim `N/A` in `## Verification Metrics` on a runtime-relevant diff
+
+If the diff touches anything executable — any `.py` outside `tests/`, a migration,
+`pyproject.toml` / `uv.lock`, `scripts/`, a Makefile, a Dockerfile — the section must carry
+real `metric:` / `dashboard:` / `monitor:` checkbox lines. `N/A` is for a diff that deploys
+no behaviour at all (docs-only, tests-only, repo-metadata-only).
+
+If the work to find a metric turns up nothing, that is a signal to look harder at the
+Temporal-workflow and route fallbacks, not a licence to write `N/A`.
+
+> supersedes: `salestech-be` `.agents/skills/pr-description/SKILL.md` claims "the bot's
+> parser treats absence of `- [ ]` checkbox lines as a no-op, so `N/A` lines are trivially
+> ignored." The deterministic validator actively rejects a runtime-diff `N/A`, so following
+> that sentence gets the PR denied — it was one of the three `salestech-be` PR #33134
+> failures.
+
 ## What the preflight cannot catch
 
 CI's validator is an LLM (`deepseek-v4-flash` via Fireworks) running **after** the
@@ -89,7 +128,13 @@ runtime surface that changed, is the verification authentic. **No local check wi
 catch those.** Write the body properly; the preflight only guarantees you never lose a CI
 cycle to *format*.
 
-## Known trap: the validator's error message lies about casing
+## Known traps — upstream output that misleads
+
+Not overrides: these change nothing about what I write, only about how I read a tool's
+output. Same durability rule applies — describe the behaviour to expect, so the entry stays
+readable even after upstream fixes it.
+
+### The validator's error message lies about casing
 
 On any failure the validator lists the required headers rendered through Python's
 `.title()`, printing `## Post-Deployment Verification` — while the template and the CI
