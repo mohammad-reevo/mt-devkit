@@ -48,13 +48,10 @@ doesn't matter — run the check first if you like — but a slow **in-app** loo
 PR creation.)
 
 Create one PR per repo the change touches, **ready for review — never draft**. For the
-description, use **that repo's own PR convention** — its `.claude/skills/pr-description` skill
-and its `pull_request_template.md`. If that skill is loaded in context, invoke it; otherwise
-**read** its `SKILL.md` + `pull_request_template.md` from the sub-repo and follow them (they
-aren't auto-loaded in the funnel session, so read-and-follow is the normal path). Fill it with
-what/why (from Goals) + the verification plan/results (note when in-app verification is still
-**pending**, and update it once it passes). Use the repo's own tooling — never devkit's
-`frontend-pr`/`backend-pr`, and don't duplicate them.
+description, use the **`pr-description` skill** — it routes to that repo's own convention,
+applies my house rules, and preflights the body against the repo's validator so a format miss
+doesn't cost a CI cycle. Fill it with what/why (from Goals) + the verification plan/results
+(note when in-app verification is still **pending**, and update it once it passes).
 
 Report the PR link right away, so I can start attaching my own verification media to it while
 you run the verification.
@@ -97,8 +94,8 @@ Once verification passes, return to `/workflow` to continue — it owns what com
 - **PR up front; fixes pushed to it.** The PR goes up before the slow in-app verification (the
   branch is already green + reviewed from implement), so it's ready while I test; any bug
   verification surfaces is pushed to the open PR. Still ready-for-review, never draft.
-- **Use the repo's own PR tooling.** The PR description follows the relevant repo's
-  `pr-description` skill + `pull_request_template.md` (read-and-follow if not natively loaded) —
-  never devkit's PR skills, and nothing duplicated into the harness.
+- **The PR description goes through the `pr-description` skill.** It reads the relevant repo's
+  convention live and preflights the body — never devkit's PR skills, and nothing duplicated
+  into the harness.
 - **No state, no auto-transition** (Wave 1: I drive). babysit is a separate phase — don't invoke
   it yourself; hand back to `workflow`, which starts it once the PR is open.
