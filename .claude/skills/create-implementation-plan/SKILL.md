@@ -118,7 +118,7 @@ If populating:
 
 1. **The user provides the project.** This skill **never creates a Linear project** — it populates one the user already made. Get the project (link / name).
 2. **Synthesize the readable layer.** The plan doc is dense and grounded; produce the *readable* Linear artifacts from it — plain-English ticket bodies (goal / what it ships / grounded technical notes / blockers) and, if asked, a readable project overview (goal, track breakdown, sequencing + dependency graph, settled decisions, scope). This dense→readable pass is this step's real work.
-3. **Map plan → Linear.** A work item → an issue; a work item with sub-items → a parent issue + sub-issues; tracks/phases → overview structure only (not Linear objects); the dependency graph → `blocked by` / `blocks` relations. Cycle / milestone / assignee are **user-directed**, not derived from the plan.
+3. **Map plan → Linear.** A work item → an issue; a work item with sub-items → a parent issue + sub-issues; tracks/phases → overview structure only (not Linear objects); the dependency graph → `blocked by` / `blocks` relations. Cycle / milestone / assignee are not derived from the plan — every issue gets `linear-tickets`' baseline (assigned to the user, Todo, current cycle), with whatever the user names overriding that field.
 4. **Approval gate.** Show the readable ticket breakdown (+ overview) for review **before** creating anything in Linear.
 5. **Create via `linear-tickets`.** Delegate the mechanics to the `linear-tickets` skill — create the issue tree in dependency order, wire relations, set the overview, verify. Follow its guardrails (status boundary, live cycle/milestone resolution, no destructive changes).
 
