@@ -20,11 +20,15 @@ Bash: allow-by-default; ask/deny only for the curated patterns (network->shell,
   allowed while `bash -c "rm -rf ~"` is caught. Running a script file
   (`bash foo.sh`) is allowed when the script sits under a trusted root
   (~/.claude, ~/Desktop/code -- your config + dev tree); a script anywhere else
-  (~/Downloads, /tmp) still prompts, since its contents are opaque. Line-scoped
-  secret reads (`grep VAR .env`, `sed`) stay allowed -- that's env-manager's
-  legit access. Shell rc + credential files (~/.zshrc, ~/.netrc, ~/.secrets.zsh)
-  fall under the same whole-file deny: they carry keys and tokens amid ordinary
-  config, so `cat ~/.zshrc` leaks them into the transcript.
+  (~/Downloads, /tmp) still prompts, since its contents are opaque. Reading a
+  secret file is denied for every reader that can print its content -- grep, sed,
+  awk, head and friends as well as cat, since `grep '' .env` dumps a file just as
+  thoroughly. Invocations that provably print none (`grep -q/-c/-l`, `sed -i`)
+  pass. Shell rc + credential files (~/.zshrc, ~/.netrc, ~/.secrets.zsh) are
+  covered alongside .env and key material: they carry keys and tokens amid
+  ordinary config, so `cat ~/.zshrc` leaks them into the transcript.
+Grep: a `content`-mode grep of a secret file -> deny. files_with_matches and
+  count print no file content, so they pass.
 Read/Edit/Write: hands-off (emit nothing, so native permissions + the worktree
   gate keep working) EXCEPT secret files (.env, keys) -> deny, an unscoped
   `Read` of a shell rc / credential file -> deny (offset+limit passes), and
@@ -39,7 +43,8 @@ Code evaluates deny over a hook allow, so it still applies.
 Fail-safe: any error -> emit nothing -> normal prompt (a bug degrades to
 prompting, never to silently allowing something dangerous).
 
-Bypass: MT_GUARD=0.
+Bypass: MT_GUARD=0 in the environment (whole session), or a literal
+`MT_GUARD=0 ` prefix on a single Bash command.
 
 Runs under /usr/bin/python3 (macOS system Python 3.9): keep 3.9-compatible
 (no PEP 604 unions, no match/case).
@@ -179,10 +184,76 @@ def _is_trusted_script(path):
 # --------------------------------------------------------------------------- #
 _SHELL_INTERPRETERS = {"bash", "sh", "zsh", "dash", "ksh"}
 # Tools that dump a whole file to stdout -- reading a secret with one of these
-# leaks it into the transcript. Line-scoped tools (grep/sed/awk/head/tail) are
-# excluded on purpose: they surface a single line and are env-manager's legit
-# way to read one value out of a .env.
+# leaks it into the transcript.
 _WHOLE_FILE_READERS = {"cat", "less", "more", "bat", "view", "xxd", "od", "strings", "nl", "tac"}
+
+# Tools that read a file and can print part of it. These were once excluded as
+# "line-scoped -- env-manager's legit access", but that reasoning checked the
+# binary and never the arguments: `grep '' .env`, `sed -n '1,$p'`, `awk '{print}'`
+# and a bare `head` on a short file each dump the whole file. Nothing in the
+# harness actually reads a secret to stdout -- env-manager rewrites with `sed -i`
+# (a write) and worktree_setup uses `cp` -- and a script run under a trusted root
+# is exempt regardless, so covering them costs nothing real.
+_SCOPED_READERS = {
+    "grep",
+    "egrep",
+    "fgrep",
+    "rg",
+    "ag",
+    "ack",
+    "sed",
+    "awk",
+    "gawk",
+    "mawk",
+    "head",
+    "tail",
+    "cut",
+    "rev",
+    "fold",
+    "expand",
+    "unexpand",
+    "colrm",
+    "diff",
+    "pr",
+}
+_FILE_READERS = _WHOLE_FILE_READERS | _SCOPED_READERS
+
+# Flags that suppress file content: -q/--quiet/--silent print nothing, -c/--count
+# a number, -l/-L filenames. `sed -i` is an in-place write, which is what
+# env-manager actually does to a .env.
+_GREP_FAMILY = {"grep", "egrep", "fgrep", "rg", "ag", "ack"}
+_GREP_SILENT_SHORT = frozenset("qclL")
+_GREP_SILENT_LONG = frozenset(
+    {
+        "--quiet",
+        "--silent",
+        "--count",
+        "--files-with-matches",
+        "--files-without-match",
+    }
+)
+
+
+def _has_short_flag(args, letters):
+    """True if any short-flag token (`-c`, or a cluster like `-ic`) carries one of
+    `letters`. Long flags (`--count`) are matched separately, by exact name."""
+    for a in args:
+        if a.startswith("-") and not a.startswith("--") and len(a) > 1:
+            if any(ch in letters for ch in a[1:]):
+                return True
+    return False
+
+
+def _prints_no_content(binary, args):
+    """True when this invocation provably prints no file content, so it may read a
+    secret path. Deliberately narrow: anything not proven silent is denied."""
+    if binary == "sed":
+        return any(a.startswith("-i") or a.startswith("--in-place") for a in args)
+    if binary in _GREP_FAMILY:
+        if any(a in _GREP_SILENT_LONG for a in args):
+            return True
+        return _has_short_flag(args, _GREP_SILENT_SHORT)
+    return False
 
 # curl/wget piped straight into a shell/interpreter -- the classic RCE vector.
 _NET_SHELL_RE = re.compile(
@@ -194,6 +265,9 @@ _SUBST_NET_RE = re.compile(r"[$`]\(?[^)]*\b(?:curl|wget|fetch)\b")
 # Writing to a raw disk device -- catastrophic, never legitimate here.
 _DISK_WRITE_RE = re.compile(r">\s*/dev/(?:sd[a-z]|disk\d|nvme\d|rdisk\d|hd[a-z])")
 _DD_DEVICE_RE = re.compile(r"of=/dev/(?:sd[a-z]|disk\d|nvme\d|rdisk\d|hd[a-z])")
+
+
+_GUARD_OFF_PREFIX_RE = re.compile(r"^\s*MT_GUARD=0\s+\S")
 
 
 def _split_segments(command):
@@ -263,8 +337,10 @@ def _classify_segment(tokens, depth):
     if binary is None:
         return ALLOW
 
-    if binary in _WHOLE_FILE_READERS and any(
-        _is_secret_path(a) or _is_rc_secret_path(a) for a in args
+    if (
+        binary in _FILE_READERS
+        and any(_is_secret_path(a) or _is_rc_secret_path(a) for a in args)
+        and not _prints_no_content(binary, args)
     ):
         return _SECRET_DECISION
 
@@ -343,16 +419,32 @@ def _run():
         command = tool_input.get("command", "")
         if not command:
             _nothing()
+        if _GUARD_OFF_PREFIX_RE.match(command):
+            _nothing()  # explicit, visible opt-out for this one command
         decision = _classify_command(command)
         if decision == DENY:
             _emit(
                 DENY,
-                "Blocked: raw-disk destruction or whole-file secret read. Read "
-                "one value with `grep`, or a range with `sed -n 'A,Bp'`.",
+                "Blocked: raw-disk destruction or secret-file read. Existence "
+                "checks (`grep -q/-c`) and `sed -i` rewrites still pass; to read "
+                "a secret value anyway, prefix the command with MT_GUARD=0.",
             )
         if decision == ASK:
             _nothing()  # surface the normal prompt
         _emit(ALLOW, "allow-by-default ACL")
+
+    if tool == "Grep":
+        path = tool_input.get("path") or ""
+        if _is_secret_path(path) or _is_rc_secret_path(path):
+            # files_with_matches (the default) and count print no file content;
+            # "content" prints matching lines, which is the whole exposure.
+            if (tool_input.get("output_mode") or "files_with_matches") == "content":
+                _emit(
+                    DENY,
+                    "Blocked by ACL: content grep of a secret file. Use "
+                    "output_mode files_with_matches or count.",
+                )
+        _nothing()
 
     if tool in ("Read", "Edit", "Write", "NotebookEdit"):
         path = tool_input.get("file_path") or tool_input.get("notebook_path") or ""
