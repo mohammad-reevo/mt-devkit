@@ -6,6 +6,7 @@ argument-hint: '[PR number, branch, or nothing for the current one]'
 
 > Personal rebuild — self-contained, no devkit dependency.
 > Standalone tool, and the automatic handoff step in **workflow** between verify and babysit.
+> `pr-review` § Report → § 1 opens its report with **§ The shape** below rather than its own copy.
 
 # pr-explanation — orient me to the diff
 
@@ -37,10 +38,37 @@ title genuinely don't say what a file contributes — and then read that one fil
 neighbours. **Never spawn an agent for this**: the whole point is that orientation is cheap. If
 you find yourself doing real investigation, you've drifted into `pr-review`'s job.
 
+## The shape
+
+An explanation orients the reader to **navigate the diff**, not to admire the design. Three
+parts, in order:
+
+1. **Two to four sentences** — what the change does and why it exists.
+2. **The files that carry it, in reading order**, each with the role it plays. Not the
+   changed-file list — the ones the reader would actually open, in the order they'd open them.
+3. **A simple arrow diagram** of how they build on each other — call or data flow, **3–6 nodes**,
+   one clause each:
+
+```
+edit_planner.py (planner input + serialized conditions)
+   → orchestrator.py (wiring, plan build)
+   → switch_case_ordering.py (subsumption prover)
+```
+
+Only files in the diff. **Skip the diagram entirely for a one- or two-file diff** — a diagram of
+two boxes is noise, and a manufactured one is worse.
+
+The diagram is the ASCII sketch above, not the `make-diagram` skill — that renders SVG and is a
+heavier tool than a three-line orientation sketch warrants.
+
+**Why parts 2 and 3:** they're the two an improvised explanation drops, and the two that do the
+work. A description of the design in the abstract reads fine and helps less when the reader is
+about to open the Files tab — reading order says where to start, the diagram says how the pieces
+chain. Both are nearly free: they fall out of `--stat` and the title.
+
 ## Report
 
-Follow `mt-devkit/.claude/references/pr-explanation-shape.md` exactly — the three parts in
-order, the diagram skipped at one or two files. Nothing else: no findings section, no test
-summary, no next-steps list. `response-altitude.md` governs how much of it to show.
+The three parts above, in order, and nothing else: no findings section, no test summary, no
+next-steps list. `response-altitude.md` governs how much of it to show.
 
 Then **stop**. Whatever invoked this decides what happens next.
