@@ -22,10 +22,13 @@ Bash: allow-by-default; ask/deny only for the curated patterns (network->shell,
   (~/.claude, ~/Desktop/code -- your config + dev tree); a script anywhere else
   (~/Downloads, /tmp) still prompts, since its contents are opaque. Line-scoped
   secret reads (`grep VAR .env`, `sed`) stay allowed -- that's env-manager's
-  legit access.
+  legit access. Shell rc + credential files (~/.zshrc, ~/.netrc, ~/.secrets.zsh)
+  fall under the same whole-file deny: they carry keys and tokens amid ordinary
+  config, so `cat ~/.zshrc` leaks them into the transcript.
 Read/Edit/Write: hands-off (emit nothing, so native permissions + the worktree
-  gate keep working) EXCEPT secret files (.env, keys) -> deny, and Edit/Write of
-  a `.claude/` config path -> allow. The latter overrides Claude Code's built-in
+  gate keep working) EXCEPT secret files (.env, keys) -> deny, an unscoped
+  `Read` of a shell rc / credential file -> deny (offset+limit passes), and
+  Edit/Write of a `.claude/` config path -> allow. The latter overrides Claude Code's built-in
   "edit its own settings" prompt, which fires on any `.claude/` write and which
   the permissions.allow list cannot suppress -- only a hook allow can. This
   subsumes the separate env-guard.
@@ -104,6 +107,38 @@ def _is_secret_path(path):
     if "/.aws/credentials" in p or "/.gnupg/" in p:
         return True
     return False
+
+
+# Shell rc + credential files. A whole-file dump leaks the keys and tokens these
+# carry, but unlike a `.env` they are mostly ordinary config (aliases, exports,
+# PATH) and are legitimately edited -- so they get a narrower treatment than
+# `_is_secret_path`: whole-file reads denied, line-scoped reads (grep/sed, or a
+# `Read` with offset+limit) allowed, Edit/Write untouched.
+# Basename-matched, like the rules above: a Bash token carries no reliable cwd to
+# resolve a relative path against.
+_RC_SECRET_BASENAMES = frozenset(
+    {
+        ".zshrc",
+        ".zshenv",
+        ".zprofile",
+        ".zlogin",
+        ".bashrc",
+        ".bash_profile",
+        ".bash_login",
+        ".profile",
+        ".netrc",
+        "_netrc",
+        ".secrets.zsh",
+        ".secrets.sh",
+    }
+)
+
+
+def _is_rc_secret_path(path):
+    if not path:
+        return False
+    p = os.path.expanduser(os.path.expandvars(path)).replace("\\", "/")
+    return os.path.basename(p.rstrip("/")) in _RC_SECRET_BASENAMES
 
 
 def _is_claude_config_path(path):
@@ -228,7 +263,9 @@ def _classify_segment(tokens, depth):
     if binary is None:
         return ALLOW
 
-    if binary in _WHOLE_FILE_READERS and any(_is_secret_path(a) for a in args):
+    if binary in _WHOLE_FILE_READERS and any(
+        _is_secret_path(a) or _is_rc_secret_path(a) for a in args
+    ):
         return _SECRET_DECISION
 
     if binary in _SHELL_INTERPRETERS and depth < 4:
@@ -308,7 +345,11 @@ def _run():
             _nothing()
         decision = _classify_command(command)
         if decision == DENY:
-            _emit(DENY, "Blocked: raw-disk destruction or whole-file secret read.")
+            _emit(
+                DENY,
+                "Blocked: raw-disk destruction or whole-file secret read. Read "
+                "one value with `grep`, or a range with `sed -n 'A,Bp'`.",
+            )
         if decision == ASK:
             _nothing()  # surface the normal prompt
         _emit(ALLOW, "allow-by-default ACL")
@@ -319,6 +360,18 @@ def _run():
             if _SECRET_DECISION == DENY:
                 _emit(DENY, "Blocked by ACL: secret file (.env / key material).")
             _nothing()  # ASK -> normal prompt on the secret file
+        if tool == "Read" and _is_rc_secret_path(path):
+            # A scoped read surfaces a slice, not the file -- that is the legit
+            # access (an alias body, one export line), and it is what this
+            # guard's own originating session needed. An unscoped Read pulls
+            # every key and token in the file into context.
+            if tool_input.get("offset") is None or tool_input.get("limit") is None:
+                _emit(
+                    DENY,
+                    "Blocked by ACL: whole-file read of a shell rc / credential "
+                    "file. Re-read it with offset+limit.",
+                )
+            _nothing()  # scoped -> hands off to native permissions
         if tool in ("Edit", "Write", "NotebookEdit") and _is_claude_config_path(path):
             _emit(ALLOW, "allow-by-default ACL: .claude config path")
         _nothing()  # non-secret file tool: hands off to native permissions
