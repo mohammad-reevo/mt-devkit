@@ -152,19 +152,10 @@ report is orientation plus decisions.
 
 ### 1. What this change is
 
-Two to four sentences: what the change does and why it exists. Then **the files that carry it**,
-each with the role it plays — not the full changed-file list, the ones I'd actually read, in
-reading order. Then a **simple arrow diagram** of how they build on each other:
-
-```
-edit_planner.py (planner input + serialized conditions)
-   → orchestrator.py (wiring, plan build)
-   → switch_case_ordering.py (subsumption prover)
-```
-
-Only files in the diff. **3–6 nodes**, call or data flow, one clause each. Skip the diagram
-entirely when the diff is one or two files — a diagram of two boxes is noise, and a manufactured
-one is worse.
+The three-part orientation from `mt-devkit/.claude/rules/pr-explanation-shape.md`: two to four
+sentences on what the change does and why it exists, then **the files that carry it** in reading
+order with the role each plays, then the **3–6 node arrow diagram** of how they build on each
+other — skipped when the diff is one or two files. Only files in the diff.
 
 Derive this from what you already have: `git diff --stat`, the PR title/body, and the lens
 reports, which name the load-bearing files as a side effect of reviewing them. Don't read files
