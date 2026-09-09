@@ -78,10 +78,13 @@ Invoke each phase skill and let it run to completion — each handles its own in
   **Go straight into verify — don't ask, don't wait for me.** Once running, verify is
   user-directed: it pulls me in to direct the testing and then opens the PR. That's my
   post-implement touchpoint — the touchpoint is *inside* verify, not a pause before it.
-- **verify → babysit — no gate.** Once verify opens the PR, report the PR link and **go straight
-  into babysit** — don't ask, don't wait for me. A freshly-opened PR always needs watching, so
-  making me say "yes, watch it" was pure friction; the only thing that ever came of the pause was
-  a delay. Invoke the `babysit` skill and let it run its poll loop.
+- **verify → babysit — no gate, with an explanation in between.** Once verify opens the PR,
+  report the PR link, then run `pr-explanation` on it — the PR is the first thing I read, and the
+  moment it opens is when I want orienting. Then **go straight into babysit** — don't ask, don't
+  wait for me. A freshly-opened PR always needs watching, so making me say "yes, watch it" was
+  pure friction; the only thing that ever came of the pause was a delay. Invoke the `babysit`
+  skill and let it run its poll loop. The explanation is orientation, not a gate: it never waits
+  for a reply before babysit starts.
 - **babysit → STOP.** babysit paces itself to a ~25-minute CI run (≈10-minute polls, so review
   comments still surface quickly) and reports what it finds — it does **not** fix, and reaching
   green does **not** close anything out. **done stays explicit**: `/done` is mine to invoke once

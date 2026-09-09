@@ -152,7 +152,7 @@ report is orientation plus decisions.
 
 ### 1. What this change is
 
-The three-part orientation from `mt-devkit/.claude/rules/pr-explanation-shape.md`: two to four
+The three-part orientation from `mt-devkit/.claude/references/pr-explanation-shape.md`: two to four
 sentences on what the change does and why it exists, then **the files that carry it** in reading
 order with the role each plays, then the **3–6 node arrow diagram** of how they build on each
 other — skipped when the diff is one or two files. Only files in the diff.
