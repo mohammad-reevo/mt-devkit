@@ -27,6 +27,19 @@ Bash: allow-by-default; ask/deny only for the curated patterns (network->shell,
   pass. Shell rc + credential files (~/.zshrc, ~/.netrc, ~/.secrets.zsh) are
   covered alongside .env and key material: they carry keys and tokens amid
   ordinary config, so `cat ~/.zshrc` leaks them into the transcript.
+Cloud: the same secret arriving from an API instead of a disk. A session
+  inherits the operator's live AWS SSO / gcloud / kube credentials, so
+  `aws ssm get-parameter --with-decryption` runs with their full
+  entitlements and prints a decrypted value straight into the transcript --
+  no local artifact, and the blast radius is the account rather than the
+  laptop. Value-bearing shapes are denied (ssm get-parameter* with
+  --with-decryption, secretsmanager get-secret-value, gcloud secrets
+  versions access, vault read / kv get, kubectl get secret -o yaml|json,
+  gh variable get). Metadata stays free -- names, types, versions and dates
+  are what diagnosis actually needs and carry no secret, so
+  describe-parameters, list-secrets, `gh secret list` and an aws `--query`
+  projecting only metadata all pass. A production namespace is denied
+  outright, metadata included.
 Grep: a `content`-mode grep of a secret file -> deny. files_with_matches and
   count print no file content, so they pass.
 Read/Edit/Write: hands-off (emit nothing, so native permissions + the worktree
@@ -255,6 +268,164 @@ def _prints_no_content(binary, args):
         return _has_short_flag(args, _GREP_SILENT_SHORT)
     return False
 
+# --------------------------------------------------------------------------- #
+# Cloud secret-store detection (Bash)
+# --------------------------------------------------------------------------- #
+# The tier above stops `cat .env`; this one stops the same secret arriving over
+# an API with the operator's inherited credentials. Only value-bearing shapes
+# are denied -- metadata (names, types, versions, dates) is what diagnosis
+# actually needs, and it carries no secret.
+
+# Reason for a pending deny, set by this tier so `_run` can name the store that
+# was touched. Left None by the file tier, which keeps the generic message.
+_DENY_REASON = None
+
+
+def _flag_value(args, names):
+    """Value of `--flag X` or `--flag=X` for any flag in `names`, else None."""
+    for i, a in enumerate(args):
+        for n in names:
+            if a == n:
+                return args[i + 1] if i + 1 < len(args) else ""
+            if a.startswith(n + "="):
+                return a[len(n) + 1:]
+    return None
+
+
+# A `--query` naming only metadata fields prints no secret -- the shape this
+# guard's originating session actually needed was
+# `--query Parameter.[Type,Version,LastModifiedDate]`. Narrow by design: a bare
+# container renders Value along with everything else, so it does not qualify.
+_AWS_VALUE_FIELDS = ("value", "secretstring", "secretbinary")
+_AWS_BARE_CONTAINERS = frozenset(
+    {"@", "parameter", "parameters", "parameters[]", "parameters[*]", "secretlist"}
+)
+
+
+def _aws_query_hides_value(args):
+    """True when an explicit `--query` provably projects no secret value."""
+    q = _flag_value(args, ("--query",))
+    if not q:
+        return False
+    s = q.strip().strip("'\"").lower()
+    if not s or s in _AWS_BARE_CONTAINERS:
+        return False
+    return not any(f in s for f in _AWS_VALUE_FIELDS)
+
+
+# `-o yaml|json|jsonpath|go-template|custom-columns` renders a Secret's `data`
+# block (base64 is an encoding, not a protection). `-o name` / `-o wide` and the
+# default table print names and types only.
+_KUBECTL_VALUE_OUTPUTS = (
+    "yaml",
+    "json",
+    "jsonpath",
+    "go-template",
+    "template",
+    "custom-columns",
+)
+
+
+def _kubectl_prints_secret_values(args):
+    out = _flag_value(args, ("-o", "--output"))
+    if out is None:
+        return False
+    o = out.strip().strip("'\"").lower()
+    return any(o.startswith(p) for p in _KUBECTL_VALUE_OUTPUTS)
+
+
+# A path segment that is exactly `prod`/`production`, or ends in `-prod`/`_prod`.
+# Matches /secrets-reevo-be-prod/..., /reevo-be-prod, /salestech-be/prod/... and
+# --secret=my-app-prod, while leaving /reevo-be-dev/... and `reproduction` alone.
+_PROD_SEGMENT_RE = re.compile(r"(?:^|[-_.])prod(?:uction)?$")
+
+
+def _names_prod_namespace(args):
+    for a in args:
+        for seg in re.split(r"[/=,:]", a):
+            if _PROD_SEGMENT_RE.search(seg.strip().lower()):
+                return True
+    return False
+
+
+def _cloud_secret_store(binary, args):
+    """Name of the store this invocation reads a *value* out of, or None.
+    Metadata-only subcommands return None and stay allowed."""
+    sub = [a for a in args if not a.startswith("-")]
+
+    if binary == "aws":
+        if sub[:1] == ["ssm"] and len(sub) >= 2:
+            if sub[1] in ("get-parameter", "get-parameters", "get-parameters-by-path"):
+                # Without --with-decryption a SecureString comes back as
+                # ciphertext, and the plain String parameters it does return are
+                # config by definition. The decrypt flag is what declares intent.
+                if "--with-decryption" in args:
+                    return "AWS SSM Parameter Store"
+            return None
+        if sub[:2] == ["secretsmanager", "get-secret-value"]:
+            return "AWS Secrets Manager"
+        return None
+
+    if binary == "gcloud":
+        if sub[:3] == ["secrets", "versions", "access"]:
+            return "Google Secret Manager"
+        return None
+
+    if binary == "vault":
+        if sub[:1] == ["read"] or sub[:2] == ["kv", "get"]:
+            return "HashiCorp Vault"
+        return None
+
+    if binary == "kubectl":
+        if sub[:1] == ["get"] and len(sub) >= 2 and sub[1] in ("secret", "secrets"):
+            if _kubectl_prints_secret_values(args):
+                return "Kubernetes Secret"
+        return None
+
+    if binary == "gh":
+        # GitHub never returns a secret's value over the API, so `gh secret list`
+        # is metadata. Actions *variables* do carry their value.
+        if sub[:2] == ["variable", "get"]:
+            return "GitHub Actions variable"
+        if sub[:2] == ["variable", "list"]:
+            j = _flag_value(args, ("--json",))
+            if j and "value" in j.lower():
+                return "GitHub Actions variable"
+        return None
+
+    return None
+
+
+def _classify_cloud_secret(binary, args):
+    """DENY when this invocation extracts a secret value from a cloud store, or
+    None when it is not a secret-store read at all (caller keeps classifying)."""
+    global _DENY_REASON
+    store = _cloud_secret_store(binary, args)
+    if store is None:
+        return None
+    if _names_prod_namespace(args):
+        # Prod is denied ahead of the metadata carve-out: a dev session has no
+        # business holding a prod secret, and "I only wanted the type" is not
+        # worth trusting a query parse for. The operator's own terminal is the
+        # right place for a genuine prod read.
+        _DENY_REASON = (
+            "Blocked: reads a PRODUCTION secret from {} with your inherited "
+            "credentials. Run it in your own terminal, or -- if you truly mean "
+            "to pull prod into this session -- prefix with MT_GUARD=0.".format(store)
+        )
+        return DENY
+    if _aws_query_hides_value(args):
+        return None  # projects metadata only; no value is printed
+    _DENY_REASON = (
+        "Blocked: prints a secret value from {} into the transcript. Metadata "
+        "reads still pass -- names, types, versions and dates (e.g. "
+        "`--query Parameter.[Type,Version]`, `describe-parameters`, "
+        "`list-secrets`, `gh secret list`). To read the value anyway, prefix the "
+        "command with MT_GUARD=0.".format(store)
+    )
+    return DENY
+
+
 # curl/wget piped straight into a shell/interpreter -- the classic RCE vector.
 _NET_SHELL_RE = re.compile(
     r"\b(?:curl|wget|fetch)\b[^|]*\|\s*(?:sudo\s+)?"
@@ -272,8 +443,16 @@ _GUARD_OFF_PREFIX_RE = re.compile(r"^\s*MT_GUARD=0\s+\S")
 
 def _split_segments(command):
     """Split into segments on &&, ||, ;, |, and newlines (same approach as the
-    branch guard) so each invocation's leading binary can be inspected."""
-    tmp = command.replace("\n", ";")
+    branch guard) so each invocation's leading binary can be inspected.
+
+    `$(` and a backtick also open a segment, so the command inside a
+    substitution is classified rather than swallowed into its assignment:
+    `KEY=$(aws ssm get-parameter ... --with-decryption)` otherwise parses as
+    the single token `KEY=$(aws`, and the guard never sees the `aws`
+    invocation at all. The closing paren stays attached to the last token --
+    harmless here, and not splitting on `)` keeps `find \\( ... \\)` and
+    quoted parens intact."""
+    tmp = command.replace("\n", ";").replace("$(", ";").replace("`", ";")
     for op in ("&&", "||"):
         tmp = tmp.replace(op, ";")
     tmp = tmp.replace("|", ";")
@@ -343,6 +522,10 @@ def _classify_segment(tokens, depth):
         and not _prints_no_content(binary, args)
     ):
         return _SECRET_DECISION
+
+    cloud = _classify_cloud_secret(binary, args)
+    if cloud is not None:
+        return cloud
 
     if binary in _SHELL_INTERPRETERS and depth < 4:
         payload = _dash_c_payload(args)
@@ -425,9 +608,13 @@ def _run():
         if decision == DENY:
             _emit(
                 DENY,
-                "Blocked: raw-disk destruction or secret-file read. Existence "
-                "checks (`grep -q/-c`) and `sed -i` rewrites still pass; to read "
-                "a secret value anyway, prefix the command with MT_GUARD=0.",
+                _DENY_REASON
+                or (
+                    "Blocked: raw-disk destruction or secret-file read. "
+                    "Existence checks (`grep -q/-c`) and `sed -i` rewrites "
+                    "still pass; to read a secret value anyway, prefix the "
+                    "command with MT_GUARD=0."
+                ),
             )
         if decision == ASK:
             _nothing()  # surface the normal prompt
