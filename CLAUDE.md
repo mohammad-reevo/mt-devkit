@@ -21,7 +21,8 @@ scope → plan → implement → verify → babysit → done   (conducted by wor
 - **babysit** — watch CI + PR review threads (opt-in; never auto-starts).
 - **done** — gate the PR (CI green + threads resolved), then tear down the worktree.
 
-Standalone tools: `pr-review` (review a diff or a teammate’s PR), `address-comments` (triage the
+Standalone tools: `pr-review` (review a diff or a teammate’s PR), `pr-explanation` (orient me to
+a PR/branch/diff — files in reading order, no findings), `address-comments` (triage the
 review comments on my PR, then act on the agreed ones), `pr-description` (write a PR body —
 routes to the target repo’s convention and preflights it), `make-diagram` (ASCII diagram
 of a design or flow), `kb` (the cross-session knowledge base), `worktree`, `db` (local/dev
