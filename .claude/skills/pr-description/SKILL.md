@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: Write a PR description for any Reevo sub-repo from an mt-devkit session. Routes to the target repo's own pr-description skill + pull_request_template.md (read live, never forked), layers my house rules on top, and runs that repo's deterministic validator before the PR is opened so a format miss costs seconds instead of a ~25-minute CI cycle. Use whenever a PR is created or its body edited — inside /verify or from a bare `gh pr create`. Triggers on "write the PR description", "open the PR", "update the PR body", "/pr-description".
+description: Write a PR description for any Reevo sub-repo — or for mt-devkit itself — from an mt-devkit session. Routes to the target repo's own pr-description skill + pull_request_template.md (read live, never forked), layers my house rules on top, and runs that repo's deterministic validator before the PR is opened so a format miss costs seconds instead of a ~25-minute CI cycle. Use whenever a PR is created or its body edited — inside /verify or from a bare `gh pr create`. Triggers on "write the PR description", "open the PR", "update the PR body", "/pr-description".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -34,6 +34,7 @@ From the branch you are opening a PR for. One PR per repo the change touches.
 | `salestech-be` | `.agents/skills/pr-description/SKILL.md` + `pull_request_template.md` (5 `## ` sections) | ✅ `scripts/hooks/validate_pr_description.py` |
 | `frontend-monorepo` | `.agents/skills/pr-description/SKILL.md` + `pull_request_template.md` (2 `# ` sections) | ❌ none |
 | `reevo-realtime` | none — no skill, no template | ❌ none |
+| `mt-devkit` | `pull_request_template.md` at the repo root (2 `## ` sections) — no skill | ❌ none |
 
 `.agents/skills/` is the canonical path in both repos; `.claude/skills/` mirrors it.
 
@@ -44,6 +45,13 @@ They are not auto-loaded in a funnel session (the session's project dir is the m
 workspace root), so read-and-follow is the normal path, not a fallback.
 
 Use the template as the literal skeleton — its headers, its order, nothing renamed.
+
+**`mt-devkit` has no sub-repo skill to read** — the root template is the whole convention.
+Two required sections, and optional ones *only when they carry weight*: optional means usually
+absent, and a template that invites filler is the failure to avoid. A harness PR is the least
+self-explanatory kind — a hook's diff does not say what it now blocks — so `## Summary` carries
+that, not a changelog. Nothing here deploys, so the backend's `## Post-deployment Verification`
+and `## Verification Metrics` have no meaning and are deliberately absent.
 
 **Read Overrides below before following the sub-repo skill.** A handful of its instructions
 are wrong; those rules win over anything the sub-repo says.
