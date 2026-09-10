@@ -43,12 +43,24 @@ leave behind).
 
 ## Layout
 
-- `.claude/` — the harness: `skills/`, `rules/`, `hooks/`, `references/` (prose two or more
-  skills share; `agents/` is the same idea for shared behavior).
+- `.claude/` — the harness: `skills/`, `rules/`, `hooks/`, `references/`, `agents/`.
 - `spec/` — design docs + per-idea scope/plan files.
 - `tasks/` — deferred tooling chores (the `claude-task` system).
 - `knowledge-base/` — context that outlives a session (gitignored; see below).
 - Product sub-repos (`salestech-be`, `frontend-monorepo`, …) are gitignored siblings.
+
+### Where a piece of prose goes
+
+- **Skill** — a produced artifact and the procedure for it; something I'd ask for by name. It's
+  advertised in the session's skill listing, so a bare ask fires it at a fraction of the context
+  an always-loaded rule costs.
+- **Rule** — a norm or constraint on how work is done, not a thing you ask for.
+- **`references/`** — prose **no single skill can own**: shared metadata that several skills each
+  apply in their own context. `testing-call.md` is the model — `scope`, `implement`,
+  `implementer`, `reviewer`, and `address-comments` all read it, and there is no "testing-call
+  skill" it could belong to. `agents/` is the same idea, for shared behavior.
+- **One owner ⇒ it lives in that skill.** A second reader is a citation — name the skill and its
+  section — not a reason to extract a file. Two consumers is not the bar; ownerless is.
 
 ## Knowledge base
 
