@@ -76,9 +76,9 @@ Invoke each phase skill and let it run to completion — each handles its own in
   (plan creates + enters the worktree at its start.)
 - **implement → verify — no gate.** implement ends at a pushed, reviewed, green branch (no PR).
   **Go straight into verify — don't ask, don't wait for me.** Once running, verify opens the PR
-  first and verifies after. Where verification needs me (the in-app case), that's my
-  post-implement touchpoint — *inside* verify, not a pause before it, and not something the
-  drive waits on.
+  and then proves whatever it can prove unattended. Verification that needs me at a keyboard is
+  written into the PR body as a pending check list — my touchpoint is when I pick the PR up to
+  review it, not a pause anywhere inside the drive.
 - **verify → babysit — no gate, with an explanation in between.** Once verify opens the PR,
   report the PR link, then run `pr-explanation` on it — the PR is the first thing I read, and the
   moment it opens is when I want orienting. Then **go straight into babysit** — don't ask, don't
