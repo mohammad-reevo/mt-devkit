@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Verification phase of my personal dev workflow. Takes the pushed, reviewed branch from implement, implicitly picks a verification strategy (run scripts / skip / in-app with me), opens the PR up front (using the relevant repo's own pr-description skill + template) — before the slow in-app verification so it doesn't wait behind it — then proves the change works. Directly invocable on any branch. Use after implement, or to verify + PR a branch on its own.
+description: Verification phase of my personal dev workflow. Takes the pushed, reviewed branch from implement, implicitly picks a verification strategy (run scripts / skip / in-app), opens the PR (using the relevant repo's own pr-description skill + template), then proves whatever it can prove unattended. In-app testing is never run inside verify — it is written into the PR body as pending, for me to orchestrate when I pick the PR up. Directly invocable on any branch. Use after implement, or to verify + PR a branch on its own.
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -10,8 +10,9 @@ description: Verification phase of my personal dev workflow. Takes the pushed, r
 # verify — open the PR, then prove it works
 
 You pick up a **pushed, reviewed, green branch** (from implement) and carry it to an **open
-PR** with the change proven to work. Two jobs: open the PR and verify — and because in-app
-verification is slow to set up, the PR goes up **first** so it doesn't wait behind the testing.
+PR**, with the change proven as far as it can be proven without me. Two jobs: open the PR, and
+run the verification that needs no human. Anything that needs me at a keyboard is written into
+the PR body as pending — I orchestrate that when I pick the PR up, never during the drive.
 
 Not your job: unit/integration **test-building** is decided in scope and built in
 implement; **code review** already happened in implement; **CI babysitting** is babysit.
@@ -33,19 +34,20 @@ Judge from what actually changed:
   flow builder, a CLI, an API script). No coordination needed.
 - **N/A** — no visual change, coding tests already cover it, and nothing complex in how the
   frontend consumes it. Nothing to manually verify.
-- **In-app (with me)** — real visual changes or potential side effects. Needs me to orchestrate.
+- **In-app (mine to run)** — real visual changes or potential side effects. Needs a human at the
+  keyboard, so verify never runs it: it writes the checks into the PR body as pending and I
+  orchestrate them when I pick the PR up.
 
-State which you picked and why in one line, then proceed. Don't hand me a menu — only the
-in-app case pulls me in.
+State which you picked and why in one line, then proceed. Don't hand me a menu, and don't wait
+for me — all three strategies run to completion inside the drive, the in-app one by handing me a
+check list rather than by testing.
 
-## 2. Open the PR (up front — before the slow verification)
+## 2. Open the PR (up front)
 
-Open the PR on the pushed branch as soon as you've picked the strategy — **before** in-app
-verification, not after. The branch is already reviewed and green from implement, so the PR
-isn't premature; and in-app setup (env spin-up + live testing) takes real time, so there's no
-reason to make the PR wait behind it. (For a fast **scripts-only / N/A** strategy the order
-doesn't matter — run the check first if you like — but a slow **in-app** loop must never block
-PR creation.)
+Open the PR on the pushed branch as soon as you've picked the strategy. The branch is already
+reviewed and green from implement, so the PR isn't premature — and under the in-app strategy the
+PR *is* the deliverable, since it carries the pending check list I'll work from. (For a fast
+**scripts-only / N/A** strategy the order doesn't matter — run the check first if you like.)
 
 Create one PR per repo the change touches, **ready for review — never draft**. For the
 description, use the **`pr-description` skill** — it routes to that repo's own convention,
@@ -61,21 +63,36 @@ you run the verification.
 - **Scripts-only** → run the script/flow (directly or via a subagent), capture pass/fail + the
   key output.
 - **N/A** → note "no manual verification needed: `<reason>`".
-- **In-app** → bring the local env up via env-manager **`run backend`** — standalone, that row
-  already chains `run frontend` after it (the frontend caches a token the backend mints at startup,
-  so it must be restarted against the fresh backend). Don't use `run all-envs` here: it additionally
-  recycles docker and realtime, which a webapp check doesn't need and which costs minutes.
-  Then drive the app live (browser MCP) with **me directing**: you propose a check, run it when I
-  say go, we look at the result together, I call pass/fail. You can suggest checks; I steer.
-  Capture a screenshot for UI changes.
+- **In-app** → **don't run it. I am not at the keyboard during the drive.** Write the concrete
+  checks into the PR body as pending verification — what to open, what to do, what should happen.
+  That list is the deliverable; I run it when I pick the PR up.
+
+  **When I ask you to drive it** (while I'm reviewing, or on any later invoke) bring the local env
+  up via env-manager **`run backend`** — standalone, that row already chains `run frontend` after it
+  (the frontend caches a token the backend mints at startup, so it must be restarted against the
+  fresh backend). Don't use `run all-envs` here: it additionally recycles docker and realtime, which
+  a webapp check doesn't need and which costs minutes. Then drive the app live (browser MCP) with
+  **me directing**: you propose a check, run it when I say go, we look at the result together, I
+  call pass/fail. You can suggest checks; I steer. Capture a screenshot for UI changes.
 
   **Check whose services are already running first.** Ports 8000/3000 are shared across worktrees,
   so another session's stack may hold them — and verifying against it proves nothing about your
   branch. Resolve each listening pid's worktree (`lsof -p <pid> -a -d cwd -Fn`) before trusting it,
   and if the stack belongs to another worktree, ask me before taking the ports.
 
-**No workarounds** — if something needs a hack to test (flag off, missing data, auth), that's a
-failure to surface and stop on, not a step to route around.
+**Never fake a pass.** If something can't be exercised as it stands (flag off, missing data,
+expired auth), don't route around it with a hack and don't report a result that never ran.
+Record it as **pending**, and say exactly what's outstanding and why. A verification you didn't
+run is pending — never passed.
+
+**Pending verification is an outstanding item, not a stop.** Two failure classes, and only one of
+them halts the drive:
+
+- **Environmental, or mine** — expired credentials, a service that's down, my availability. Note
+  it, run whatever else you *can* run unattended, mark the rest pending in the PR body, and keep
+  going. This never blocks the funnel from reaching a ready PR.
+- **The change itself** — it can't work without a hack, or verification surfaces a structural
+  problem. That still stops, and still kicks back to plan.
 
 If verification surfaces a bug → fix it, re-run the check, then commit + push to the
 **already-open PR**. These after-the-fact changes do **not** re-run implement's code review (it
@@ -83,19 +100,27 @@ was a one-shot post-implementation gate). If verification instead surfaces a **s
 problem (the change is fundamentally wrong, not a fixable bug), that's a kickback to plan — say
 so on the PR rather than papering over it.
 
-Once verification passes, return to `/workflow` to continue — it owns what comes next.
+Once the PR is open and you've run everything you can unattended, return to `/workflow` to
+continue — it owns what comes next. Name any verification still outstanding in the hand-back, as
+a **reminder** rather than a question: I decide when manual testing happens, and the drive
+doesn't wait on that decision.
 
 ## Guardrails
 
 - **Verify, don't rebuild.** You verify a finished branch — you don't re-run coding checks or
   re-review (implement owned those). Only fix what verification itself surfaces.
-- **Strategy is your call, not a menu.** Pick N/A / scripts / in-app from what changed; only
-  in-app pulls me in.
-- **PR up front; fixes pushed to it.** The PR goes up before the slow in-app verification (the
-  branch is already green + reviewed from implement), so it's ready while I test; any bug
-  verification surfaces is pushed to the open PR. Still ready-for-review, never draft.
+- **Strategy is your call, not a menu.** Pick N/A / scripts / in-app from what changed. None of
+  the three waits for me — in-app is discharged by writing the check list, not by running it.
+- **PR up front; fixes pushed to it.** The PR goes up as soon as the strategy is picked (the
+  branch is already green + reviewed from implement), so it's ready and carrying the pending
+  checks by the time I get to it; any bug verification surfaces is pushed to the open PR. Still
+  ready-for-review, never draft.
 - **The PR description goes through the `pr-description` skill.** It reads the relevant repo's
   convention live and preflights the body — never devkit's PR skills, and nothing duplicated
   into the harness.
+- **Testing is mine to run, never the funnel's to wait on.** In-app verification needs me at a
+  keyboard and I schedule that myself, at PR-review time. Leave it in the PR body as a pending
+  check list, name it in the hand-back, and carry on to a ready PR — an open, green, reviewable
+  PR is not blocked because I haven't tested it yet.
 - **No state, no auto-transition** (Wave 1: I drive). babysit is a separate phase — don't invoke
   it yourself; hand back to `workflow`, which starts it once the PR is open.
