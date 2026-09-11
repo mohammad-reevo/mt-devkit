@@ -67,15 +67,27 @@ you run the verification.
   recycles docker and realtime, which a webapp check doesn't need and which costs minutes.
   Then drive the app live (browser MCP) with **me directing**: you propose a check, run it when I
   say go, we look at the result together, I call pass/fail. You can suggest checks; I steer.
-  Capture a screenshot for UI changes.
+  Capture a screenshot for UI changes. If I'm not there to steer, don't sit on it — write the
+  proposed checks into the PR body as pending and carry on.
 
   **Check whose services are already running first.** Ports 8000/3000 are shared across worktrees,
   so another session's stack may hold them — and verifying against it proves nothing about your
   branch. Resolve each listening pid's worktree (`lsof -p <pid> -a -d cwd -Fn`) before trusting it,
   and if the stack belongs to another worktree, ask me before taking the ports.
 
-**No workarounds** — if something needs a hack to test (flag off, missing data, auth), that's a
-failure to surface and stop on, not a step to route around.
+**Never fake a pass.** If something can't be exercised as it stands (flag off, missing data,
+expired auth), don't route around it with a hack and don't report a result that never ran.
+Record it as **pending**, and say exactly what's outstanding and why. A verification you didn't
+run is pending — never passed.
+
+**Pending verification is an outstanding item, not a stop.** Two failure classes, and only one of
+them halts the drive:
+
+- **Environmental, or mine** — expired credentials, a service that's down, my availability. Note
+  it, run whatever else you *can* run unattended, mark the rest pending in the PR body, and keep
+  going. This never blocks the funnel from reaching a ready PR.
+- **The change itself** — it can't work without a hack, or verification surfaces a structural
+  problem. That still stops, and still kicks back to plan.
 
 If verification surfaces a bug → fix it, re-run the check, then commit + push to the
 **already-open PR**. These after-the-fact changes do **not** re-run implement's code review (it
@@ -83,7 +95,10 @@ was a one-shot post-implementation gate). If verification instead surfaces a **s
 problem (the change is fundamentally wrong, not a fixable bug), that's a kickback to plan — say
 so on the PR rather than papering over it.
 
-Once verification passes, return to `/workflow` to continue — it owns what comes next.
+Once the PR is open and you've run everything you can unattended, return to `/workflow` to
+continue — it owns what comes next. Name any verification still outstanding in the hand-back, as
+a **reminder** rather than a question: I decide when manual testing happens, and the drive
+doesn't wait on that decision.
 
 ## Guardrails
 
@@ -97,5 +112,8 @@ Once verification passes, return to `/workflow` to continue — it owns what com
 - **The PR description goes through the `pr-description` skill.** It reads the relevant repo's
   convention live and preflights the body — never devkit's PR skills, and nothing duplicated
   into the harness.
+- **Testing is mine to run, never the funnel's to wait on.** In-app verification needs me at a
+  keyboard and I schedule that myself. Surface it as an outstanding reminder and carry on to a
+  ready PR — an open, green, reviewable PR is not blocked because I haven't tested it yet.
 - **No state, no auto-transition** (Wave 1: I drive). babysit is a separate phase — don't invoke
   it yourself; hand back to `workflow`, which starts it once the PR is open.
