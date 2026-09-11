@@ -1,6 +1,6 @@
 ---
 name: address-comments
-description: Triage the review comments on my PR and then act on the ones I agree to. Reads every open thread, verifies what it claims, and hands me a numbered report — one short entry per comment with your call, action items at the bottom — then STOPS for my review before any code changes or replies. AI-bot comments, my comments, and other humans' comments each get a different default posture. The inbound mirror of pr-review. Triggers on "address the comments", "go through the PR comments", "what do the review comments say", "handle the bot comments", "/address-comments".
+description: Triage the review comments on my PR and then act on the ones I agree to. Reads every open thread, verifies what it claims, and hands me a numbered report — one short entry per comment with your call, action items at the bottom — then STOPS for my review before any code changes or replies. Approvals given while we discuss accumulate but authorize nothing: the skill re-emits a finalized action table and waits for one explicit go before it executes. AI-bot comments, my comments, and other humans' comments each get a different default posture. The inbound mirror of pr-review. Triggers on "address the comments", "go through the PR comments", "what do the review comments say", "handle the bot comments", "/address-comments".
 argument-hint: '[repo#n]'
 ---
 
@@ -9,12 +9,15 @@ argument-hint: '[repo#n]'
 
 # address-comments — triage PR comments, then act on the agreed ones
 
-Three steps. The gate between 2 and 3 is the entire point of the skill:
+Four steps. The gate before execution is the entire point of the skill:
 
 1. **Triage** — read every open thread, verify what it claims, hand me a numbered report. No code
    touched, nothing posted to GitHub.
-2. **My review** — we discuss. I decide what happens to each comment.
-3. **Execute** — implement the agreed ones, then reply and resolve every thread.
+2. **My review** — we discuss, over as many rounds as it takes. I decide what happens to each
+   comment. Nothing is acted on here.
+3. **Finalize** — re-emit the whole action table with every decision applied, and stop. One
+   explicit go on *that* table is what authorizes execution.
+4. **Execute** — implement the agreed ones, then reply and resolve every thread.
 
 The failure this replaces: **compliance by default.** A comment says X, so the code becomes X —
 no step between reading and implementing. A silently-accepted bad suggestion is worse than an
@@ -56,7 +59,7 @@ Don't overcorrect into reflexive dismissal. "The bot said it" is not a reason to
 bot comments that survive verification are worth doing.
 
 **An approval carrying nits is not a gate.** A review that approves while leaving small comments
-still goes through all three steps — the nits get triaged, tiered and resolved like anything else —
+still goes through all four steps — the nits get triaged, tiered and resolved like anything else —
 but nothing about the PR is blocked while that happens, so don't report it as if it were.
 
 ## Step 1 — the report
@@ -112,15 +115,43 @@ flagged.
 that need me. A comment with an obvious answer gets one line, not a paragraph.
 
 Then **stop.** Don't edit code, don't post a reply, don't start on the easy ones because they're
-easy. Close with a single line that execution is available on my word.
+easy. Close with a single line inviting my review — not an offer to start executing, which isn't
+on the table until step 3 has been approved.
 
 ## Step 2 — my review
 
-Conversational, possibly several rounds. I confirm, override, or re-tier anything. Approval covers
-**the action items in the message I approved** — not the next batch, and not a comment that
-arrives afterwards. A new comment restarts at step 1 for that thread.
+Conversational, possibly several rounds. I confirm, override, or re-tier anything.
 
-## Step 3 — execute
+**Approvals arriving during discussion accumulate — they authorize nothing.** "#1 agreed, #2
+agreed" mid-conversation is me working through the list, not releasing you to build. Record it and
+keep discussing. It takes effect at step 3 and only there: don't dispatch an implementer, and
+don't start on the ones I've already agreed to on the grounds that those are settled.
+
+A round of review is over when *I* close it, not when the approvals look like enough.
+
+## Step 3 — finalize
+
+Discussion doesn't end itself. When it settles, **re-emit the action table in full** — every
+comment, every tier, as decided — and then stop.
+
+That table is the artifact I approve, so it has to stand alone:
+
+- **Every override applied.** A tier I moved shows its new tier, not the original with a note.
+- **Every open question resolved.** Nothing still reads "open" or "depends on".
+- **Anything I never mentioned listed as `Unaddressed`** — a first-class row, never quietly
+  carried at its triage tier and never quietly dropped. My silence is neither agreement nor
+  refusal, and the row is what turns a guess into a confirmation. Usually I just missed it.
+- **The drafted replies carried along**, push-backs and answers included: the wording that lands
+  on the thread is part of what I'm approving (`github.md`).
+
+Then wait for **one explicit go on this table**. That go is the only thing that authorizes step 4,
+and it covers the table I showed — not the next batch, and not a comment that arrives afterwards.
+A new comment restarts at step 1 for that thread.
+
+**A message that mixes discussion with approval is discussion.** Re-finalize and ask again rather
+than reading a go into it.
+
+## Step 4 — execute
 
 1. **Dispatch an `implementer`** per action item — product-repo code is never edited from here
    (`delegate-product-code.md`).
@@ -143,8 +174,10 @@ arrives afterwards. A new comment restarts at step 1 for that thread.
 
 ## Guardrails
 
-- **Nothing lands before the gate.** No edits, no replies, no resolves in step 1. The whole value
-  is the pause.
+- **Nothing lands before the gate, and the gate is the finalized table.** No edits, no replies,
+  no resolves in steps 1–3 — including on items I approved mid-discussion. The whole value is the
+  pause, and a partial approval collapses it: a tier I was about to override gets built, and an
+  item I forgot to mention gets silently skipped or silently assumed.
 - **Verify before you agree, not after.** An action item that says "implement" asserts you checked
   the claim against the code. If you couldn't, it's a *bring to me*.
 - **Escalate rather than pick a side.** A large change or a hard judgment call goes to me in the

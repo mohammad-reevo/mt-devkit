@@ -204,6 +204,11 @@ propose a fix plan unless I ask, and don't start fixing.
 must-leaves" is not approval; approval is me telling you to leave them. Approval covers the
 comments in the message I approved — not the next batch.
 
+**Approvals given while we're still talking through the report accumulate — they authorize
+nothing.** If the review turns into a discussion, it ends by you re-emitting the finalized set of
+comments and waiting for one go on *that* set, the same shape `address-comments` uses. A message
+that mixes discussion with approval is discussion.
+
 When I do say so, for each comment:
 
 1. **Verify the anchor is in the diff at head.** An inline comment on a line the diff doesn't
