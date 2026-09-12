@@ -51,7 +51,7 @@ from a human is still wrong. What differs is the default posture when you're uns
 
 | Source | Default posture |
 |---|---|
-| **AI review bot** (`*-code-review[bot]`, builder agent) | A **hypothesis**, not a finding — a model reading a diff, not a verified defect. Confirm the claim is true of *this* codebase before it earns an action item. **Push back and resolve is a first-class outcome**, not rudeness. |
+| **AI review bot** (`*-code-review[bot]`, `reevo-builder-agent[bot]` — see `builder-agent.md`) | A **hypothesis**, not a finding — a model reading a diff, not a verified defect. Confirm the claim is true of *this* codebase before it earns an action item. **Push back and resolve is a first-class outcome**, not rudeness. |
 | **Mohammad** (my own comments) | Authority on **intent and direction** — don't argue about what I want built. But still consequence-check the change it implies: my own comment on salestech-be#31062 moved logic to the service layer and silently invalidated the testing call. Authority over intent isn't authority over side effects. |
 | **Another human** | Real context and authority an AI doesn't have. Verify the claim, then default toward implementing. Disagreement is legitimate but needs an argument, not a preference. |
 
