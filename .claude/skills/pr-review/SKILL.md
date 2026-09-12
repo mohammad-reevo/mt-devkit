@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a diff through a fixed trio of parallel lenses — correctness, house-rules conformance, and duplication/dead-code — and report back what the change is, which files carry it, and the candidate comments tiered into must-leave / minor / skip. Works on my uncommitted working tree, my branch vs main, or a teammate's PR. Two modes I pick, never the skill — the default full trio of parallel subagents, or `mini`, the same three lenses in one main-thread pass with no subagents, for a small diff. Never edits code; posts inline PR comments only when I explicitly say so, then re-reviews the author's revision. Replaces my use of the built-in /code-review, which has effort levels, remembered state, and background workflow routing I don't want. Triggers on "review this", "review my diff", "review this branch", "review PR <n>", "/pr-review", "/pr-review mini", "re-review", "did they address the comments".
+description: Review a diff through a fixed trio of parallel lenses — correctness, house-rules conformance, and duplication/dead-code — and report back what the change is, which files carry it, and the candidate comments tiered into must-leave / minor — rule-true noise is dropped outright rather than shown. Works on my uncommitted working tree, my branch vs main, or a teammate's PR. Two modes I pick, never the skill — the default full trio of parallel subagents, or `mini`, the same three lenses in one main-thread pass with no subagents, for a small diff. Never edits code; posts inline PR comments only when I explicitly say so, then re-reviews the author's revision. Replaces my use of the built-in /code-review, which has effort levels, remembered state, and background workflow routing I don't want. Triggers on "review this", "review my diff", "review this branch", "review PR <n>", "/pr-review", "/pr-review mini", "re-review", "did they address the comments".
 argument-hint: '[mini] [branch | repo#n]'
 ---
 
@@ -163,23 +163,33 @@ wholesale to build it, and **don't spawn an agent for it**.
 
 ### 2. The comments, numbered and tiered
 
-Every finding worth my attention becomes a numbered candidate comment, split into three tiers.
-**Number continuously across all three tiers** (1..N, not per-tier) so we can refer to "number 4"
+Every finding worth my attention becomes a numbered candidate comment, split into two tiers.
+**Number continuously across both tiers** (1..N, not per-tier) so we can refer to "number 4"
 without ambiguity. Order by tier, most severe first within each.
 
 | Tier | Bar |
 |---|---|
 | **Must leave** | Ships a production behavior bug, **or** the PR doesn't do what its title claims, **or** it's cheap to fix and actively misleads future work (a wrong example, a rule that contradicts the code it steers). |
 | **Could leave / minor nits** | Real but non-blocking — a follow-up, or a question rather than a demand. |
-| **Worth leaving out** | Rule-true but noise: test restructuring, style volume, a hazard with no reproducer, anything pre-existing that this diff didn't introduce. |
 
 Each entry: **`file:line`**, then **cause → effect → fix**, as prose I can read for context —
 2–4 sentences. What's actually wrong, what breaks or misleads because of it, and what would
 resolve it. Not a card, not a bare assertion.
 
+A third bar exists for your own triage and is **never printed**: *worth leaving out* — rule-true
+but noise. Test restructuring, style volume, a hazard with no reproducer, anything pre-existing
+this diff didn't introduce. Findings that meet it are **dropped by you**, unnumbered and unshown.
+
+I dropped that tier on every single run, so reading it and saying "drop them" was the only thing
+it ever produced — and it pushed the numbers I actually refer to down past a block I never used.
+
+**Drop them for real.** Not relocated under a new heading, not collapsed into a count line, not
+smuggled back as a parenthetical on a tier that is printed. § 3 below is the only place anything
+from this bar gets a mention, and only when it changes what the run is worth.
+
 **Whose branch it is sets the bar.** On a teammate's PR the nits get dropped — a comment costs
 their time, and ten of them bury the two that matter. On my own working tree or branch nothing
-gets posted at all, so the tiers mean fix-now / fix-later / drop.
+gets posted at all, so the two tiers mean fix-now / fix-later.
 
 Two things carry through into the tiered list, not into a separate section:
 
@@ -187,13 +197,17 @@ Two things carry through into the tiered list, not into a separate section:
   and the agreement is worth a clause — not two entries.
 - **Carry `unconfirmed` through.** If a lens couldn't verify a finding, say so in the entry;
   don't launder it into certainty by restating it in your own voice. An unconfirmed finding
-  usually belongs in *worth leaving out* — telling an author about a hazard you can't reproduce
-  mostly costs them time.
+  usually meets the drop bar instead — telling an author about a hazard you can't reproduce
+  mostly costs them time — and then it belongs in the § 3 line, never in the numbered list.
 
 ### 3. What the run couldn't cover
 
 A malformed rule a lens reported, an empty diff, a repo I had to disambiguate, a claim no lens
 could verify. Silently reviewing less than I asked for is the one failure I can't detect.
+
+This is also where a dropped finding gets its only mention — a clause, not an entry, and only
+when it changes what the run is worth: a hazard nothing could reproduce, or an area left alone
+because the diff didn't introduce it. Never a roll-call of what you dropped.
 
 Then **stop**. Close with a single line that posting is available on my word. Don't post, don't
 propose a fix plan unless I ask, and don't start fixing.
