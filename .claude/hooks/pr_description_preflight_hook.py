@@ -100,23 +100,54 @@ def _find_repo_root(start):
         path = parent
 
 
+def _checkouts_named(base, name):
+    """Every directory called ``name`` at or above ``base``, nearest first.
+
+    The cwd of a funnel session is the workspace root, a worktree of it, or a
+    sub-repo *inside* that worktree -- and only the first of those has the named
+    checkout as a child. Joining the name onto the cwd therefore resolves the
+    sibling from exactly one of the three shapes; walking up and looking for a
+    child of that name resolves it from all of them.
+    """
+    found = []
+    try:
+        path = os.path.realpath(os.path.expanduser(base))
+    except Exception:
+        return found
+    while True:
+        candidate = os.path.join(path, name)
+        if os.path.isdir(candidate):
+            found.append(candidate)
+        parent = os.path.dirname(path)
+        if parent == path:
+            return found
+        path = parent
+
+
 def _candidate_dirs(command, cwd):
     """Directories that might be the targeted repo, best signal first.
 
     `gh` is run in several shapes from a funnel session: with `--repo` from the
     workspace root, behind a `cd <sub-repo> &&`, or plainly inside the sub-repo.
     Each shape leaves a different clue, so all of them are tried.
+
+    Returns ``(candidates, repo_name)`` -- ``repo_name`` is the repo `--repo`
+    named, or None. The caller needs it to reject a root that is some *other*
+    repo, which the candidate walk can still reach.
     """
     candidates = []
+    repo_name = None
     base = cwd if cwd else os.getcwd()
 
-    # `--repo ReevoAI/salestech-be` -> the sibling checkout of that name. Only a
-    # sub-repo *inside* this workspace is eligible; a bare name never escapes it.
+    # `--repo ReevoAI/salestech-be` -> the checkout of that name at or above the
+    # cwd. Only a sub-repo *inside* this workspace is eligible; a bare name
+    # never escapes it.
     match = _REPO_FLAG.search(command)
     if match:
         name = match.group(1)
         if name not in (os.curdir, os.pardir) and "/" not in name:
-            candidates.append(os.path.join(base, name))
+            repo_name = name
+            candidates.extend(_checkouts_named(base, name))
 
     for pattern in (_CD_PREFIX, _DASH_C):
         for raw in pattern.findall(command):
@@ -126,14 +157,22 @@ def _candidate_dirs(command, cwd):
             candidates.append(path if os.path.isabs(path) else os.path.join(base, path))
 
     candidates.append(base)
-    return candidates
+    return candidates, repo_name
 
 
 def _resolve_repo_root(command, cwd):
-    for candidate in _candidate_dirs(command, cwd):
+    candidates, repo_name = _candidate_dirs(command, cwd)
+    for candidate in candidates:
         root = _find_repo_root(candidate)
-        if root:
-            return root
+        if not root:
+            continue
+        # `--repo` names the target outright, so a root that is a *different*
+        # repo is one we walked up into -- most often the sub-repo the session
+        # happens to be sitting in. Delegating there checks the body against
+        # the wrong repo's template and denies a correct one.
+        if repo_name and os.path.basename(root) != repo_name:
+            continue
+        return root
     return None
 
 
