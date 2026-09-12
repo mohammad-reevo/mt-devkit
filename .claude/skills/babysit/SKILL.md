@@ -1,11 +1,12 @@
 ---
 name: babysit
-description: Watch CI checks + PR review threads for the current worktree's PR(s) in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly). Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) + unresolved threads, and flags a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
+description: Watch CI checks + PR review threads for the current worktree's PR(s) in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly). Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) and flags a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Unresolved review threads are handed straight to address-comments, which carries its own gate. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
 argument-hint: [--watch-only]
 allowed-tools:
   - Bash
   - Read
   - ScheduleWakeup
+  - Skill
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -84,8 +85,9 @@ only a new `headSha` is.
 - Unresolved threads: `path:line` + the comment body.
 - Surface what's failing; **I** (or the orchestrator) decide how to fix. Track already-reported
   run IDs + thread IDs so you don't re-report the same thing every loop.
-- Threads are surfaced, never triaged here — **`address-comments` is what acts on them.** Name it
-  once when threads are outstanding; don't run it yourself, and don't summarize what you'd do.
+- **Threads are handed off, never triaged here** — `address-comments` owns the verification, the
+  tiering and the gate. Print them, then hand over (see *Finish the iteration*). Don't work out
+  what you'd do about them and don't summarize it; that is the handoff's job, done properly.
 
 ## Poll cadence
 
@@ -122,6 +124,23 @@ past (~40 min+), and even then as an observation, not a failure.
 - **Keep the loop quiet when nothing changed.** At a 10-minute cadence most iterations have no
   news. If no check changed state and no new thread appeared, emit **one line** ("CI still
   running, ~14/25 min, no new comments") — not a repeat of the full status table.
+- **Unresolved threads → hand off to `address-comments`.** Schedule the wakeup **first**, then
+  invoke the skill in the same turn. Ordering is the whole design: the loop is already armed, so
+  CI keeps being watched through however long the triage conversation runs. babysit owns the
+  resume, and `address-comments` needs to know nothing about the loop.
+
+  This is a handoff, not auto-fixing. `address-comments` reads every thread, triages it into a
+  numbered report, finalizes, and waits for my explicit go before it touches code or replies to
+  anything. What goes away is my having to say "yes, go look at them" — the same friction the
+  `verify → babysit` pause had, where the only thing the pause ever produced was a delay.
+
+  The handoff turn only ever reads: `address-comments` verifies threads with `gh` and stops at
+  the report, so nothing it does in that turn needs more than this loop already carries.
+
+  **Hand off once per set of threads, not once per poll.** Track handed-off thread IDs the way
+  you already track reported run IDs. Threads still open next iteration are already in the report
+  I'm holding, and re-invoking on them restarts a triage I'm in the middle of. Only genuinely new
+  threads trigger another handoff.
 
 ## Guardrails
 
@@ -136,7 +155,13 @@ past (~40 min+), and even then as an observation, not a failure.
   "too early" — a conflicted PR never gets a run, so the 120s wait would loop forever.
 - **Two failed pushes on the same check ends the loop.** Go loud and hand back; don't keep
   polling something that needs me.
-- **Report, don't fix.** Surface failures + comments; don't dispatch fix agents or close out.
+- **Report, don't fix — that rule is about CI.** Surface a failing check and let me decide the
+  fix; never dispatch a fix agent, never close out. Review threads are the single exception:
+  they go to `address-comments`, which gates them itself.
+- **A `validate-description` failure is still report-only.** It looks like the one CI failure you
+  could just fix, but the body usually fails because it is waiting on verification media I attach
+  by hand — and rewriting it risks destroying what I already attached (`github.md`). Report it
+  and leave the body alone.
 - **Poll inline, in main orchestration — never delegate the watch.** babysit is a main-loop
   task: one inline `gh` check + `ScheduleWakeup`, nothing more. Never dispatch a subagent to
   poll CI/threads, and never arm a persistent `Monitor` to watch — a delegated watcher lingers

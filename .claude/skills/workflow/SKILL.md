@@ -96,9 +96,11 @@ Invoke each phase skill and let it run to completion — each handles its own in
   green does **not** close anything out. **done stays explicit**: `/done` is mine to invoke once
   CI's green and threads are resolved. Surface it as the next move; never run it — and surface
   any verification still outstanding alongside it, so I know what's left for me to run.
-- **Review comments → `address-comments`, on my invoke.** When babysit surfaces unresolved
-  threads, name the skill and stop. It triages them into a report, waits for my call, and only
-  then implements and resolves — so it carries its own gate and never auto-runs off a poll.
+- **Review comments → `address-comments`, handed over by babysit.** When a poll finds unresolved
+  threads, babysit schedules its next wakeup and then enters `address-comments` in the same turn.
+  That is not auto-fixing: the skill triages every thread into a numbered report, finalizes it,
+  and waits for my explicit go before it implements or replies. The gate I want — which comments
+  get acted on — stays; the one I don't — whether to go and look at them — goes.
 
 ### 3. Route kickbacks
 - plan finds the **direction** wrong → back to **scope** (revision) → re-summarize at the
