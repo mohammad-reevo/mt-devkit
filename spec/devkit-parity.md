@@ -6,7 +6,7 @@
 > **super brief** — one clause. Update as each sweep/build lands.
 
 **Verdict tags:** `REBUILT` (personal mt-* exists) · `COVERED` (handled by another personal skill)
-· `WAVE-N` (planned, not built) · `DEFERRED` (task in `~/.claude/tasks/`) · `IGNORED` (dropped;
+· `WAVE-N` (planned, not built) · `DEFERRED` (task in `tasks/`) · `IGNORED` (dropped;
 reimplement from scratch if ever wanted) · `SKIP` (deliberately not wanted).
 
 ## Skills — swept 2026-07-07 (Wave 2a, done)

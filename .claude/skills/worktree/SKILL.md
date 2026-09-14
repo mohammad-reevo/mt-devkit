@@ -27,8 +27,8 @@ the first entry of `git worktree list` in the parent repo; fall back to
    copies `.env*` + nested frontend env + `settings.local.json`, **sets `REEVO_BACKEND_PATH`**
    in the worktree's frontend env to `<worktree>/salestech-be` — rewriting the key in place, or
    appending it when the copied env doesn't carry it, so the path is set either way; line-scoped,
-   so secrets are never read into context — **symlinks `knowledge-base/` back to the primary
-   checkout**, and runs `uv sync`):
+   so secrets are never read into context — **symlinks `knowledge-base/` and `tasks/` back to the
+   primary checkout**, and runs `uv sync`):
    ```bash
    bash $HOME/Desktop/code/mt-devkit/.claude/skills/worktree/worktree_setup.sh "<name>" "$MAIN"
    ```

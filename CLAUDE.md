@@ -45,7 +45,7 @@ leave behind).
 
 - `.claude/` — the harness: `skills/`, `rules/`, `hooks/`, `references/`, `agents/`.
 - `spec/` — design docs + per-idea scope/plan files.
-- `tasks/` — deferred tooling chores (the `claude-task` system).
+- `tasks/` — deferred tooling chores (the `claude-task` system; gitignored).
 - `knowledge-base/` — context that outlives a session (gitignored; see below).
 - Product sub-repos (`salestech-be`, `frontend-monorepo`, …) are gitignored siblings.
 

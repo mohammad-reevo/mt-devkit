@@ -1,6 +1,6 @@
 ---
 name: done
-description: Close out the session's worktree(s) — gate the PR(s) for each one's checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, drain any `~/.claude/tasks/` chore the session actually finished, then tear down the worktrees + local branches. Manual only. `/done cancel` abandons an idea without the gate. Use when a PR is ready to close out of your active set (merge happens separately). Triggers on "/done", "close this out", "done with this".
+description: Close out the session's worktree(s) — gate the PR(s) for each one's checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, drain any `tasks/` chore the session actually finished, then tear down the worktrees + local branches. Manual only. `/done cancel` abandons an idea without the gate. Use when a PR is ready to close out of your active set (merge happens separately). Triggers on "/done", "close this out", "done with this".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -84,15 +84,15 @@ Run these **per worktree**, for each one that passed its own gate.
    branch with no spec files just skips the spec part. Use plain `rm` for the spec files and
    `rm -r` for the scratch dir — **never `rm -rf`** (the `-f` flag is permission-blocked and
    treated as dangerous; it gets denied).
-3. **Drain any deferred task this session finished.** A `~/.claude/tasks/` chore that this
-   session's PR actually resolves is done once that PR is up — delete `~/.claude/tasks/<slug>.md`
+3. **Drain any deferred task this session finished.** A `tasks/` chore that this
+   session's PR actually resolves is done once that PR is up — delete `tasks/<slug>.md`
    **and** its line in `TASKS.md`. That is the `claude-task` protocol; close-out is simply where
    it fires, so I don't have to remember a task was in flight and drain it by hand.
    Take the list **from the conversation**, the same way you resolved the worktrees — never infer
    a task by matching its title against a branch name or a PR summary.
    **A partly-addressed task is not drained**: if the PR closed one half of a task, leave the file
    untouched and say which half is still open. Name every task you drained in the report —
-   `~/.claude/tasks/` is not version-controlled, so the delete is permanent.
+   `tasks/` is gitignored, so the delete is permanent.
 4. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
    the worktree first, removes the sub-repo + parent worktrees, and deletes the **local**
    feature branches: `mohammad/<slug>` **and** whatever each tree actually had checked out).
