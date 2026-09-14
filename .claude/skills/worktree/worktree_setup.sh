@@ -191,6 +191,17 @@ if [[ ! -e "${wt}/knowledge-base" ]]; then
     ln -s "${main}/knowledge-base" "${wt}/knowledge-base"
 fi
 
+# Deferred tasks: ONE store, for the same reason, minus the import.
+#
+# tasks/TASKS.md is read on demand rather than imported by CLAUDE.md, so a missing
+# store breaks nothing outright. The forking is the problem: a copy would give every
+# worktree its own task list, and `/done` would drain from whichever one it happened
+# to see while the others kept a chore that is already finished. So link this too.
+mkdir -p "${main}/tasks"
+if [[ ! -e "${wt}/tasks" ]]; then
+    ln -s "${main}/tasks" "${wt}/tasks"
+fi
+
 be_wt="${wt}/salestech-be"
 if [[ -z "$review_ref" && -f "${be_wt}/pyproject.toml" ]]; then
     (cd "$be_wt" && uv sync --quiet)
