@@ -158,5 +158,6 @@ test database, or test teardown deleting its orgs so the existing `GRAPH_DELETE`
 fires). Until then this skill is the containment, and `local-test-scope.md` limits how
 much gets generated.
 
-Seed local with `spinup-local-db` (one synthetic org), never `populate-dev-data`
-(a ~1000-org dev restore) — that alone is 20 GB of graphs.
+Seed local with `spinup-local-db` — one synthetic org. Restoring a real multi-org dataset
+locally would be ~1000 orgs of graphs, about 20 GB on its own; that is part of why the local
+DB is synthetic-only.

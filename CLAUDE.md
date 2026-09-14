@@ -27,7 +27,7 @@ review comments on my PR, then act on the agreed ones), `pr-description` (write 
 routes to the target repo’s convention and preflights it), `make-diagram` (ASCII diagram
 of a design or flow), `kb` (the cross-session knowledge base), `worktree`, `db` (local/dev
 Postgres), `snowflake` (reporting warehouse),
-`langfuse-traces` (analyze LLM traces — latency, throughput, tokens), `populate-dev-data`,
+`langfuse-traces` (analyze LLM traces — latency, throughput, tokens),
 `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
 leave behind).
 
