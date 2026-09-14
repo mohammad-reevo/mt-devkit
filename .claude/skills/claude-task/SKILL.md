@@ -32,6 +32,14 @@ The store is **gitignored** — this skill is tracked and reviewable, the notes 
 personal working state and are not — and it is symlinked into every worktree back
 to the primary checkout, so there is one list rather than one per worktree.
 
+**Write to it through Bash, never `Edit`/`Write`.** The symlink points at the primary
+checkout, and the worktree gate resolves it and refuses the resolved path — so from a
+worktree, which is where most sessions run, the Write tool fails with "Edit the worktree
+copy of this file instead of the shared-checkout path". Creating the symlink does not
+help; resolving it *is* the refusal. Same constraint `kb` has, and the same escape: a
+Bash heredoc. Unlike `kb` there is no write gate on `tasks/` and so **no marker to add** —
+`kb`'s `MT_KB_WRITE=1` matches on `knowledge-base` only and means nothing here.
+
 ---
 
 ## § Defer — capture a deferred chore
@@ -61,7 +69,13 @@ already covers this, update that file instead of creating a duplicate — say so
 Infer from where the fix lands. If ambiguous, ask.
 
 ### 4. Write the task file
-`tasks/<slug>.md`:
+`tasks/<slug>.md` — via a Bash heredoc, per the write-path note above:
+
+```
+cat > tasks/<slug>.md <<'TASK_EOF'
+<the file, as below>
+TASK_EOF
+```
 
 ```markdown
 ---
@@ -92,10 +106,12 @@ not enforced. Preserve concrete detail (file paths, symbols, denial messages) �
 that's what makes the task actionable later.
 
 ### 5. Add the index line
-Append to `tasks/TASKS.md`:
+Append to `tasks/TASKS.md` — Bash again, for the same reason:
 
 ```
+cat >> tasks/TASKS.md <<'IDX_EOF'
 - [<slug>](<slug>.md) — <target> — <short hook from the title>
+IDX_EOF
 ```
 
 ### 6. Confirm
