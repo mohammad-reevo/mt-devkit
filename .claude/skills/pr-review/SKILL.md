@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a diff through a fixed trio of parallel lenses — correctness, house-rules conformance, and duplication/dead-code — and report back what the change is, which files carry it, and the candidate comments tiered into must-leave / minor — rule-true noise is dropped outright rather than shown. Works on my uncommitted working tree, my branch vs main, or a teammate's PR. Two modes I pick, never the skill — the default full trio of parallel subagents, or `mini`, the same three lenses in one main-thread pass with no subagents, for a small diff. Never edits code; posts inline PR comments only when I explicitly say so, then re-reviews the author's revision. Replaces my use of the built-in /code-review, which has effort levels, remembered state, and background workflow routing I don't want. Triggers on "review this", "review my diff", "review this branch", "review PR <n>", "/pr-review", "/pr-review mini", "re-review", "did they address the comments".
+description: Review a diff through a fixed trio of parallel lenses — correctness, house-rules conformance, and duplication/dead-code — and report back what the change is, which files carry it, and the candidate comments tiered into must-leave / minor — rule-true noise is dropped outright rather than shown. Works on my uncommitted working tree, my branch vs main, or a teammate's PR. Two modes I pick, never the skill — the default full trio of parallel subagents, or `mini`, the same three lenses in one main-thread pass with no subagents, for a small diff. Never edits code; on a PR I'd post to, the report is discussed comment by comment and only a finalized list I explicitly approve gets posted — approvals given while we discuss accumulate but authorize nothing — then re-reviews the author's revision. Replaces my use of the built-in /code-review, which has effort levels, remembered state, and background workflow routing I don't want. Triggers on "review this", "review my diff", "review this branch", "review PR <n>", "/pr-review", "/pr-review mini", "re-review", "did they address the comments".
 argument-hint: '[mini] [branch | repo#n]'
 ---
 
@@ -17,6 +17,21 @@ and produces the findings — you decide **what** gets reviewed and how the resu
 Where pr-review ends: **a report, in my hands.** You never edit code. You never post to GitHub
 **until I say so in that message** — see § Posting. Fixing is mine to
 direct (via the `implementer` agent); merging is mine to do.
+
+**On a PR I'd post to, the report starts a conversation rather than ending one.** Four steps, the
+same shape `address-comments` uses inbound — the gate before posting is the point:
+
+1. **Report** — the three parts below, candidate comments numbered and tiered. Nothing posted.
+2. **My review** — we go comment by comment, over as many rounds as it takes. I decide what
+   happens to each one. Nothing is posted here.
+3. **Finalize** — re-emit the whole list with every decision applied, and stop. One explicit go on
+   *that* list is what authorizes posting.
+4. **Post** — the approved comments, inline on the diff line.
+
+**Steps 2–4 exist only where the comments land on someone else's PR.** On my own working tree or
+branch nothing is posted at all (§ 2, *Whose branch it is sets the bar*), so the report is the
+whole deliverable and the run ends at § 3. Don't run a posting gate over a list that was never
+going anywhere.
 
 **Fixed by design.** Every run is the same three lenses — no effort levels, no state carried from
 the last run, no routing to a background fleet, no behavior that varies by model. That
@@ -209,19 +224,62 @@ This is also where a dropped finding gets its only mention — a clause, not an 
 when it changes what the run is worth: a hazard nothing could reproduce, or an area left alone
 because the diff didn't introduce it. Never a roll-call of what you dropped.
 
-Then **stop**. Close with a single line that posting is available on my word. Don't post, don't
-propose a fix plan unless I ask, and don't start fixing.
+Then **stop**. Don't post, don't propose a fix plan unless I ask, and don't start fixing.
+
+How you close depends on where these comments would land. **On a PR I'd post to, ask for my call
+on each numbered comment** — one line saying you want a verdict per comment (post / drop /
+reframe) and that nothing goes up until we've settled the list. Not a yes/no on the batch: an
+approval of the whole report is exactly the outcome § My review exists to prevent. **On my own
+working tree or branch**, close with a single line that posting is available on my word and stop
+there — there is no list to settle.
+
+## My review — comment by comment
+
+**The expected path, not a detour.** The tiered list is a first draft; what's worth a colleague's
+attention is what survives us going through it. I confirm, drop, re-tier, or **reframe** any
+comment — a finding whose scope narrows and then holds is the normal shape, not a failure of the
+review, and *reframed* is a first-class outcome alongside post and drop.
+
+**Approvals arriving during discussion accumulate — they authorize nothing.** "#1 yes, #3 yes"
+mid-conversation is me working through the list, not releasing you to post. Record it and keep
+going; it takes effect at § Finalize and only there.
+
+**A contested premise gets re-verified here, not at posting time.** § Posting step 2 already
+requires re-checking a claim before it lands on someone else's PR — when I push back on one during
+the discussion, run that check *then*. It is earlier, and it is what decides whether the comment
+is dropped, reframed, or kept as stated. Don't defend a lens's wording against my objection
+without going back to the code, and don't concede it without going back either.
+
+A round is over when *I* close it, not when the approvals look like enough.
+
+## Finalize — the list I approve
+
+Discussion doesn't end itself. When it settles, **re-emit the full numbered list with every
+decision applied**, and then stop.
+
+It has to read as a **diff of the original report**, not a fresh document I re-read from scratch:
+carry a short decision column — `post` / `dropped` / `reframed` — and **keep the original
+numbering**, dropped ones included. Number 4 stays number 4.
+
+- **Every reframed comment shows its rewritten body**, not the original with a note about how it
+  changed. The wording that lands on the thread is part of what I'm approving.
+- **Every dropped comment carries its reason in a clause** — my call, a paired PR that settled it,
+  a flag that mooted it, a premise that didn't survive re-checking. One line, so the list still
+  explains itself later.
+- **Anything I never mentioned is listed as `Unaddressed`** — a first-class row, never quietly
+  carried at its report tier and never quietly dropped. My silence is neither agreement nor
+  refusal, and the row is what turns a guess into a confirmation. Usually I just missed it.
+- **Every open question resolved.** Nothing still reads "open" or "depends on".
+
+Then wait for **one explicit go on this list**. That go is the only thing that authorizes posting,
+and it covers the list I showed — not the next batch.
 
 ## Posting — only when I say so
 
 **Default is hold.** Never post to GitHub until I say so *in that message*. "These are the
 must-leaves" is not approval; approval is me telling you to leave them. Approval covers the
-comments in the message I approved — not the next batch.
-
-**Approvals given while we're still talking through the report accumulate — they authorize
-nothing.** If the review turns into a discussion, it ends by you re-emitting the finalized set of
-comments and waiting for one go on *that* set, the same shape `address-comments` uses. A message
-that mixes discussion with approval is discussion.
+comments in the message I approved — not the next batch. **A message that mixes discussion with
+approval is discussion** — re-finalize and ask again rather than reading a go into it.
 
 When I do say so, for each comment:
 
