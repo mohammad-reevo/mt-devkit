@@ -207,6 +207,33 @@ if [[ -z "$review_ref" && -f "${be_wt}/pyproject.toml" ]]; then
     (cd "$be_wt" && uv sync --quiet)
 fi
 
+# pre-commit hooks: install from the PRIMARY, not from this worktree.
+#
+# salestech-be's CLAUDE.md treats `pre-commit install` as a per-clone step, and nothing here
+# ever ran it -- so every funnel worktree committed with hooks off and learned about a
+# violation from CI twenty minutes later instead of from the commit.
+#
+# It installs from the primary because worktrees SHARE $GIT_COMMON_DIR/hooks: one install
+# covers the primary and every worktree, present and future. The choice of source matters
+# because `pre-commit install` bakes its own interpreter into the hook as INSTALL_PYTHON.
+# Installing from a worktree would write that worktree's .venv path into the shared hook,
+# and `/done` deletes that venv -- after which the hook falls through to `command -v
+# pre-commit` (not on PATH here) and exits 1, hard-failing commits in the primary and in
+# every sibling worktree. The primary's venv is never torn down.
+#
+# Best-effort, like the step-0 main refresh: a missing binary or a failed install warns and
+# carries on rather than aborting worktree creation.
+be_main="${main}/salestech-be"
+be_precommit="${be_main}/.venv/bin/pre-commit"
+if [[ -z "$review_ref" && -f "${be_main}/.pre-commit-config.yaml" ]]; then
+    if [[ -x "$be_precommit" ]]; then
+        (cd "$be_main" && "$be_precommit" install >/dev/null) \
+            || echo "  warning: pre-commit install failed — salestech-be commits will skip hooks" >&2
+    else
+        echo "  warning: ${be_precommit} not found — salestech-be commits will skip hooks" >&2
+    fi
+fi
+
 if [[ -n "$review_ref" ]]; then
     echo "review worktree ready: ${wt} (${review_subrepo} detached at ${review_ref})" >&2
 else

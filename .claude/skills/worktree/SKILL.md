@@ -28,7 +28,9 @@ the first entry of `git worktree list` in the parent repo; fall back to
    in the worktree's frontend env to `<worktree>/salestech-be` — rewriting the key in place, or
    appending it when the copied env doesn't carry it, so the path is set either way; line-scoped,
    so secrets are never read into context — **symlinks `knowledge-base/` and `tasks/` back to the
-   primary checkout**, and runs `uv sync`):
+   primary checkout**, runs `uv sync`, and **installs salestech-be's pre-commit hooks** — from
+   the primary, since worktrees share one hooks dir; see the script's comment for why the source
+   matters):
    ```bash
    bash $HOME/Desktop/code/mt-devkit/.claude/skills/worktree/worktree_setup.sh "<name>" "$MAIN"
    ```
@@ -54,7 +56,8 @@ A **read-only review tree** — for reading someone else's branch, not building 
 Three differences from `create`, each load-bearing:
 
 - **One sub-repo, not three.** A review reads one repo; the other two would be dead weight.
-- **No env copy, no `uv sync`.** Nothing is executed in a review tree. This is the point: a
+- **No env copy, no `uv sync`, no hook install.** Nothing is executed in a review tree, and
+  nothing is committed from one. This is the point: a
   review tree is **~390M** instead of the **~4-6G** a feature worktree costs.
 - **Detached at `<ref>`, never a local branch.** `done` resolves each sub-repo's checked-out
   branch and gates the open PR for it. On a named branch tracking the author's ref that
