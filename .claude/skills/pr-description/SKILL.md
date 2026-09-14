@@ -111,6 +111,33 @@ the opposite, and do not delete a rule because its `supersedes:` line no longer 
 Adding one: put it here if it changes **what I do** in the face of a sub-repo instruction.
 A caveat about a *tool's output* rather than an instruction belongs in Known traps below.
 
+### `## Verification` carries only what CI cannot prove
+
+Verification is for evidence a green CI does not already give: a live run against a real
+model, a flow driven by hand in the app, a script exercised manually, a data state read out of
+a database. Write that, and how it was done.
+
+**Never list automated checks there.** Not a pytest count, not `ruff format`, not `ruff check`,
+not `mypy`, not a generated-artifact or byte-equality gate. If CI is green those passed and the
+PR already says so without a sentence from me. Restating them is noise a reviewer has to read
+past, and it buries the one paragraph the section exists for.
+
+This is about narrating that checks *passed*, not about tests. `## Testing` is a different
+section and stays legitimate — it says what tests were **added** and what they cover. Writing a
+test is work worth describing; a test run going green is not evidence.
+
+A section with nothing CI-independent to report is short, not padded. "Documentation only — no
+behaviour change" is a complete entry.
+
+The test is whether the check is **already proven where the reviewer is looking**, not whether
+it was automated. `mt-devkit` itself runs no CI, so a probe or a script run there is the only
+evidence there is — state it. In a repo with CI, it isn't.
+
+> supersedes: `salestech-be`'s `pull_request_template.md` asks you to "demonstrate your changes
+> work and don't break existing functionality". Read literally that invites the whole check
+> list; on PR #33943 it produced several paragraphs of pytest / ruff / mypy / bake-staleness
+> results ahead of the one live spot-check that actually mattered.
+
 ### Never claim `N/A` in `## Verification Metrics` on a runtime-relevant diff
 
 If the diff touches anything executable — any `.py` outside `tests/`, a migration,
