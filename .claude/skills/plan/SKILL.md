@@ -119,14 +119,25 @@ can run out of order.
   browser flows, API calls, data states.
 ```
 
-Close by telling me the plan path (we're already in the worktree) and walking me through what
-landed — the shape of the work, and the diagram if you drew one. Then **stop**. A written plan
-is not a green light: agreeing the plan is *right* is not me saying start building. I want a
-beat to sit with it — implement is mine to trigger, and `/workflow` enforces the same gate from
-the conductor's side. If I come back with changes, revise the file in place.
+Close by telling me the plan path (we're already in the worktree), then **describe the finished
+PR** — what a reviewer opens and sees. Go surface by surface: which signatures gain an argument,
+which docs gain or lose a section, what is a new file, what rebakes, what stays untouched. Add
+anything the plan decided that goes beyond the ticket. A few sentences, or a short list of
+surfaces. Then the diagram, if you drew one.
+
+**Never walk me through the tasks.** The file is the task list and I am about to read it, so
+"Tasks 1–5 …, Task 6 …" is a second rendering of the same thing — and it is the wrong altitude
+for the decision I'm making here, which is whether the design is right (`response-altitude.md`).
+What the diff ends up looking like is the one thing the file doesn't hand me at a glance.
+
+Then **stop**. A written plan is not a green light: agreeing the plan is *right* is not me
+saying start building. I want a beat to sit with it — implement is mine to trigger, and
+`/workflow` enforces the same gate from the conductor's side. If I come back with changes,
+revise the file in place.
 
 ## Guardrails
 
+- **The walkthrough describes the PR, never the tasks.** The file is the task list.
 - **Concrete or absent.** A task that says "update the relevant files" isn't a task.
   Every task names its files and its done-signal, or it doesn't go in.
 - **The plan decides, implement executes.** If you find yourself writing "decide at
