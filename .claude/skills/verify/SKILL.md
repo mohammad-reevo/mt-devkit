@@ -55,6 +55,11 @@ applies my house rules, and preflights the body against the repo's validator so 
 doesn't cost a CI cycle. Fill it with what/why (from Goals) + the verification plan/results
 (note when in-app verification is still **pending**, and update it once it passes).
 
+**The body gets the strategy's outcome, never the coding checks.** implement already ran lint,
+type-check and the targeted tests, and CI runs them again — a green PR says so without a
+sentence. Don't transcribe those results into the body; `## Verification` is for what CI cannot
+prove (`pr-description` § Overrides).
+
 Report the PR link right away, so I can start attaching my own verification media to it while
 you run the verification.
 
