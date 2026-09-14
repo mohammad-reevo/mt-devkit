@@ -43,8 +43,8 @@ of a known set of write operators. That reliably catches the `kb` skill, whose
 write shape we control, plus the obvious hand-rolled cases.
 
 It will miss an exotic write. That is accepted and worth stating plainly: this is
-a backstop, not a wall. The behaviour is produced by the `kb` skill and the
-`doc-edit-diff-first` rule; losing the backstop degrades that rather than
+a backstop, not a wall. The behaviour is produced by the `kb` skill's own
+diff-and-approve sequence; losing the backstop degrades that rather than
 breaking it.
 
 Runs under /usr/bin/python3 (macOS system Python 3.9): keep 3.9-compatible
