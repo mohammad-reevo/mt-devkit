@@ -1,7 +1,7 @@
 ---
 name: pr-review
-description: Review a diff through a fixed trio of parallel lenses — correctness, house-rules conformance, and duplication/dead-code — and report back what the change is, which files carry it, and the candidate comments tiered into must-leave / minor — rule-true noise is dropped outright rather than shown. Works on my uncommitted working tree, my branch vs main, or a teammate's PR. Two modes I pick, never the skill — the default full trio of parallel subagents, or `mini`, the same three lenses in one main-thread pass with no subagents, for a small diff. Never edits code; on a PR I'd post to, the report is discussed comment by comment and only a finalized list I explicitly approve gets posted — approvals given while we discuss accumulate but authorize nothing — then re-reviews the author's revision. Replaces my use of the built-in /code-review, which has effort levels, remembered state, and background workflow routing I don't want. Triggers on "review this", "review my diff", "review this branch", "review PR <n>", "/pr-review", "/pr-review mini", "re-review", "did they address the comments".
-argument-hint: '[mini] [branch | repo#n]'
+description: Review a diff through a fixed trio of parallel lenses — correctness, house-rules conformance, and duplication/dead-code — and report back what the change is, which files carry it, and the candidate comments tiered into must-leave / minor — rule-true noise is dropped outright rather than shown. Works on my uncommitted working tree, my branch vs main, or a teammate's PR. Two modes, selected by a fixed size threshold rather than asked about — the full trio of parallel subagents, or `mini`, the same three lenses in one main-thread pass with no subagents, for a small diff; a leading `mini` or `full` overrides. Never edits code; on a PR I'd post to, the report is discussed comment by comment and only a finalized list I explicitly approve gets posted — approvals given while we discuss accumulate but authorize nothing — then re-reviews the author's revision. Replaces my use of the built-in /code-review, which has effort levels, remembered state, and background workflow routing I don't want. Triggers on "review this", "review my diff", "review this branch", "review PR <n>", "/pr-review", "/pr-review mini", "re-review", "did they address the comments".
+argument-hint: '[mini|full] [branch | repo#n]'
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -41,9 +41,11 @@ predictability is why this skill exists. If a run feels shallow, sharpen the len
 **`mini` is not a dial.** The trio is fixed *within* a mode: mini runs the same three
 lenses, against the same rules, and reports in the same format — it just runs them in one
 main-thread pass instead of three subagents. What changes is where the work happens, not how deep
-it goes. It's a cost choice about whether a change is worth three fan-outs, which is why **I** make
-it and the skill never infers it. Two runs in the same mode stay comparable; that's the property
-being protected, and it's what a depth dial would have destroyed.
+it goes. It's a cost choice about whether a change is worth three fan-outs, and it's settled by
+the **fixed threshold in § Mode selection** — measured once, before the work starts, and never
+revisited because the diff turned out hairy. Two similarly-sized diffs get the same treatment;
+that's the property being protected, and a stated threshold protects it better than a judgment
+call does, because a threshold can't forget that mini exists.
 
 ## Input check (always first)
 
@@ -53,16 +55,14 @@ being protected, and it's what a depth dial would have destroyed.
 | `/pr-review <branch>` | That branch vs `origin/main`. |
 | `/pr-review <repo>#<n>` | That repo's PR #`<n>` — usually a teammate's. |
 
-**Mode.** A leading bare `mini` selects mini mode; anything else is full. It's a separate
-axis from the target and composes with every row above — `/pr-review mini`,
-`/pr-review mini <branch>`, `/pr-review mini <repo>#<n>`. Everything downstream is shared:
-same target resolution, same review worktree for a PR, same report, same posting rules.
+**Mode.** A leading bare `mini` or `full` forces that mode. It's a separate axis from the target
+and composes with every row above — `/pr-review mini`, `/pr-review mini <branch>`,
+`/pr-review full <repo>#<n>`. Everything downstream is shared: same target resolution, same
+review worktree for a PR, same report, same posting rules.
 
-**The mode is mine to pick, never yours.** Don't infer it from how the diff looks, don't upgrade a
-`mini` run to the trio because the change turned out hairy, and don't downgrade a full run
-because the diff is two lines. If mini was the wrong call, finish the pass and say so in the
-report (§ 3) — I'll re-run. A mode that drifts on its own is a mode that makes two runs
-incomparable, which is the same failure the fixed trio exists to prevent.
+**With no mode word — the usual case — you select it yourself**, from the size of the diff, by
+the threshold in § Mode selection. Don't ask me which mode to run and don't offer me the choice;
+measure, say what you measured, and go. An explicit `mini` / `full` always beats the threshold.
 
 **Which repo.** The session usually sits at the mt-devkit worktree root with the sub-repos nested
 inside. Check `salestech-be`, `frontend-monorepo`, `reevo-realtime`, and the parent for changes on
@@ -101,6 +101,32 @@ Because the sub-repo is **detached**, `/done`'s PR gate finds no branch and pass
 that's deliberate. Gating a review tree on the *author's* PR would block my cleanup on their CI
 and their unresolved threads. See `worktree` § `create-review`.
 
+## Mode selection
+
+Run this once, after the target is resolved and before any lens work starts.
+
+**mini** if the diff is **≤ 2 hand-written files AND ≤ 200 hand-written changed lines**
+(insertions + deletions) **and stays within one repo**. **full** otherwise. Nothing else feeds
+the decision — not how risky the area looks, not what the PR title says.
+
+**"Hand-written" is the load-bearing word.** Generated output counts toward neither number, or a
+one-file migration measures as three files and wrongly gets the trio:
+
+```bash
+git diff --stat <base>...HEAD -- . \
+  ':(exclude)**/schema.sql' ':(exclude)**/latest_revision.txt' \
+  ':(exclude)packages/openapi-client/**' \
+  ':(exclude)**/*.lock' ':(exclude)**/pnpm-lock.yaml' ':(exclude)**/package-lock.json'
+```
+
+For a working-tree target, add untracked files at their full length — they have no diff, but
+they are hand-written. **If the measurement is ambiguous or the command errors, run `full`** —
+the cheap mode is never the fallback for not knowing.
+
+**Say which mode ran and what decided it** — one clause in § 1 of the report, carrying the two
+numbers ("mini — 1 file / 138 lines"). A run whose mode is invisible can't be compared against
+another, and that comparability is why the threshold is fixed rather than judged.
+
 ## Run the trio (full mode)
 
 Full mode only — in `mini` skip this section entirely and use § Mini mode instead.
@@ -121,6 +147,18 @@ restate it inline.
 
 Three lenses, every time. Don't add a fourth, don't drop one because the diff looks small, and
 don't spawn extra finders to be thorough. A fixed trio is what makes two runs comparable.
+
+**While they run, don't re-derive the diff.** Reading the changed files yourself pulls into your
+context precisely what the three subagents exist to keep out of it — and they are not the
+bottleneck anyway, finishing in one to five minutes in parallel. Don't poll `ListAgents` either;
+completion arrives on its own.
+
+**What the wait IS for: the questions no lens's brief can reach.** A lens sees the diff and the
+code around it *within the branch*, so everything outside that is yours alone — whether the
+branch is stale or conflicted, what landed on `main` since it was cut, whether a migration's
+parent still matches main's head, whether the PR is mergeable, whether a sibling repo has to move
+with it. That is not duplicated work; on more than one review it has been the only thing that
+found anything. The line is **in-branch content** (theirs) versus **out-of-branch state** (yours).
 
 ## Mini mode — one pass, in the main thread
 
@@ -175,6 +213,10 @@ other — skipped when the diff is one or two files. Only files in the diff.
 Derive this from what you already have: `git diff --stat`, the PR title/body, and the lens
 reports, which name the load-bearing files as a side effect of reviewing them. Don't read files
 wholesale to build it, and **don't spawn an agent for it**.
+
+Open with the mode and the numbers behind it, as a clause rather than a line of its own —
+"*mini — 1 file / 138 lines*" or "*full — 3 files / 405 lines*" (§ Mode selection). Say it even
+when I forced the mode myself, so every report carries the same stamp.
 
 ### 2. The comments, numbered and tiered
 
