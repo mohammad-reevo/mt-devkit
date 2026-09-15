@@ -83,6 +83,13 @@ The map is split into sections by domain. When a row delegates to another row, t
 
 **`run` is idempotent (stop-then-start).** Every `run <env>` row first stops any running instance, then starts fresh — so there is no separate `re-run`. `re-run <env>` (and `re-run all-envs`) is an accepted synonym that does exactly what the matching `run` row does; the skill still activates on that phrasing.
 
+**This skill owns the single default stack — `local-stack` owns the numbered ones.** Every row
+here is pinned to backend :8000, frontend :3000, realtime :8787, and one shared Docker dep stack.
+Running several stacks at once (one per worktree, on offset ports) is the `local-stack` skill.
+**Never use these kill rows on a numbered stack**: `kill-be` is `pkill -f salestech_be`, which is
+port-agnostic and would kill every stack on the machine. Tear a numbered stack down with
+`local-stack down`, which is scoped to that instance's own PIDs and slot.
+
 **Killing whatever was already running is the point — don't flag it, don't ask.** The kill aliases are port- and process-name-based (`kill-be-f` ends in `pkill -9 -f salestech_be`, `kill-fe` frees tcp:3000), so they are **worktree-agnostic**: `run backend` from worktree A will take down a backend serving from worktree B. That is intended and expected — a port hosts one service, and I know what I am doing when I ask for a run. Do not warn about it beforehand, do not ask for confirmation, and do not offer to restart the other worktree's env afterwards. Just run the row and report the result. (Rule 6 still applies to genuine *failures* — this is not one.)
 
 ### Shortcuts
