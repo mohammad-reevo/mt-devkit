@@ -193,7 +193,13 @@ it, and do not turn this into a debate.
 - **An ambivalent mention is not an instruction.** "I might save this" opens a conversation, not
   a write.
 - **Never edit an entry as a side effect** of reading or searching it.
-- **Don't file what belongs elsewhere.** A behavioral rule goes in `.claude/rules/`; a small
-  durable fact goes in the memory store. The KB is for what neither covers.
+- **The KB is the default; `.claude/rules/` is the exception.** A rule is loaded into **every**
+  session whether or not it's relevant, so it is a permanent tax on all work; a KB entry costs one
+  index line and is opened only when its trigger fires. A rule earns its place only when it **must
+  be referenced in most conversations**. Anything scoped to one project, tool, subsystem, or
+  situation is a KB entry with a well-written index line — **however normative its wording**.
+  "Never do X until Y" sounds like a rule and is almost always an entry: phrasing is not the
+  signal, whether it must be in context for unrelated work is. (A small durable fact still goes to
+  the memory store.) Length, once something *is* a rule, is `rules-stay-minimal.md`'s business.
 - **A bad index line is a bug, and reporting it is part of the job.** Re-deriving something the
   KB already holds is the failure this store exists to prevent — surface it, don't absorb it.

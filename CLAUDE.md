@@ -54,7 +54,13 @@ leave behind).
 - **Skill** — a produced artifact and the procedure for it; something I'd ask for by name. It's
   advertised in the session's skill listing, so a bare ask fires it at a fraction of the context
   an always-loaded rule costs.
-- **Rule** — a norm or constraint on how work is done, not a thing you ask for.
+- **Knowledge-base entry** — anything scoped to a project, tool, subsystem, or situation, **norms
+  included**. Costs one index line and is opened only when its trigger fires. This is the default
+  home for durable prose; see `knowledge-base/` below.
+- **Rule** — a norm that **must be referenced in most conversations**. Loaded into every session
+  whether or not it's relevant, so it's the exception, not the catch-all for anything phrased as a
+  norm: a constraint that only applies to one project or tool is a knowledge-base entry. Keep it
+  short (`rules-stay-minimal.md`).
 - **`references/`** — prose **no single skill can own**: shared metadata that several skills each
   apply in their own context. `testing-call.md` is the model — `scope`, `implement`,
   `implementer`, `reviewer`, and `address-comments` all read it, and there is no "testing-call

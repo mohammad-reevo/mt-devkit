@@ -38,26 +38,48 @@ records, no session state. The PR is the source of truth.
    (run from that sub-repo so the repo is inferred).
 
 ## Normal mode — the gate (every resolved PR must pass BOTH)
-- **CI green:** `gh pr view <n> --json statusCheckRollup,autoMergeRequest,state` — every check
-  `conclusion` is success.
-  - **Exception — the PR is already queued to merge:** then checks that are merely
+
+One query answers the whole gate — required-ness, merge-queue state, and every thread:
+
+```bash
+gh api graphql -f query='query { repository(owner:"<owner>",name:"<repo>") {
+  pullRequest(number:<n>) {
+    state isInMergeQueue autoMergeRequest { enabledAt }
+    commits(last:1) { nodes { commit { statusCheckRollup { contexts(first:100) { nodes {
+      __typename
+      ... on CheckRun      { name    conclusion isRequired(pullRequestNumber:<n>) }
+      ... on StatusContext { context state      isRequired(pullRequestNumber:<n>) } } } } } } }
+    reviewThreads(first:100) { nodes { isResolved isOutdated path } } } } }'
+```
+
+- **CI green — required checks only.** A check blocks the gate **only when `isRequired: true`**.
+  Everything else is informational: GitHub will land the PR with it red, so `done` must not
+  refuse to close out over it. (`gh pr checks <n> --required` prints the same subset, if you
+  want it readable.)
+  - **Read both context types, or you miss the one that matters.** `statusCheckRollup.contexts`
+    mixes `CheckRun` (`name` + `conclusion`) with `StatusContext` (`context` + `state`) — and
+    salestech-be's required gate, **`All Tests Passed`, is a `StatusContext`**. A CheckRun-only
+    fragment drops it silently and passes a PR whose tests failed.
+  - Individual jobs being non-required is normal and safe: `unit-tests` / `check-and-build` are
+    `isRequired: false` because they roll up into the required `All Tests Passed`, which goes
+    red with them. What gets waived is genuinely non-blocking — `smoke-tests-branch` timing out
+    on infrastructure, a preview deploy.
+  - **Name every red non-required check in the report.** A waived failure must be visible;
+    swallowing it silently is the other way to make the gate untrustworthy.
+  - Don't reach for `repos/{owner}/{repo}/branches/main/protection` — it 404s for this account,
+    so `required_status_checks.contexts` isn't readable that way.
+  - **Exception — the PR is already queued to merge:** then required checks that are merely
     **incomplete** (pending / queued / in-progress / no `conclusion` yet) **don't block the
     gate** — GitHub won't land it until they pass, so there's nothing left for me to watch.
     Queued = `autoMergeRequest` non-null (auto-merge, "Merge when ready") **or**
     `isInMergeQueue: true` **or** `state: MERGED` (it already landed).
-  - A check that actually **failed** (`failure`/`timed_out`/`cancelled`/`action_required`)
-    still fails the gate **even when queued** — a queued PR sitting on a red check will never
-    merge, so tearing its worktree down would strand it.
-- **All review threads resolved:** query **every** thread and check `isResolved` directly —
-  never a filtered "unresolved" list (an `isOutdated` thread is still OPEN). Same query picks
-  up the merge-queue flag above:
-  ```bash
-  gh api graphql -f query='query { repository(owner:"<owner>",name:"<repo>") {
-    pullRequest(number:<n>) { isInMergeQueue reviewThreads(first:100) {
-      nodes { isResolved isOutdated path } } } } }'
-  ```
-  Any `isResolved:false` (regardless of `isOutdated`) = fail — **queued-to-merge never excuses
-  an open thread.** Report the open threads and name `address-comments` as the way through them;
+  - A **required** check that actually **failed** (`FAILURE`/`TIMED_OUT`/`CANCELLED`/
+    `ACTION_REQUIRED`) still fails the gate **even when queued** — a queued PR sitting on a red
+    required check will never merge, so tearing its worktree down would strand it.
+- **All review threads resolved:** check `isResolved` on **every** thread the query returned —
+  never a filtered "unresolved" list (an `isOutdated` thread is still OPEN). Any
+  `isResolved:false` (regardless of `isOutdated`) = fail — **queued-to-merge never excuses an
+  open thread.** Report the open threads and name `address-comments` as the way through them;
   never triage or resolve them from here.
 
 Collect **all** failures across **all** PRs of **all** worktrees and report at once. The gate is
@@ -109,6 +131,12 @@ that none were), and that the worktree was removed. If a PR passed on the queued
 checks still running** — I'm closing out before CI finished, and GitHub will land it unattended.
 Name any worktree left standing because its own gate failed, so nothing is silently skipped.
 
+Two things the report must not leave out:
+- **Every red non-required check the gate waived**, by name and with what it was. It didn't block
+  the close-out, but I decide whether it deserves a look.
+- **Whether the removed worktree was hosting a running local service** — the stack is now broken
+  and that's expected, not mysterious. `env-manager` restarts it from wherever I want it next.
+
 ## Guardrails
 - **Explicit only.** Never auto-run — only on my `/done`.
 - **Every worktree the session worked in, not just the current one.** A session that reviewed
@@ -118,8 +146,18 @@ Name any worktree left standing because its own gate failed, so nothing is silen
 - **Gate is all-or-nothing within a worktree**, independent across them. Any PR failing CI or
   with an open thread → tear down nothing *of that worktree*; the others still close out.
   Report every failure at once (don't fail on the first).
-- **Queued-to-merge waives only *incomplete* CI** — never a red check, never an open thread.
-  It's a wait-skip (the merge is already committed to), not a quality bypass.
+- **Only required checks gate.** `isRequired: true` blocks; everything else is informational and
+  is reported, not enforced. A gate that stalls on a check GitHub would merge over trains me to
+  wave it through by hand — and once overriding is routine, the real failures go through with the
+  same sentence.
+- **Queued-to-merge waives only *incomplete* CI** — never a red required check, never an open
+  thread. It's a wait-skip (the merge is already committed to), not a quality bypass.
+- **Never start, stop, or restart a local service.** A worktree may be hosting the running stack,
+  and removing it breaks that stack — **say so in the report** and leave the killing to
+  `env-manager` in a separate session. This is a rule, not an omission: env-manager's kills are
+  port- and process-name-based (`pkill -9 -f salestech_be`, free tcp:3000) and therefore
+  worktree-agnostic, so a `done` here would take down a backend deliberately started from a
+  different worktree. Closing out one idea must not break another idea's stack.
 - **All threads, not a filtered list.** Query every thread's `isResolved`; outdated counts as
   open (per `github.md`).
 - **Local branches only.** Never delete or push a remote branch.
