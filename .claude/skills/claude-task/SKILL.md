@@ -1,6 +1,6 @@
 ---
 name: claude-task
-description: Manage deferred tooling tasks in `tasks/` — "revisit later" chores against my own harness (personal `~/.claude/` or the mt-devkit repo). Not Linear (product work), not memory (facts). Three subcommands — `claude-task defer` captures a task, `claude-task list` shows all tasks, `claude-task open <fuzzy>` reads one out and checks it's still true so we can decide what to do about it. Draining a finished task belongs to `/done`. Triggers on "claude task", "defer this", "note this for later", "list claude tasks", "open a claude task", "explain that task", "/claude-task".
+description: Manage deferred tooling tasks in `tasks/` — "revisit later" chores against my own harness (personal `~/.claude/` or the mt-devkit repo). Not Linear (product work), not memory (facts). Three subcommands — `claude-task defer` captures a task, `claude-task list` shows all tasks, `claude-task open <fuzzy>` reads one out from zero context, checks it's still true, and proposes a plan it waits for my go on. Draining a finished task belongs to `/done`. Triggers on "claude task", "defer this", "note this for later", "list claude tasks", "open a claude task", "explain that task", "/claude-task".
 ---
 
 # claude-task — capture, list, and open deferred tooling chores
@@ -19,8 +19,8 @@ Dispatch on how the skill was invoked:
 - **`list`** (`claude-task list`, "list claude tasks") → go to **§ List**.
   Display-only; shows all tasks and stops.
 - **`open <fuzzy>`** (`claude-task open <name>`, "explain the edit-guard one",
-  "what's that task about") → go to **§ Open**. Reads one task out; the work
-  itself is a normal conversation from there.
+  "what's that task about") → go to **§ Open**. Reads one task out and
+  plans it; the build is a normal conversation from there.
 - **No/ambiguous subcommand** → if the intent reads as capture-a-new-thing, use
   Defer; if it reads as work-on-an-existing-thing, use Open; otherwise run
   List and ask what they want.
@@ -131,7 +131,7 @@ Read `tasks/TASKS.md`, show the tasks (slug — target — hook), and
 Put one task in front of me with enough context to decide. You do **not** own the
 work that follows: once we agree what to do, it proceeds as ordinary work under
 the ordinary rules — a worktree and a PR for the harness, a direct edit for
-`~/.claude/`. This section ends when the task is understood.
+`~/.claude/`. This section ends at a plan I've approved.
 
 ### 1. Select the task
 - **A task name given** (e.g. `claude-task open worktree`, "explain the edit-guard
@@ -150,14 +150,27 @@ Before explaining anything, verify: is the problem still live, or has it been
 fixed since? Do the files, skills and line numbers it cites still exist? Say what
 rotted — a dead link or a stale premise is part of the answer, not a footnote.
 
-### 3. Explain it, briefly
-What the task is about, whether it still holds, and what you'd do about it. Lead
-with the recommendation. Open choices in the note ("Fix ideas" with several
-options) get surfaced as a choice, with your pick named — not a menu.
+### 3. Brief me from zero context, briefly
+**Assume I have not read the note.** Deferring it is what put it out of my head,
+often months ago — so this is a standalone brief, not a delta against a file only
+you can see. Never hand back the note's own internal labels or section names
+(`contributor 1`, "§ Run the trio"); I can't see what they refer to. Translate them
+into the thing itself.
 
-Then **discuss**. That's the whole mode. No approval ceremony, no execution plan
-template: if it turns into work, it's work, and the rules that govern work already
-apply.
+What the task is, whether it still holds, and what you'd do about it —
+recommendation first. Open choices in the note ("Fix ideas" with several options)
+get surfaced as a choice with your pick named, not a menu.
+
+**Budget it: ~10 lines.** The failure mode here is length, not missing detail — a
+long read-out that I have to ask you to shorten costs more than it carried.
+
+### 4. Propose a plan, then wait
+Close with a short plan: the concrete changes you'd make, one line each, named by the
+file they land in. Then **stop.** Nothing is edited until I say go.
+
+This is the one approval beat Open owns, and it exists because I ask for it every
+time. Past my go it is ordinary work under the ordinary rules — a worktree and a PR
+for the harness, a direct edit for `~/.claude/` — which need no second ceremony.
 
 ---
 
@@ -170,7 +183,8 @@ apply.
   (a `~/.claude/` fix), delete the file and its `TASKS.md` line yourself once
   it's verified.
 - **List is display-only.** Never selects or executes from List.
-- **Open reads; it doesn't build.** One task per run. It ends at understanding —
-  the build is a normal conversation afterwards, under the normal rules.
+- **Open reads and plans; it doesn't build.** One task per run. It ends at a plan
+  I've approved — the build is a normal conversation afterwards, under the normal
+  rules.
 - **Preserve detail.** Deferred notes rot when vague. Keep the file paths, symbol
   names, and reproduction context that let a future session act without re-investigating.
