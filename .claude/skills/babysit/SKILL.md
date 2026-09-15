@@ -37,10 +37,17 @@ Not conflicted → `ScheduleWakeup(120s)` and return (skip in `--watch-only`).
 ## Each iteration (per PR)
 
 **Check** (in parallel across the PRs):
-- CI: `gh pr checks <n>` (shows blocking vs informational) + `gh run view <run-id> --json
+- CI: `gh pr checks <n>` + `gh run view <run-id> --json
   jobs,status,conclusion,startedAt` for per-job status/conclusion **and the run's age**, which
   is what picks the next poll interval (see *Poll cadence*). Elapsed = `date -u +%s` minus
   `startedAt`.
+  - **Which of those actually block the merge: `gh pr checks <n> --required`.** Plain
+    `gh pr checks` has no blocking column — it lists everything flat, so a red informational
+    check reads exactly like a red required one. Run both and treat the `--required` set as what
+    matters: a failure in it is actionable, a failure outside it is reported as non-blocking and
+    never triggers the go-loud rule below. On salestech-be the required set is two entries
+    (`All Tests Passed`, `Frontend Breaking Changes Check`) — `All Tests Passed` is the
+    aggregator the individual test jobs roll up into, so a real test failure still surfaces.
 - **Mergeability — why a run may not exist at all.** `gh pr view <n> --json
   mergeable,mergeStateStatus`. `CONFLICTING` → the PR is dirty, and **a conflicted PR gets no CI
   runs scheduled at all** — so an absent run means dirty far more often than it means too early.
@@ -81,7 +88,8 @@ re-polls ten minutes later is exactly the failure this exists to prevent. Reruns
 only a new `headSha` is.
 
 **Report** (concise — don't fix, don't dispatch):
-- A small status table: PR / workflow / job / status·conclusion.
+- A small status table: PR / workflow / job / status·conclusion. Mark which rows are required;
+  a red non-required check is worth one line saying it's not blocking, not an investigation.
 - Unresolved threads: `path:line` + the comment body.
 - Surface what's failing; **I** (or the orchestrator) decide how to fix. Track already-reported
   run IDs + thread IDs so you don't re-report the same thing every loop.
