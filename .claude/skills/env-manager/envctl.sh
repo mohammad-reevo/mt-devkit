@@ -74,7 +74,10 @@ case "$cmd" in
     pnpm dev > logs/dev.log 2>&1 &
     ;;
   kill-rt)
-    pkill -f "pnpm.*dev" 2>/dev/null
+    # Port-scoped, like kill-fe. The previous `pkill -f "pnpm.*dev"` also matched the
+    # frontend — both `pnpm -F ./apps/reevo-webapp dev` (run-fe-2) and `pnpm dev:webapp`
+    # (run-fe) — so killing realtime took the webapp down with it.
+    lsof -ti tcp:8787 -sTCP:LISTEN | xargs kill -9 2>/dev/null
     true
     ;;
   ""|-h|--help) usage; exit 0 ;;

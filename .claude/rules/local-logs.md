@@ -16,6 +16,7 @@ Every repo writes its local service logs to a `logs/` directory at the repo root
 | | `falkor_workflow_logs.txt`, `falkor_activity_logs.txt` | Falkor temporal workers (manually started only) |
 | `frontend-monorepo/logs/` | `frontend_logs.txt` | Next.js webapp (localhost:3000) |
 | `reevo-realtime/logs/` | `dev.log` | PartyKit realtime server (:8787) |
+| `salestech-be/logs/stack/<instance>/` | `<label>.log` + `pids` | A numbered `local-stack` stack — one dir per instance, so parallel stacks don't overwrite each other. The table above is the **default** stack only. |
 
 The authoritative process → log mapping is in the `env-manager` skill — consult it if a file listed here doesn't match what's on disk.
 
