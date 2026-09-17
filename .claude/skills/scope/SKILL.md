@@ -119,6 +119,14 @@ per § Reporting.
 Then discuss. This is conversational and may take multiple rounds. I pick the direction —
 you advocate, you don't decide.
 
+**This discussion is my checkpoint before plan.** Under `/workflow` there is no stop between
+the scope file and plan — my **"we're done"** here is the go-ahead for both. So anything that
+needs my call gets asked *now*, in the conversation, not parked in the file for a later gate
+that no longer exists: resolve what you can yourself (a targeted read, reasoning from what you
+already found), then ask the rest as direct, answerable questions with your recommendation —
+**AskUserQuestion** when they're discrete choices, so I can just pick. Keep going until I say
+we're done; that phrase (or an equivalent "go", "write it up") is what ends this phase.
+
 **Testing call (part of the direction).** Before writing the file, settle — at altitude — what
 testing the chosen direction warrants, reasoning it out from
 `mt-devkit/.claude/references/testing-call.md`. Name the *kinds* and what they'd cover, never test
@@ -127,7 +135,7 @@ turns it into concrete test tasks and implement builds them; verify does post-bu
 verification only and never decides tests. The call is re-derived later only when a change lands
 outside the plan; the reference says when.
 
-### Write the scope file (only after I've agreed on a direction)
+### Write the scope file (only after I've said we're done)
 The discussion is ephemeral; the file is the converged record — not a transcript. Write
 `~/.claude/spec/<slug>-scope.md`:
 
@@ -154,9 +162,10 @@ What testing the chosen direction warrants, at altitude — the kinds of tests +
 or "none" + why. plan turns this into concrete test tasks; it doesn't invent test scope.
 
 ## Open questions
-Genuine unknowns that still need my input — each written as a direct, answerable question (not
-"figure out X"), ideally with your recommendation. Resolve what you can yourself first (a
-targeted read/research pass); only what you genuinely can't settle lands here.
+What the discussion couldn't settle — each written as a direct, answerable question (not
+"figure out X"), ideally with your recommendation. plan owns these next: it resolves them by
+research where the code answers, and asks me only where it's a judgment call. Anything I could
+have decided in the discussion should have been asked there, not left here.
 
 ## Out of scope
 What we consciously deferred, so plan doesn't reinvent it.
@@ -169,8 +178,8 @@ guess at size or duration: it comes from a reconnaissance pass, so plan would in
 approximation as authority. You give me the full read live while investigating; the file keeps
 only the parts that explain a decision.
 
-Close by telling me the file path. Return to `/workflow` to continue the funnel — it owns
-what comes next.
+Close by telling me the file path. Under `/workflow`, plan follows immediately — the "done" I
+just said was its go-ahead, so no summary and no second ask; the conductor owns the handoff.
 This filename is the **slug authority** for the rest of the funnel — downstream skills find
 the chain by this file, they never re-derive the slug from the idea.
 
@@ -207,8 +216,9 @@ What that means concretely for a scope message:
 - **Share as you go.** Findings land in conversation as they're settled; don't hold everything
   for one dump at the end. This is a discussion phase, not a report. But "as you go" means
   *ordered within the message* — lead with the cause, then the options — not a hard stop after
-  every phase. There is exactly one mandatory stop: I pick the direction before you write the
-  file. Stop earlier only when the premise itself changed (see Investigate).
+  every phase. There is exactly one mandatory stop: I say we're done before you write the
+  file — and it is the last stop before plan. Stop earlier only when the premise itself
+  changed (see Investigate).
 - **No descending.** If the discussion starts producing task lists, file-level change plans,
   or schemas — stop, say "that's plan territory", and capture the thread as an open question
   instead. This applies to your own output too: catch yourself.
@@ -223,7 +233,7 @@ What that means concretely for a scope message:
 - **Resolve before asking.** An open question is a last resort, not a catch-all for anything
   unresolved. Before one lands in the file, try to answer it yourself — a targeted read or
   research pass. Keep only what genuinely needs my call, and phrase each as a straight,
-  answerable question with your recommendation — so the gate can ask it plainly rather than
-  hand me a vague list.
-- **One artifact, no state.** No session files, no hooks, no auto-transition into plan
-  (Wave 1: I drive).
+  answerable question with your recommendation — and ask it in the discussion, where I can
+  still answer it before plan starts.
+- **One artifact, no state.** No session files, no hooks. Standalone, scope ends at the file;
+  it's `/workflow` that carries my "done" straight into plan (Wave 1: I drive).
