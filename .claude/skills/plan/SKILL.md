@@ -57,7 +57,9 @@ name real files and real seams, not guesses.
 
 ### 2. Resolve and break down
 - **Resolve every open question** from the scope — by research where the code answers it,
-  by asking me where it's a judgment call. No question survives into the plan unresolved
+  by asking me where it's a judgment call. The scoping discussion was my last checkpoint and
+  plan runs straight after it, so an ask here is a real interruption: research first, and ask
+  only what the code genuinely can't answer. No question survives into the plan unresolved
   unless explicitly marked as a deliberate runtime decision.
 - **Break the work into ordered tasks.** Each task: one coherent change with a clear
   done-signal. Small enough to verify independently, big enough to be worth a checkbox.

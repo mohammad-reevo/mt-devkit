@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with two hard gates (after scope and after plan, each needing my explicit go-ahead) and kickback routing, then stops at explicit done. Detects phase from the spec files + git/PR state. Also a status view across every in-flight idea. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
+description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with one hard gate (after plan, needing my explicit go-ahead — scope hands off on my "we're done" in the scoping discussion) and kickback routing, then stops at explicit done. Detects phase from the spec files + git/PR state. Also a status view across every in-flight idea. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -14,7 +14,7 @@ handoffs — you never do their work. Compose, never duplicate: each phase's log
 own skill. The spec files + git/PR state **are** the state (Wave 1: no session file).
 
 Purpose: drive an idea from raw idea to a **PR that's open and being watched** (scope → plan →
-implement → verify → babysit), enforce both hard gates, route kickbacks — then stop at the
+implement → verify → babysit), enforce the one hard gate, route kickbacks — then stop at the
 explicit close-out (done).
 
 ## Two modes
@@ -26,7 +26,7 @@ explicit close-out (done).
 
 Scan `~/.claude/spec/*-scope.md` and `*-plan.md`. For each idea, one line:
 
-- scope file only → **scoped — ready to plan**
+- scope file only → **scoped — ready to plan** (plan didn't follow scope; pick it back up)
 - plan, some tasks `[ ]` → **implementing — N/M tasks done**
 - plan all `[x]`, no PR for `mohammad/<name>` → **built — ready to verify**
 - plan all `[x]`, PR open → **in review — <PR link> (babysit watching / done when green)**
@@ -55,20 +55,14 @@ that phase.
 Invoke each phase skill and let it run to completion — each handles its own internal pauses
 (scope agrees the direction, plan approves the plan, verify is user-directed). Then:
 
-- **scope → plan — HARD GATE.** Scope is the deep-context phase: a full, in-depth look at the
-  work before we commit more to it, so I have real context and a conversation going. After the
-  scope file lands, **stop and give me a quick summary of what we're doing** — the direction,
-  the approach we picked and why, and the testing call. Then handle open questions properly
-  instead of dumping them on me:
-  - **Resolve what you can yourself first.** For each open question, try to answer it — a
-    targeted read/research pass, or reasoning from what scope already found. Don't punt a
-    question you could settle in a minute. Say which ones you resolved and how.
-  - **Ask the rest straight.** Surface only the questions that genuinely need *my* call, and
-    ask each as a clear, direct, answerable question — with your recommendation — not a vague
-    "things to resolve" list. Use **AskUserQuestion** when they're discrete choices so I can
-    just pick.
-
-  Then wait for my **explicit go-ahead** before starting plan. Never cross this on your own.
+- **scope → plan — no gate; the scoping discussion is the checkpoint.** Scope is the
+  deep-context phase: a full, in-depth look at the work, argued out with me in conversation
+  until I say **we're done**. That "done" is the go-ahead — it covers writing the scope file
+  *and* running plan. Once the scope file lands, **go straight into plan — don't summarize, don't
+  re-ask, don't wait for me.** Everything I need to weigh in on belongs *inside* the scoping
+  discussion (scope's Discuss phase owns asking it); whatever still lands in the file's Open
+  questions is plan's to resolve by research or to ask about as a judgment call. My next review
+  point is the written plan.
 - **plan → implement — HARD GATE.** Plan approval covers the *breakdown* — it is me agreeing the
   design is right, not me saying start building. After the plan file lands, **stop** and wait for
   my explicit go-ahead. Report the plan path, and if plan drew a `make-diagram` diagram, leave it
@@ -103,8 +97,8 @@ Invoke each phase skill and let it run to completion — each handles its own in
   get acted on — stays; the one I don't — whether to go and look at them — goes.
 
 ### 3. Route kickbacks
-- plan finds the **direction** wrong → back to **scope** (revision) → re-summarize at the
-  gate → forward again.
+- plan finds the **direction** wrong → back to **scope** (revision) → I say done again →
+  straight back into plan.
 - implement hits **structural drift** → back to **plan** (revision) → forward into implement.
 - verify's own fixes stay in verify (post-build); only a structural problem kicks to plan.
 
@@ -115,13 +109,14 @@ back up.
 
 - **Conduct, don't perform.** Never write scope/plan/implement content or open the PR yourself —
   always through the owning skill.
-- **The post-scope gate is real** — a genuine summary + my actual go-ahead, never a rubber-stamp.
-  Scope earns the commitment to plan.
-- **So is the post-plan gate.** A written plan is not consent to build. Wait for the word, even
+- **The scope → plan hop is gate-less, but never silent.** My "we're done" in the scoping
+  discussion is a real decision I made in conversation — not something you infer from a lull.
+  Scope stops for it; once it's said, plan follows without another stop.
+- **The post-plan gate is real.** A written plan is not consent to build. Wait for the word, even
   when the plan is obviously good and the tasks are obviously next.
-- **Only those two are gates.** Naming phases when you kick me off ("scope, plan and implement
+- **Only that one is a gate.** Naming phases when you kick me off ("scope, plan and implement
   without me") is me listing what's pending, not withholding permission for the rest. A
-  gate-less hop stays gate-less; an incidental phase list in the kickoff never invents a third
+  gate-less hop stays gate-less; an incidental phase list in the kickoff never invents a second
   gate.
 - **babysit auto-runs as the tail; done never does.** Flowing verify → babysit is the drive
   finishing its job. `/done` is the one transition that stays mine — the workflow only surfaces it.
