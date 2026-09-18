@@ -139,11 +139,14 @@ past (~40 min+), and even then as an observation, not a failure.
 
   This is a handoff, not auto-fixing. `address-comments` reads every thread, triages it into a
   numbered report, finalizes, and waits for my explicit go before it touches code or replies to
-  anything. What goes away is my having to say "yes, go look at them" — the same friction the
-  `verify → babysit` pause had, where the only thing the pause ever produced was a delay.
+  anything — except when every comment verifies as Implement, where it says so and executes from
+  the report, since there is nothing for me to decide. What goes away is my having to say "yes,
+  go look at them" — the same friction the `verify → babysit` pause had, where the only thing
+  the pause ever produced was a delay.
 
-  The handoff turn only ever reads: `address-comments` verifies threads with `gh` and stops at
-  the report, so nothing it does in that turn needs more than this loop already carries.
+  The handoff turn only ever reads, unless the report comes out all-Implement: `address-comments`
+  verifies threads with `gh` and stops at the report, so nothing it does in that turn needs more
+  than this loop already carries.
 
   **Hand off once per set of threads, not once per poll.** Track handed-off thread IDs the way
   you already track reported run IDs. Threads still open next iteration are already in the report

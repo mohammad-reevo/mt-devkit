@@ -1,6 +1,6 @@
 ---
 name: address-comments
-description: Triage the review comments on my PR and then act on the ones I agree to. Reads every open thread, verifies what it claims, and hands me a numbered report — one short entry per comment with your call, action items at the bottom — then STOPS for my review before any code changes or replies. Approvals given while we discuss accumulate but authorize nothing: the skill re-emits a finalized action table and waits for one explicit go before it executes. AI-bot comments, my comments, and other humans' comments each get a different default posture. The inbound mirror of pr-review. Triggers on "address the comments", "go through the PR comments", "what do the review comments say", "handle the bot comments", "/address-comments".
+description: Triage the review comments on my PR and then act on the ones I agree to. Reads every open thread, verifies what it claims, and hands me a numbered report — one short entry per comment with your call, action items at the bottom — then STOPS for my review before any code changes or replies. Approvals given while we discuss accumulate but authorize nothing: the skill re-emits a finalized action table and waits for one explicit go before it executes. The one exception: when every comment verifies and tiers as Implement, there is nothing for me to decide, so it says so and executes straight from the report. AI-bot comments, my comments, and other humans' comments each get a different default posture. The inbound mirror of pr-review. Triggers on "address the comments", "go through the PR comments", "what do the review comments say", "handle the bot comments", "/address-comments".
 argument-hint: '[repo#n]'
 ---
 
@@ -18,6 +18,10 @@ Four steps. The gate before execution is the entire point of the skill:
 3. **Finalize** — re-emit the whole action table with every decision applied, and stop. One
    explicit go on *that* table is what authorizes execution.
 4. **Execute** — implement the agreed ones, then reply and resolve every thread.
+
+The gate exists for the contested case. When the whole report is *Implement* — every claim
+verified, nothing to push back on, answer, or bring to me — steps 2 and 3 have nothing to hold,
+and the skill goes from the report straight to execution (see the end of step 1).
 
 The failure this replaces: **compliance by default.** A comment says X, so the code becomes X —
 no step between reading and implementing. A silently-accepted bad suggestion is worse than an
@@ -118,6 +122,26 @@ Then **stop.** Don't edit code, don't post a reply, don't start on the easy ones
 easy. Close with a single line inviting my review — not an offer to start executing, which isn't
 on the table until step 3 has been approved.
 
+**Unless every action item is *Implement*.** Then there is nothing for me to decide — the
+finalized table would be a re-print of the report I just read, and the only thing the gate
+produces is a "go ahead" turn. So: emit the report, say in one line that every item verified as
+Implement and you are proceeding on that basis, and go straight to step 4. The condition is
+strict and every part of it is a real check:
+
+- **Every item is Implement** — not a majority, not "the rest are trivial". One *Push back*,
+  *Answer*, or *Bring to me* anywhere restores the full gate for the whole table. Since a request
+  to talk, a scope-expansion ask, and a contradicting pair all force *Bring to me*, none of them
+  can coexist with an all-Implement report; a "can't tell" can't either, because an unverified
+  claim never tiers as Implement.
+- **My own comments don't force the gate.** A comment I wrote is intent I already stated, and the
+  consequence-check on it still runs in triage — a side effect it finds tiers the item as *Bring
+  to me*, which is what restores the gate. A clean own-comment is just an Implement.
+- **A comment that arrives mid-execution restarts at step 1** for that thread; it doesn't ride the
+  authorization of the report it wasn't in.
+
+This is the one shortcut, and it's self-enforcing: the tiers that carry a decision are exactly
+the ones that can't be in the table.
+
 ## Step 2 — my review
 
 Conversational, possibly several rounds. I confirm, override, or re-tier anything.
@@ -177,7 +201,9 @@ than reading a go into it.
 - **Nothing lands before the gate, and the gate is the finalized table.** No edits, no replies,
   no resolves in steps 1–3 — including on items I approved mid-discussion. The whole value is the
   pause, and a partial approval collapses it: a tier I was about to override gets built, and an
-  item I forgot to mention gets silently skipped or silently assumed.
+  item I forgot to mention gets silently skipped or silently assumed. The all-Implement shortcut
+  at the end of step 1 is the only exception, and it is all-or-nothing — one non-Implement tier
+  and the gate is back for every item, not just that one.
 - **Verify before you agree, not after.** An action item that says "implement" asserts you checked
   the claim against the code. If you couldn't, it's a *bring to me*.
 - **Escalate rather than pick a side.** A large change or a hard judgment call goes to me in the

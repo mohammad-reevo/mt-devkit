@@ -93,8 +93,10 @@ Invoke each phase skill and let it run to completion — each handles its own in
 - **Review comments → `address-comments`, handed over by babysit.** When a poll finds unresolved
   threads, babysit schedules its next wakeup and then enters `address-comments` in the same turn.
   That is not auto-fixing: the skill triages every thread into a numbered report, finalizes it,
-  and waits for my explicit go before it implements or replies. The gate I want — which comments
-  get acted on — stays; the one I don't — whether to go and look at them — goes.
+  and waits for my explicit go before it implements or replies — unless every comment verifies
+  as Implement, in which case it executes from the report because there is nothing to decide.
+  The gate I want — which comments get acted on — stays; the one I don't — whether to go and
+  look at them — goes.
 
 ### 3. Route kickbacks
 - plan finds the **direction** wrong → back to **scope** (revision) → I say done again →
