@@ -23,7 +23,7 @@ scope → plan → implement → verify → babysit → done
 - **babysit** — watch CI + PR review threads (opt-in).
 - **done** — close out and tear down the worktree.
 
-Plus standalone tools: `worktree`, `db`, `make-diagram`, `kb`, `spinup-local-db`, `env-manager`, and
+Plus standalone tools: `worktree`, `db`, `make-diagram`, `author-knowledge-base`, `spinup-local-db`, `env-manager`, and
 others.
 
 ## Principles

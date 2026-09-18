@@ -55,7 +55,7 @@ because it reshapes the plan). The check costs one grep.
 
 Drift found this way is exactly what a `projects/` knowledge-base entry is for — the
 concept-to-code name mapping, and what a ticket's scope *actually* covers. Note it as a KB
-candidate; the write itself happens at `/done` or on an explicit ask, per the `kb` skill. This
+candidate; the write itself happens at `/done` or on an explicit ask, per the `author-knowledge-base` skill. This
 rule catches the drift the first time; the KB stops the next session paying for it again.
 
 ## Not the same as `no-invented-requirements.md`

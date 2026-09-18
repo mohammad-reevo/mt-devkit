@@ -16,8 +16,8 @@ and refuse an Edit/Write from a worktree session. They are right to: if a symlin
 could be followed into the primary, worktree isolation would be one `ln -s` away
 from meaningless. The store was consequently unwritable from anywhere.
 
-So the `kb` skill writes through the shell instead, which those guards do not
-police, and this gate moved with it.
+So the `author-knowledge-base` skill writes through the shell instead, which those
+guards do not police, and this gate moved with it.
 
 WHY IT DENIES RATHER THAN ASKS
 ------------------------------
@@ -39,13 +39,13 @@ WHAT IT CAN AND CANNOT SEE
 Recognising "this arbitrary shell command writes to the KB" is not decidable --
 `cat >`, `tee`, `sed -i`, a heredoc into python, an editor, all look different.
 So this does NOT try. It matches a path mentioning `knowledge-base` alongside one
-of a known set of write operators. That reliably catches the `kb` skill, whose
-write shape we control, plus the obvious hand-rolled cases.
+of a known set of write operators. That reliably catches the `author-knowledge-base`
+skill, whose write shape we control, plus the obvious hand-rolled cases.
 
 It will miss an exotic write. That is accepted and worth stating plainly: this is
-a backstop, not a wall. The behaviour is produced by the `kb` skill's own
-diff-and-approve sequence; losing the backstop degrades that rather than
-breaking it.
+a backstop, not a wall. The behaviour is produced by the `author-knowledge-base`
+skill's own diff-and-approve sequence; losing the backstop degrades that rather
+than breaking it.
 
 Runs under /usr/bin/python3 (macOS system Python 3.9): keep 3.9-compatible
 (no PEP 604 unions, no match/case).
@@ -57,6 +57,10 @@ import re
 import sys
 
 KB_DIR_SEGMENT = "knowledge-base"
+# The store's own path component only. The skill that writes to the store is
+# `author-knowledge-base`, so an unanchored match would gate every shell edit of
+# the skill's files as if it were a store write.
+KB_DIR_RE = r"(?<![\w-])" + KB_DIR_SEGMENT
 
 # The one sanctioned escape: a literal prefix, visible in the command itself, so
 # a write is never invisible in the transcript.
@@ -65,12 +69,12 @@ WRITE_MARKER = "MT_KB_WRITE=1"
 # Write operators worth recognising. Read-only commands (grep/ls/cat-without-
 # redirect) deliberately do not appear -- reading the store is free.
 WRITE_PATTERNS = (
-    r">\s*\S*" + KB_DIR_SEGMENT,           # cat > kb/... , >> kb/...
-    KB_DIR_SEGMENT + r"\S*\s*<<",           # heredoc into a kb path
-    r"\btee\b[^|]*" + KB_DIR_SEGMENT,       # tee kb/...
-    r"\bsed\b[^|]*-i[^|]*" + KB_DIR_SEGMENT,
-    r"\b(cp|mv|rm|mkdir|touch|ln)\b[^|]*" + KB_DIR_SEGMENT,
-    r"\bpython3?\b[^|]*" + KB_DIR_SEGMENT,  # a script that names a kb path
+    r">\s*\S*" + KB_DIR_RE,           # cat > kb/... , >> kb/...
+    KB_DIR_RE + r"\S*\s*<<",           # heredoc into a kb path
+    r"\btee\b[^|]*" + KB_DIR_RE,       # tee kb/...
+    r"\bsed\b[^|]*-i[^|]*" + KB_DIR_RE,
+    r"\b(cp|mv|rm|mkdir|touch|ln)\b[^|]*" + KB_DIR_RE,
+    r"\bpython3?\b[^|]*" + KB_DIR_RE,  # a script that names a kb path
 )
 
 
@@ -123,8 +127,8 @@ def main():
         "  1. Show the change as a fenced ```diff block (- old, + new).\n"
         "  2. Get an explicit yes.\n"
         "  3. Re-run the command prefixed with {marker} .\n"
-        "  The `kb` skill does all three and owns the index-line and one-page "
-        "rules; prefer it over a hand-rolled write.".format(marker=WRITE_MARKER)
+        "  The `author-knowledge-base` skill does all three and owns the index-line "
+        "and one-page rules; prefer it over a hand-rolled write.".format(marker=WRITE_MARKER)
     )
 
 

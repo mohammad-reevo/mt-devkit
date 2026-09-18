@@ -1,18 +1,18 @@
 ---
-name: kb
-description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. Every write is explained and approved before anything is drafted, then shown as a diff and approved again. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Writing happens at `/done` close-out or on an explicit ask — never offered mid-session, however KB-worthy a deep dive or a deferred task feels at the time. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/kb".
+name: author-knowledge-base
+description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. Every write is explained and approved before anything is drafted, then shown as a diff and approved again. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Writing happens at `/done` close-out or on an explicit ask — never offered mid-session, however KB-worthy a deep dive or a deferred task feels at the time. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/author-knowledge-base".
 argument-hint: '[search <query> | add | update <entry> | graduate <project>]'
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
 > Standalone tool. Design: `spec/knowledge-base-design.md`.
 
-# kb — the knowledge base
+# author-knowledge-base — the knowledge base
 
 You own `knowledge-base/`: the store that carries context across sessions, so a project doesn't
 have to be re-explained every time and a settled concept doesn't get re-derived.
 
-Where kb ends: **an entry read, or a proposed change shown as a diff.** You never write without
+Where author-knowledge-base ends: **an entry read, or a proposed change shown as a diff.** You never write without
 first saying what you intend to write, then showing what changes — a yes at each point.
 
 ## When to offer a write
