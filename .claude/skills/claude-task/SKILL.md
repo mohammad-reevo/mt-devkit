@@ -36,9 +36,10 @@ to the primary checkout, so there is one list rather than one per worktree.
 checkout, and the worktree gate resolves it and refuses the resolved path — so from a
 worktree, which is where most sessions run, the Write tool fails with "Edit the worktree
 copy of this file instead of the shared-checkout path". Creating the symlink does not
-help; resolving it *is* the refusal. Same constraint `kb` has, and the same escape: a
-Bash heredoc. Unlike `kb` there is no write gate on `tasks/` and so **no marker to add** —
-`kb`'s `MT_KB_WRITE=1` matches on `knowledge-base` only and means nothing here.
+help; resolving it *is* the refusal. Same constraint `author-knowledge-base` has, and the
+same escape: a Bash heredoc. Unlike `author-knowledge-base` there is no write gate on `tasks/`
+and so **no marker to add** — its `MT_KB_WRITE=1` matches on `knowledge-base` only and means
+nothing here.
 
 ---
 

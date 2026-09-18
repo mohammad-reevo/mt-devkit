@@ -7,7 +7,7 @@ README.
 
 **Only then.** An edit I asked for directly just gets made. Don't volunteer a red/green diff, and
 don't reach for this on `spec/` scope/plan files, task files, or code — those are edited in place
-(code gets reviewed as a git diff in its PR). The `kb` skill carries its own diff-and-approve
+(code gets reviewed as a git diff in its PR). The `author-knowledge-base` skill carries its own diff-and-approve
 sequence for `knowledge-base/` entries; it doesn't need this rule.
 
 ## The Rule

@@ -25,7 +25,7 @@ Standalone tools: `pr-review` (review a diff or a teammate’s PR), `pr-explanat
 a PR/branch/diff — files in reading order, no findings), `address-comments` (triage the
 review comments on my PR, then act on the agreed ones), `pr-description` (write a PR body —
 routes to the target repo’s convention and preflights it), `make-diagram` (ASCII diagram
-of a design or flow), `kb` (the cross-session knowledge base), `worktree`, `db` (local/dev
+of a design or flow), `author-knowledge-base` (the cross-session knowledge base), `worktree`, `db` (local/dev
 Postgres), `snowflake` (reporting warehouse),
 `langfuse-traces` (analyze LLM traces — latency, throughput, tokens),
 `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
@@ -79,7 +79,7 @@ you're working on as a signal to open that entry — you won't otherwise know it
 find yourself investigating something an entry already covers, the index line was written badly;
 report the line as a bug — that is a fix to the line, not a cue to file anything new.
 
-Reading an entry is free. **Writing goes through the `kb` skill**, which says what it's about to
+Reading an entry is free. **Writing goes through the `author-knowledge-base` skill**, which says what it's about to
 write and waits, then shows a diff and waits again — never hand-edit the store. **Writes happen
 at `/done` or when I explicitly ask, and nowhere else** — don't offer to file things mid-session,
 however KB-worthy they feel at the time, and don't read "I might save this" as an instruction.
