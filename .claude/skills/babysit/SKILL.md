@@ -1,12 +1,14 @@
 ---
 name: babysit
-description: Watch CI checks + PR review threads for the current worktree's PR(s) in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly). Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) and flags a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Unresolved review threads are handed straight to address-comments, which carries its own gate. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
+description: Watch CI checks + PR review threads for the current worktree's PR(s) in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly), and exits by announcing "ready for your review" with the PR link once required checks are green and every thread is resolved. Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) and flags a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Unresolved review threads are handed straight to address-comments, which carries its own gate. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
 argument-hint: [--watch-only]
 allowed-tools:
   - Bash
   - Read
   - ScheduleWakeup
   - Skill
+  - ToolSearch
+  - PushNotification
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -21,6 +23,10 @@ What I still never do is **nudge after a push** (the deliberate difference from 
 un-asked-for poll loop attaches itself to an ordinary `git push`.
 
 Each invocation is **one poll iteration**: check, report, schedule the next.
+
+**The loop carries the PR to reviewable, then hands it to me.** My own review starts at the
+"ready for your review" announcement, not before — so "babysit it, I'll review when it's ready"
+needs no extra instruction; it is what the loop already does.
 
 ## Resolve the PR(s) (first iteration)
 
@@ -124,9 +130,19 @@ past (~40 min+), and even then as an observation, not a failure.
 ## Finish the iteration
 
 - **`--watch-only`** → print the status table + unresolved threads, then exit. No wakeup, no loop.
-- **Loop mode (default)** → all PRs green **and** zero unresolved threads → print "all green" and
-  exit (do **not** invoke done, do **not** write any state). The loop's **only other exit** is the
-  two-failed-pushes escalation above — that one hands back instead of scheduling. Otherwise
+- **Loop mode (default)** → every PR's `--required` checks passed **and** zero unresolved threads
+  → **ready for your review**: announce it and exit (do **not** invoke done, do **not** write any
+  state). The announcement:
+  - leads with **"Ready for your review"** and each PR's link, one line per PR (links every time,
+    per `github.md`);
+  - lists any non-required check that failed or is still running, one line each, marked
+    non-blocking — e.g. `validate-description` failing its LLM grade while every required check
+    is green. These never hold the announcement back;
+  - is also sent as a `PushNotification` (load it via `ToolSearch` if deferred) — "PR ready for
+    your review" + the link — since this is the moment I'm most likely away from the session.
+
+  The loop's **only other exit** is the two-failed-pushes escalation above — that one hands back
+  instead of scheduling. Otherwise
   schedule the next poll at the *Poll cadence* interval:
   `ScheduleWakeup(delaySeconds: <from the table>, reason: "<what we're waiting on — e.g. 'CI ~14 min in of ~25; checking for review comments'>", prompt: "Continue babysit — run one more poll iteration for the current worktree's PR(s).")`
 - **Keep the loop quiet when nothing changed.** At a 10-minute cadence most iterations have no
