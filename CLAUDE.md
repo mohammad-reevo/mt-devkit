@@ -28,6 +28,7 @@ routes to the target repo’s convention and preflights it), `make-diagram` (ASC
 of a design or flow), `author-knowledge-base` (the cross-session knowledge base), `worktree`, `db` (local/dev
 Postgres), `snowflake` (reporting warehouse),
 `langfuse-traces` (analyze LLM traces — latency, throughput, tokens),
+`session-deferral` (park a session to a handoff file and resume it later),
 `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
 leave behind).
 
