@@ -49,7 +49,9 @@ reviewed and green from implement, so the PR isn't premature — and under the i
 PR *is* the deliverable, since it carries the pending check list I'll work from. (For a fast
 **scripts-only / N/A** strategy the order doesn't matter — run the check first if you like.)
 
-Create one PR per repo the change touches, **ready for review — never draft**. For the
+Create one PR per repo the change touches, **ready for review — never draft** — two in
+salestech-be when implement split out a migration: `mohammad/<slug>-migration` against `main`,
+and `mohammad/<slug>` against that migration branch, so its diff shows only the code. For the
 description, use the **`pr-description` skill** — it routes to that repo's own convention,
 applies my house rules, and preflights the body against the repo's validator so a format miss
 doesn't cost a CI cycle. Fill it with what/why (from Goals) + the verification plan/results

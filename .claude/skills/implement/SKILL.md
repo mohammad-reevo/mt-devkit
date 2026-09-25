@@ -84,6 +84,10 @@ Once every task is `[x]`, the targeted checks are green, **and the finalization 
 dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on a feature
 branch), commit the work, and push. It returns the branch name and push confirmation.
 
+**Plan split into a migration PR and a stacked code PR** (plan's `### PR 1 — migration` /
+`### PR 2` groups): two branches, staged by path. `mohammad/<slug>-migration` off `main` carries
+only PR 1's files; `mohammad/<slug>` is then based on it and carries the rest. Push both.
+
 Report to me: tasks done, checks green, reviewed, branch pushed. Return to `/workflow` to
 continue the funnel — it owns what comes next.
 
