@@ -63,6 +63,14 @@ name real files and real seams, not guesses.
   unless explicitly marked as a deliberate runtime decision.
 - **Break the work into ordered tasks.** Each task: one coherent change with a clear
   done-signal. Small enough to verify independently, big enough to be worth a checkbox.
+- **A salestech-be migration is always its own PR.** When the work adds or alters a table,
+  split the Tasks into `### PR 1 — migration` (the migration file, `latest_revision.txt`,
+  regenerated `schema.sql`, nothing else) and `### PR 2 — code, stacked on PR 1` (model,
+  repository, `TableName`, CDC/Debezium exclusion, tests, feature logic). CI's migration-only
+  check fails a PR that mixes the two. The mechanics are salestech-be's own and are read, not
+  restated: `.claude/skills/db-migration/SKILL.md` (+ its `reference/cdc-awareness.md`) for PR 1,
+  `.claude/skills/db-model-repo/SKILL.md` for PR 2 — funnel sessions don't auto-load sub-repo
+  skills, so name the one each task follows in the task itself.
 - **Kickback rule:** if research shows the chosen direction itself is wrong (not just a
   detail), stop. Say what broke and recommend re-running scope — don't quietly re-scope
   inside the plan.
