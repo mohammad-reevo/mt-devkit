@@ -121,8 +121,9 @@ can run out of order.
   browser flows, API calls, data states.
 ```
 
-Close by telling me the plan path (we're already in the worktree), then **describe the finished
-PR** — what a reviewer opens and sees. Go surface by surface: which signatures gain an argument,
+Close by telling me the plan path (we're already in the worktree) and, in one line, the direction
+scope chose — scope hands off without asking me, so this is where I first see it. Then
+**describe the finished PR** — what a reviewer opens and sees. Go surface by surface: which signatures gain an argument,
 which docs gain or lose a section, what is a new file, what rebakes, what stays untouched. Add
 anything the plan decided that goes beyond the ticket. A few sentences, or a short list of
 surfaces. Then the diagram, if you drew one.

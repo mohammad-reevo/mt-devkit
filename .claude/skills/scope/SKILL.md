@@ -120,12 +120,17 @@ Then discuss. This is conversational and may take multiple rounds. I pick the di
 you advocate, you don't decide.
 
 **This discussion is my checkpoint before plan.** Under `/workflow` there is no stop between
-the scope file and plan — my **"we're done"** here is the go-ahead for both. So anything that
-needs my call gets asked *now*, in the conversation, not parked in the file for a later gate
-that no longer exists: resolve what you can yourself (a targeted read, reasoning from what you
-already found), then ask the rest as direct, answerable questions with your recommendation —
-**AskUserQuestion** when they're discrete choices, so I can just pick. Keep going until I say
-we're done; that phrase (or an equivalent "go", "write it up") is what ends this phase.
+the scope file and plan. So anything that needs my call gets asked *now*, in the conversation,
+not parked in the file for a later gate that no longer exists: resolve what you can yourself (a
+targeted read, reasoning from what you already found), then ask the rest as direct, answerable
+questions with your recommendation — **AskUserQuestion** when they're discrete choices, so I can
+just pick. A real choice between approaches is one of those questions; one my kickoff already
+settled is not.
+
+**The phase ends when nothing needs my call** — every question answered, or there were none.
+Then write the scope file straight away. Don't restate the converged direction for me to
+review, and don't wait for a "we're done": I front-load context in the kickoff and will halt you
+myself if I want to steer. The written plan is my next review point.
 
 **Testing call (part of the direction).** Before writing the file, settle — at altitude — what
 testing the chosen direction warrants, reasoning it out from
@@ -135,7 +140,7 @@ turns it into concrete test tasks and implement builds them; verify does post-bu
 verification only and never decides tests. The call is re-derived later only when a change lands
 outside the plan; the reference says when.
 
-### Write the scope file (only after I've said we're done)
+### Write the scope file (once nothing needs my call)
 The discussion is ephemeral; the file is the converged record — not a transcript. Write
 `~/.claude/spec/<slug>-scope.md`:
 
@@ -178,8 +183,8 @@ guess at size or duration: it comes from a reconnaissance pass, so plan would in
 approximation as authority. You give me the full read live while investigating; the file keeps
 only the parts that explain a decision.
 
-Close by telling me the file path. Under `/workflow`, plan follows immediately — the "done" I
-just said was its go-ahead, so no summary and no second ask; the conductor owns the handoff.
+Close by telling me the file path. Under `/workflow`, plan follows immediately — no summary and
+no ask; the conductor owns the handoff.
 This filename is the **slug authority** for the rest of the funnel — downstream skills find
 the chain by this file, they never re-derive the slug from the idea.
 
@@ -216,9 +221,8 @@ What that means concretely for a scope message:
 - **Share as you go.** Findings land in conversation as they're settled; don't hold everything
   for one dump at the end. This is a discussion phase, not a report. But "as you go" means
   *ordered within the message* — lead with the cause, then the options — not a hard stop after
-  every phase. There is exactly one mandatory stop: I say we're done before you write the
-  file — and it is the last stop before plan. Stop earlier only when the premise itself
-  changed (see Investigate).
+  every phase. There is no mandatory stop: stop only to ask what needs my call (see Discuss),
+  or when the premise itself changed (see Investigate).
 - **No descending.** If the discussion starts producing task lists, file-level change plans,
   or schemas — stop, say "that's plan territory", and capture the thread as an open question
   instead. This applies to your own output too: catch yourself.
@@ -236,4 +240,4 @@ What that means concretely for a scope message:
   answerable question with your recommendation — and ask it in the discussion, where I can
   still answer it before plan starts.
 - **One artifact, no state.** No session files, no hooks. Standalone, scope ends at the file;
-  it's `/workflow` that carries my "done" straight into plan (Wave 1: I drive).
+  it's `/workflow` that carries the landed file straight into plan (Wave 1: I drive).
