@@ -35,7 +35,7 @@ Never assume IDs. Before creating or editing, resolve from Linear:
 Create issues with `save_issue` (`title` + `team` required). For a **tree**, mind the ordering:
 
 - **Parents before children** — a sub-issue needs its parent to exist (`parentId`).
-- **Relations need both endpoints** — `blockedBy` / `blocks` reference issues that must already exist, so **create in dependency order** (roots first, then dependents) and set relations at creation; or create everything, then wire relations in a second pass. Relations are **append-only**.
+- **Relations need both endpoints** — `blockedBy` / `blocks` reference issues that must already exist, so **create in dependency order** (roots first, then dependents) and set relations at creation; or create everything, then wire relations in a second pass. Relations are **append-only**. Record only direct blockers — see *Which blockers to record*.
 - Set `project`, `assignee` (`"me"` / id / name / email), `state`, `cycle`, and `milestone` per §2 and the Reevo defaults below. The baseline applies to **every** issue you create — each sub-issue of a tree, not just the root.
 - A project **overview** is the project's description/summary — set it with `save_project`, not on an issue.
 
@@ -44,14 +44,28 @@ Create issues with `save_issue` (`title` + `team` required). For a **tree**, min
 Update existing issues with `save_issue` (`id` + the fields to change).
 
 - **Preserve UI-added content — use `patch`.** For description edits, prefer `patch` (append / replace / insert) over passing a full `description`, so anything the user added in the Linear UI survives. Full-body overwrite only when you explicitly intend to replace it.
-- Add relations with `blockedBy` / `blocks` (append-only; use `removeBlockedBy` / `removeBlocks` to detach). Re-parent with `parentId`.
+- Add relations with `blockedBy` / `blocks` (append-only; use `removeBlockedBy` / `removeBlocks` to detach). Re-parent with `parentId`. A new blocker follows *Which blockers to record*.
 - The same live-resolution rules (§2) apply to cycle / milestone / assignee changes.
 
 ## 5. Verify
 
 Create/update responses **don't echo relations**. After wiring a tree, confirm with
 `get_issue includeRelations` (spot-check a blocked issue and a sub-issue) so the nesting and
-`blockedBy` / `blocks` actually landed.
+`blockedBy` / `blocks` actually landed. Then check the set is reduced: no ticket's blocker is
+also reachable through one of its other blockers.
+
+## Which blockers to record
+
+Record the **transitive reduction** — direct blockers only. If Z blocks Y and Y blocks X, X gets
+"blocked by Y", never also "blocked by Z"; it inherits Z through Y. Redundant edges bury the
+critical path in Linear's relation view, and each one is another link to keep in sync when the
+plan changes.
+
+- **Before adding "X blocked by Z"**, drop it if Z is already upstream of another of X's blockers.
+- **An external blocker** (another team's or another project's ticket, e.g. a kernel ticket)
+  goes on the earliest ticket that needs it — not on every descendant.
+- **An existing redundant edge found while editing** is reported to the user, not detached —
+  removing relations unasked is a guardrail below.
 
 ## Reevo defaults
 
