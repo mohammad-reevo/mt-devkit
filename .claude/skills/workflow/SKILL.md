@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with one hard gate (after plan, needing my explicit go-ahead — scope hands off on my "we're done" in the scoping discussion) and kickback routing, then stops at explicit done. Detects phase from the spec files + git/PR state. Also a status view across every in-flight idea. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
+description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with one hard gate (after plan, needing my explicit go-ahead — scope hands off on its own once no question needs my call) and kickback routing, then stops at explicit done. Detects phase from the spec files + git/PR state. Also a status view across every in-flight idea. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -56,9 +56,9 @@ Invoke each phase skill and let it run to completion — each handles its own in
 (scope agrees the direction, plan approves the plan, verify is user-directed). Then:
 
 - **scope → plan — no gate; the scoping discussion is the checkpoint.** Scope is the
-  deep-context phase: a full, in-depth look at the work, argued out with me in conversation
-  until I say **we're done**. That "done" is the go-ahead — it covers writing the scope file
-  *and* running plan. Once the scope file lands, **go straight into plan — don't summarize, don't
+  deep-context phase: a full, in-depth look at the work, with every question that needs my call
+  asked in conversation. Once none remain, scope writes its file without waiting for a
+  "we're done". Once the scope file lands, **go straight into plan — don't summarize, don't
   re-ask, don't wait for me.** Everything I need to weigh in on belongs *inside* the scoping
   discussion (scope's Discuss phase owns asking it); whatever still lands in the file's Open
   questions is plan's to resolve by research or to ask about as a judgment call. My next review
@@ -99,8 +99,8 @@ Invoke each phase skill and let it run to completion — each handles its own in
   look at them — goes.
 
 ### 3. Route kickbacks
-- plan finds the **direction** wrong → back to **scope** (revision) → I say done again →
-  straight back into plan.
+- plan finds the **direction** wrong → back to **scope** (revision) → once no question
+  needs my call → straight back into plan.
 - implement hits **structural drift** → back to **plan** (revision) → forward into implement.
 - verify's own fixes stay in verify (post-build); only a structural problem kicks to plan.
 
@@ -111,9 +111,9 @@ back up.
 
 - **Conduct, don't perform.** Never write scope/plan/implement content or open the PR yourself —
   always through the owning skill.
-- **The scope → plan hop is gate-less, but never silent.** My "we're done" in the scoping
-  discussion is a real decision I made in conversation — not something you infer from a lull.
-  Scope stops for it; once it's said, plan follows without another stop.
+- **The scope → plan hop is gate-less.** The trigger is the scope file landing — not a phrase
+  from me. Scope stops only for questions that need my call; I halt it myself if I want to
+  steer, and my review point is the written plan.
 - **The post-plan gate is real.** A written plan is not consent to build. Wait for the word, even
   when the plan is obviously good and the tasks are obviously next.
 - **Only that one is a gate.** Naming phases when you kick me off ("scope, plan and implement
