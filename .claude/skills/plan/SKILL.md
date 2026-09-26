@@ -92,7 +92,8 @@ is not a commitment to it.
 The one thing that *does* come before the write is a **genuine open question that isn't the
 whole plan** — a judgment call left over from *Resolve and break down*, a direction that turned
 out ambiguous, a decision only I can make. Ask that on its own and get the answer. Don't dress
-the entire plan up as a question in order to ask it.
+the entire plan up as a question in order to ask it. In agentic mode, don't ask: take the
+best-supported option and record it under Decisions as an Assumption (per `workflow` § Modes).
 
 The file:
 
@@ -110,7 +111,8 @@ What done looks like, concretely — concretized from the scope's Chosen directi
 Inherited from scope's Out of scope, plus anything planning excluded.
 
 ## Decisions
-How each of scope's open questions was resolved, one line each.
+How each of scope's open questions was resolved, one line each. Agentic mode adds an
+`Assumption: <what was decided>` line per call taken without me.
 
 ## Tasks
 - [ ] 1. <Task name> — files: <paths>. <What changes, specifically.>
@@ -143,8 +145,8 @@ What the diff ends up looking like is the one thing the file doesn't hand me at 
 
 Then **stop**. A written plan is not a green light: agreeing the plan is *right* is not me
 saying start building. I want a beat to sit with it — implement is mine to trigger, and
-`/workflow` enforces the same gate from the conductor's side. If I come back with changes,
-revise the file in place.
+`/workflow` enforces the same gate from the conductor's side, applying the mode's rule (per
+`workflow` § Modes). If I come back with changes, revise the file in place.
 
 ## Guardrails
 

@@ -42,7 +42,8 @@ present it is § Reporting, below.
 ### Frame
 Restate the idea in your own words — the problem and the why, not the solution. If the idea
 is genuinely ambiguous (unclear goal, unclear user, unclear constraint), ask 1–3 clarifying
-questions. If it's clear, go straight to investigating — don't manufacture questions.
+questions. If it's clear, go straight to investigating — don't manufacture questions. Under
+`/workflow`, each question follows the mode's decision rule (per `workflow` § Modes).
 
 **Don't state a cause here.** You haven't read anything yet. Frame the *problem*; investigating
 establishes what's actually true.
@@ -93,7 +94,9 @@ coherent answer than collect it across three.
 doesn't hold, the thing is already fixed, the bug is somewhere else, or the real work is much
 bigger than the framing implied. Then say that plainly and stop, because everything downstream
 would be built on a premise I need to correct first. That is the one interruption worth its
-cost; a routine "here's the cause, shall I continue?" is not.
+cost; a routine "here's the cause, shall I continue?" is not. This stop holds in every mode — an
+agentic drive continues past it only on a clear recommended reading of the corrected premise,
+recorded as an Assumption; with none, it stops too (per `workflow` § Modes).
 
 ### Candidates — validate what's load-bearing
 Now generate **2–3 genuinely different** candidates, shaped by the cause — not one approach
@@ -125,7 +128,8 @@ not parked in the file for a later gate that no longer exists: resolve what you 
 targeted read, reasoning from what you already found), then ask the rest as direct, answerable
 questions with your recommendation — **AskUserQuestion** when they're discrete choices, so I can
 just pick. A real choice between approaches is one of those questions; one my kickoff already
-settled is not.
+settled is not. In agentic mode, take the recommended option as an Assumption; in investigate,
+leave it as an open question (per `workflow` § Modes).
 
 **The phase ends when nothing needs my call** — every question answered, or there were none.
 Then write the scope file straight away. Don't restate the converged direction for me to
@@ -148,6 +152,7 @@ The discussion is ephemeral; the file is the converged record — not a transcri
 # <Idea title> — Scope
 
 > Name: <name>   (the slug — names the scope/plan files, the worktree, and branch mohammad/<name>)
+> Mode: <assistant | agentic | investigate>   (per `workflow` § Modes; assistant when standalone)
 
 ## Idea
 2–4 sentences: the problem and the why. For a defect, the established cause belongs here —
@@ -172,6 +177,9 @@ What the discussion couldn't settle — each written as a direct, answerable que
 research where the code answers, and asks me only where it's a judgment call. Anything I could
 have decided in the discussion should have been asked there, not left here.
 
+## Assumptions
+Agentic mode only — one `Assumption: <what was decided>` line per gate taken without me.
+
 ## Out of scope
 What we consciously deferred, so plan doesn't reinvent it.
 ```
@@ -184,7 +192,8 @@ approximation as authority. You give me the full read live while investigating; 
 only the parts that explain a decision.
 
 Close by telling me the file path. Under `/workflow`, plan follows immediately — no summary and
-no ask; the conductor owns the handoff.
+no ask; the conductor owns the handoff. In investigate mode the file is the end of the drive: no
+plan follows.
 This filename is the **slug authority** for the rest of the funnel — downstream skills find
 the chain by this file, they never re-derive the slug from the idea.
 
