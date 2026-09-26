@@ -109,6 +109,10 @@ Subagents surface drift; **you** decide — they never redesign mid-task:
 Every check failure gets fixed or escalated with specifics — never skipped, never labeled
 pre-existing, never routed around.
 
+**These stops hold in every mode.** The check-failure and review-cycle escalations and the
+structural-drift kickback are real failures, not gates — an agentic drive stops on them too (per
+`workflow` § Modes).
+
 ## Guardrails
 
 - **Conduct, don't perform.** You never write task code or run checks in main context —

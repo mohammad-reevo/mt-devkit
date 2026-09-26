@@ -156,7 +156,8 @@ past (~40 min+), and even then as an observation, not a failure.
   This is a handoff, not auto-fixing. `address-comments` reads every thread, triages it into a
   numbered report, finalizes, and waits for my explicit go before it touches code or replies to
   anything — except when every comment verifies as Implement, where it says so and executes from
-  the report, since there is nothing for me to decide. What goes away is my having to say "yes,
+  the report, since there is nothing for me to decide (or in an agentic drive, per `workflow`
+  § Modes). What goes away is my having to say "yes,
   go look at them" — the same friction the `verify → babysit` pause had, where the only thing
   the pause ever produced was a delay.
 
