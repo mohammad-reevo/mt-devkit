@@ -23,8 +23,8 @@ This skill is post-build, does-it-actually-work verification plus the PR.
 Find the plan — glob `~/.claude/spec/*-plan.md` and match against the idea (**never re-derive a
 slug from prose**; confirm with me if more than one could fit). Read: **Goals** (the PR's
 what/why), **Verification / Manual checks** (informs the strategy), **Repo** (where to run, and
-which PR skill to use). No plan (invoked directly on a branch) → infer what to check from the
-diff and ask me.
+which PR skill to use), **Declined review findings** (for the PR body). No plan (invoked directly
+on a branch) → infer what to check from the diff and ask me.
 
 **Explicit plan + worktree.** Invoked with a **plan path and a worktree path** (a `workflow`
 project drive, where the session stays at the mt-devkit root), use those — never the session's
@@ -65,6 +65,8 @@ applies my house rules, and preflights the body against the repo's validator so 
 doesn't cost a CI cycle. Fill it with what/why (from Goals) + the verification plan/results
 (note when in-app verification is still **pending**, and update it once it passes). An agentic
 drive also carries every `Assumption:` line from the scope and plan files (per `workflow` § Modes).
+In any mode, list every entry of the plan's `## Declined review findings` with its reason — a
+finding implement declined is still mine to make the final call on.
 
 **The body gets the strategy's outcome, never the coding checks.** implement already ran lint,
 type-check and the targeted tests, and CI runs them again — a green PR says so without a
