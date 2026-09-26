@@ -23,5 +23,6 @@ Everything else stands, notably Tier 1 + Tier 2 of `definition-of-done.md`, `pro
 Unused: `check-spec`, `merge-slice`, `finalize-stack`, `land-owner` — don't invoke.
 Used: `.claude/lib/code_owners.py` (`owners` = which team owns each path; `approvals <pr>`),
 run from `salestech-be/`. Missing ⇒ AH isn't applied; re-run its `bootstrap.sh`.
+Per-file decisions + how to check AH for changes: `knowledge-base/concepts/harness/assimilation-harness.md`.
 
 This applies across all sessions working in this workspace.
