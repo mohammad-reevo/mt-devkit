@@ -45,6 +45,8 @@ in it (and the worktree gate is satisfied):
   for `<name>` already exists (a revision, or you made one), it's reused — just confirm we're
   inside it. Skip only if I explicitly say I don't want a worktree.
 - (Scope-less quick plan: pick the name first, then this same worktree step.)
+- **Project drive** — skip this step: `workflow` has already created the slice's worktree without
+  entering it and dispatches the planner with its path (`workflow` § Project drive).
 
 ## The three beats
 
@@ -81,7 +83,8 @@ must name real files and real seams, not guesses.
   check fails a PR that mixes the two. The mechanics are salestech-be's own and are read, not
   restated: `.claude/skills/db-migration/SKILL.md` (+ its `reference/cdc-awareness.md`) for PR 1,
   `.claude/skills/db-model-repo/SKILL.md` for PR 2 — funnel sessions don't auto-load sub-repo
-  skills, so name the one each task follows in the task itself.
+  skills, so name the one each task follows in the task itself. In a project drive the migration
+  is its own slice instead: don't split — report it, and `workflow` carves the slice out.
 - **Kickback rule:** if research shows the chosen direction itself is wrong (not just a detail), the
   planner writes no plan and reports it; stop. Say what broke and recommend re-running scope — don't
   quietly re-scope inside the plan.
@@ -115,6 +118,10 @@ The file:
 
 > Scope: <slug>-scope.md  (or: scope-less — mini-scope below)
 > Repo: <repo root the plan targets — where checks and git run>
+> Project: <project>   (project drive only — these four lines; omit them otherwise)
+> Depends on: <none | other slice's slug>
+> Base: <mohammad/<project>-base | mohammad/<dependency> | main>   (the PR's base)
+> Worktree: <worktree path>
 
 ## Goals
 What done looks like, concretely — concretized from the scope's Chosen direction
