@@ -48,12 +48,23 @@ in it (and the worktree gate is satisfied):
 
 ## The three beats
 
+**Research, breakdown, and the write run in one `planner` agent** (`subagent_type: planner`),
+dispatched once the worktree is up, so the deep reading stays out of the main thread. Give it the
+scope file path (or the mini-scope), the plan file path, the worktree path, the mode, and any
+feedback on a previous version. It follows the three beats below and the file template, and
+returns the path, a short summary of the finished PR, the judgment calls it couldn't resolve
+(options + recommendation), and whether a diagram would help — it never asks me anything. The
+main thread keeps presenting the result, asking those calls, the diagram, and the gate.
+
+**A revision is a fresh `planner`** with my feedback — the plan file is the contract, so it
+carries no hidden state from the last dispatch.
+
 ### 1. Deep research
-This is where real investigation happens — dispatch Explore agent(s) to map the actual code
-the plan will touch: exact files, existing patterns to follow, integration points, what the
-tests around this area look like. Scope investigated only far enough to explain the cause and
-check each approach's load-bearing assumption; here depth is the point — the plan's tasks must
-name real files and real seams, not guesses.
+This is where real investigation happens — the planner maps the actual code the plan will touch
+itself (a subagent can't dispatch Explore): exact files, existing patterns to follow, integration
+points, what the tests around this area look like. Scope investigated only far enough to explain the
+cause and check each approach's load-bearing assumption; here depth is the point — the plan's tasks
+must name real files and real seams, not guesses.
 
 ### 2. Resolve and break down
 - **Resolve every open question** from the scope — by research where the code answers it,
@@ -71,17 +82,17 @@ name real files and real seams, not guesses.
   restated: `.claude/skills/db-migration/SKILL.md` (+ its `reference/cdc-awareness.md`) for PR 1,
   `.claude/skills/db-model-repo/SKILL.md` for PR 2 — funnel sessions don't auto-load sub-repo
   skills, so name the one each task follows in the task itself.
-- **Kickback rule:** if research shows the chosen direction itself is wrong (not just a
-  detail), stop. Say what broke and recommend re-running scope — don't quietly re-scope
-  inside the plan.
+- **Kickback rule:** if research shows the chosen direction itself is wrong (not just a detail), the
+  planner writes no plan and reports it; stop. Say what broke and recommend re-running scope — don't
+  quietly re-scope inside the plan.
 
 ### 3. Converge and write
-**Draw the shape when it earns one.** If the design is a pipeline with more than one consumer,
-or ≥3 steps where each step's output feeds the next, invoke **`make-diagram`** and include its
-diagram in the walkthrough you hand me with the finished plan — a fork is far clearer drawn than
-described, and that walkthrough is where I decide whether the design is right. That skill owns
-the grammar *and* the call on when not to draw; don't hand-roll a diagram here, and don't force
-one onto a plan that's a list of independent edits.
+**Draw the shape when it earns one.** The planner says whether it does; the main thread draws it. If
+the design is a pipeline with more than one consumer, or ≥3 steps where each step's output feeds the
+next, invoke **`make-diagram`** and include its diagram in the walkthrough you hand me with the
+finished plan — a fork is far clearer drawn than described, and that walkthrough is where I decide
+whether the design is right. That skill owns the grammar *and* the call on when not to draw; don't
+hand-roll a diagram here, and don't force one onto a plan that's a list of independent edits.
 
 **Write the file, then ask — not the other way round.** Write
 `~/.claude/spec/<slug>-plan.md` and review it with me from there. Don't render the whole plan
@@ -89,11 +100,13 @@ into a chat message and hold the write until I approve: a plan I have to reconst
 is harder to read than the file, and revising a written plan costs nothing. The file existing
 is not a commitment to it.
 
-The one thing that *does* come before the write is a **genuine open question that isn't the
-whole plan** — a judgment call left over from *Resolve and break down*, a direction that turned
-out ambiguous, a decision only I can make. Ask that on its own and get the answer. Don't dress
-the entire plan up as a question in order to ask it. In agentic mode, don't ask: take the
-best-supported option and record it under Decisions as an Assumption (per `workflow` § Modes).
+The one thing I still get asked is a **genuine open question that isn't the whole plan** — a
+judgment call left over from *Resolve and break down*, a direction that turned out ambiguous, a
+decision only I can make. The planner writes each as a `Pending:` line under Decisions with its
+recommendation; ask it on its own, get the answer, and re-dispatch the planner with it. Don't
+dress the entire plan up as a question in order to ask it. In agentic mode, don't ask: the
+planner takes the best-supported option and records it under Decisions as an Assumption (per
+`workflow` § Modes).
 
 The file:
 
@@ -146,7 +159,7 @@ What the diff ends up looking like is the one thing the file doesn't hand me at 
 Then **stop**. A written plan is not a green light: agreeing the plan is *right* is not me
 saying start building. I want a beat to sit with it — implement is mine to trigger, and
 `/workflow` enforces the same gate from the conductor's side, applying the mode's rule (per
-`workflow` § Modes). If I come back with changes, revise the file in place.
+`workflow` § Modes). If I come back with changes, a fresh planner revises the file in place.
 
 ## Guardrails
 

@@ -29,7 +29,8 @@ scope file (below) so downstream phases read it rather than re-derive it.
 
 **Re-entrancy.** Check `~/.claude/spec/<name>-scope.md`:
 - **Exists** → revision (plan kicked it back, or I changed my mind). Read it, state the
-  current direction, ask what changed. Revise from there — don't start over.
+  current direction, ask what changed. Revise from there — don't start over. A change that needs
+  new research goes to a fresh `scoper` with the file path and what changed.
 - **Doesn't exist** → fresh scope, work through the phases below.
 
 ## How scope runs
@@ -39,11 +40,21 @@ them as section headers, never label a message with a phase name, never refer to
 number when you talk to me. What I see is an answer; the phases are how you got there. How to
 present it is § Reporting, below.
 
+**Frame, Investigate, Candidates, and the first write of the scope file run in one `scoper`
+agent** (`subagent_type: scoper`), so the repo reading stays out of the main thread. Dispatch it
+with the idea text or ticket id, the name, the mode, the scope file path, and any answers I've
+already given. It follows the three phases below and the file template, and returns the path, the
+cause + difficulty, and its open questions with options and a recommendation — it never asks me
+anything. The main thread keeps the name, the Discuss phase, and updating the file with what I
+decide.
+
 ### Frame
 Restate the idea in your own words — the problem and the why, not the solution. If the idea
 is genuinely ambiguous (unclear goal, unclear user, unclear constraint), ask 1–3 clarifying
 questions. If it's clear, go straight to investigating — don't manufacture questions. Under
-`/workflow`, each question follows the mode's decision rule (per `workflow` § Modes).
+`/workflow`, each question follows the mode's decision rule (per `workflow` § Modes). The scoper
+returns these rather than asking; if they block investigating at all, re-dispatch it with my
+answers.
 
 **Don't state a cause here.** You haven't read anything yet. Frame the *problem*; investigating
 establishes what's actually true.
@@ -59,15 +70,14 @@ not as established fact, and not as part of the frame.
 The real first research pass. Its job is not "what exists in this area" — it's **what is
 actually true here**: how does this work today, and where does it actually break.
 
-**Check the knowledge base before dispatching anything.** An entry may already hold what a
-research pass is about to re-derive — how a subsystem fits together, why something is shaped the
-way it is, what a project's tickets actually cover. Scan the index in your context; if nothing
-there fires but the area feels previously-trodden, invoke **`author-knowledge-base`** `search`. This is cheap and it
-runs before the expensive part, which is the entire point — re-investigating what the KB already
-holds is the cost this store exists to remove.
+**Check the knowledge base before reading code.** An entry may already hold what a research pass is
+about to re-derive — how a subsystem fits together, why something is shaped the way it is, what a
+project's tickets actually cover. Scan the index; if nothing there fires but the area feels
+previously-trodden, search the entries. This is cheap and it runs before the expensive part, which
+is the entire point — re-investigating what the KB already holds is the cost this store exists to
+remove.
 
-Read-only. Dispatch Explore agent(s), **scaled to the idea** — one for a single-surface
-change, more when it spans repos or both backend and frontend. Keep the grounding they return
+Read-only, and done by the scoper itself — a subagent can't dispatch Explore. Keep the grounding
 (which components are shared, how many consumers, which call sites); that detail is what the
 difficulty read is made of. Summarize it away only later, when writing the file.
 
@@ -90,13 +100,13 @@ Establish two things, and lead with them when you report:
 you found is uncontroversial, keep going into candidates in the same turn; I'd rather read one
 coherent answer than collect it across three.
 
-**Stop and wait only when what you found changes the problem** — the ticket's stated cause
-doesn't hold, the thing is already fixed, the bug is somewhere else, or the real work is much
-bigger than the framing implied. Then say that plainly and stop, because everything downstream
-would be built on a premise I need to correct first. That is the one interruption worth its
-cost; a routine "here's the cause, shall I continue?" is not. This stop holds in every mode — an
-agentic drive continues past it only on a clear recommended reading of the corrected premise,
-recorded as an Assumption; with none, it stops too (per `workflow` § Modes).
+**Stop and wait only when what you found changes the problem** — the ticket's stated cause doesn't
+hold, the thing is already fixed, the bug is somewhere else, or the real work is much bigger than
+the framing implied. The scoper leads its report with it; say that plainly and stop, because
+everything downstream would be built on a premise I need to correct first. That is the one
+interruption worth its cost; a routine "here's the cause, shall I continue?" is not. This stop holds
+in every mode — an agentic drive continues past it only on a clear recommended reading of the
+corrected premise, recorded as an Assumption; with none, it stops too (per `workflow` § Modes).
 
 ### Candidates — validate what's load-bearing
 Now generate **2–3 genuinely different** candidates, shaped by the cause — not one approach
@@ -114,10 +124,10 @@ pass is required; it is the difference between a proposal and a guess.
   remaining unknowns wouldn't change which approach I'd pick.
 
 ### Discuss — converge
-Put the candidates in front of me and recommend one. Each carries what it is, what it costs,
-what the validation pass found, and its share of the difficulty read — but as **prose that
-argues for or against it**, not as a labelled block with those four fields filled in. Shape it
-per § Reporting.
+Main thread, from the scoper's report and the file it wrote. Put the candidates in front of me and
+recommend one. Each carries what it is, what it costs, what the validation pass found, and its share
+of the difficulty read — but as **prose that argues for or against it**, not as a labelled block
+with those four fields filled in. Shape it per § Reporting.
 
 Then discuss. This is conversational and may take multiple rounds. I pick the direction —
 you advocate, you don't decide.
@@ -131,10 +141,11 @@ just pick. A real choice between approaches is one of those questions; one my ki
 settled is not. In agentic mode, take the recommended option as an Assumption; in investigate,
 leave it as an open question (per `workflow` § Modes).
 
-**The phase ends when nothing needs my call** — every question answered, or there were none.
-Then write the scope file straight away. Don't restate the converged direction for me to
-review, and don't wait for a "we're done": I front-load context in the kickoff and will halt you
-myself if I want to steer. The written plan is my next review point.
+**The phase ends when nothing needs my call** — every question answered, or there were none. Then
+update the scope file with what I decided straight away — Chosen direction, Open questions,
+Assumptions — or re-dispatch the scoper if an answer needs new research. Don't restate the converged
+direction for me to review, and don't wait for a "we're done": I front-load context in the kickoff
+and will halt you myself if I want to steer. The written plan is my next review point.
 
 **Testing call (part of the direction).** Before writing the file, settle — at altitude — what
 testing the chosen direction warrants, reasoning it out from
@@ -145,8 +156,8 @@ verification only and never decides tests. The call is re-derived later only whe
 outside the plan; the reference says when.
 
 ### Write the scope file (once nothing needs my call)
-The discussion is ephemeral; the file is the converged record — not a transcript. Write
-`~/.claude/spec/<slug>-scope.md`:
+The discussion is ephemeral; the file is the converged record — not a transcript. The scoper
+writes `~/.claude/spec/<slug>-scope.md` first; the main thread brings it to the converged state:
 
 ```markdown
 # <Idea title> — Scope
@@ -227,8 +238,8 @@ What that means concretely for a scope message:
 
 ## Guardrails
 
-- **Share as you go.** Findings land in conversation as they're settled; don't hold everything
-  for one dump at the end. This is a discussion phase, not a report. But "as you go" means
+- **Share as you go.** Findings land in conversation once the scoper returns; don't hold them
+  back for one dump at the end. This is a discussion phase, not a report. But "as you go" means
   *ordered within the message* — lead with the cause, then the options — not a hard stop after
   every phase. There is no mandatory stop: stop only to ask what needs my call (see Discuss),
   or when the premise itself changed (see Investigate).
