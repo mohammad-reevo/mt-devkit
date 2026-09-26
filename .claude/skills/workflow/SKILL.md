@@ -214,7 +214,16 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
 6. **Watch.** Once every slice PR is open, show the index table, run `pr-explanation` per PR,
    then `babysit <project>`. `done <project>` stays mine.
 
-Landing — merging slices and the final base→main PR — is not yet part of the drive.
+7. **Land.** Merging is mine, in GitHub — never merge a slice yourself. The order I use: a chain
+   merges in **reverse** (the top slice into the one below it, down to the project base), which
+   is conflict-free and squash-safe and needs no retargeting; an independent slice merges any
+   time; a slice based on `main` (migration, another team's paths) goes through `main`'s normal
+   flow. This order is mine to apply — never write it into a PR body
+   (`pr-description-no-merge-order.md`). babysit marks a row `merged` once its PR merges.
+8. **Final PR.** Once every slice based on the project base (directly or through a chain) reads
+   `merged`, open the project PR `mohammad/<project>-base` → `main` via `verify` (ready, never
+   draft), its body linking every slice PR, and add it to the index as the last row. babysit it
+   like any PR; `done <project>` after it merges stays mine.
 
 ## Guardrails
 
