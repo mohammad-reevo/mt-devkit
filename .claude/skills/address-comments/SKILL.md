@@ -62,6 +62,13 @@ from a human is still wrong. What differs is the default posture when you're uns
 Don't overcorrect into reflexive dismissal. "The bot said it" is not a reason to skip it, and most
 bot comments that survive verification are worth doing.
 
+**The plan outranks a bot, never a human.** When the PR's branch `mohammad/<name>` has a plan
+(`~/.claude/spec/<name>-plan.md`), check each **AI review bot** finding against its Goals,
+Decisions, and tasks. A bot finding that contradicts a choice the plan made deliberately tiers as
+**Push back and resolve**, its reply `contradicts plan: <the plan line>`. A **human** comment
+that contradicts the plan is never declined on plan grounds — humans can overrule the plan, so it
+tiers as **Bring to me**. No plan file → nothing to check against; triage as usual.
+
 **An approval carrying nits is not a gate.** A review that approves while leaving small comments
 still goes through all four steps — the nits get triaged, tiered and resolved like anything else —
 but nothing about the PR is blocked while that happens, so don't report it as if it were.
