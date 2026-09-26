@@ -48,6 +48,10 @@ cause + difficulty, and its open questions with options and a recommendation —
 anything. The main thread keeps the name, the Discuss phase, and updating the file with what I
 decide.
 
+In a `workflow` project drive the conductor dispatches one scoper per slice in parallel and runs
+Discuss once, batched across them (`workflow` § Project drive); each file also gets
+`> Project: <project>`.
+
 ### Frame
 Restate the idea in your own words — the problem and the why, not the solution. If the idea
 is genuinely ambiguous (unclear goal, unclear user, unclear constraint), ask 1–3 clarifying
@@ -164,6 +168,7 @@ writes `~/.claude/spec/<slug>-scope.md` first; the main thread brings it to the 
 
 > Name: <name>   (the slug — names the scope/plan files, the worktree, and branch mohammad/<name>)
 > Mode: <assistant | agentic | investigate>   (per `workflow` § Modes; assistant when standalone)
+> Project: <project>   (project drive only — its index is ~/.claude/spec/<project>-project.md)
 
 ## Idea
 2–4 sentences: the problem and the why. For a defect, the established cause belongs here —

@@ -17,7 +17,8 @@ delete their plan/scope spec files, and tear it down. Deliberately minimal — n
 records, no session state. The PR is the source of truth.
 
 ## Two modes
-- **`/done`** — normal close-out (runs the gate).
+- **`/done`** — normal close-out (runs the gate). **`/done <project>`** closes a project drive's
+  slices (below); `cancel` combines with it.
 - **`/done cancel`** — abandon the idea: skip the gate, tear down anyway (dead exploration,
   superseded direction). No reason arg.
 
@@ -36,6 +37,12 @@ records, no session state. The PR is the source of truth.
    `mohammad/<slug>`) are *exactly* what this close-out handles — nothing else.
 3. For each branch, find its open PR: `gh pr list --head "<branch>" --json number,url,state`
    (run from that sub-repo so the repo is inferred).
+
+**`/done <project>`** — the worktrees are every slice row's worktree path in
+`~/.claude/spec/<project>-project.md`, not the conversation's list; steps 2–3, the gate, and the
+teardown then run per slice worktree exactly as above (each slice gates independently). Remove
+each closed slice's row from the index, and delete the index once no row is left. The remote
+project base branch is never touched.
 
 ## Normal mode — the gate (every resolved PR must pass BOTH)
 

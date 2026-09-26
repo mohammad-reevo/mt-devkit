@@ -26,6 +26,13 @@ Find the plan — glob `~/.claude/spec/*-plan.md` and match against the idea (**
 a slug from prose**; confirm with me if more than one could fit). No plan file → stop and
 point me to plan. The plan's `> Repo:` line is the repo every subagent operates in.
 
+**Explicit plan + worktree.** Invoked with a **plan path and a worktree path** (a `workflow`
+project drive, where the session stays at the mt-devkit root), use those — never the session's
+cwd. The worktree also comes from the plan's `> Worktree:` header when present. Every subagent
+then gets `<worktree>/<repo>` as the directory it works in, and every git command is
+`git -C <worktree>/<repo> …`. When the plan names a `> Base:`, the branch diff (reviewer target
+included) is against `origin/<base>`, not `main`.
+
 Check the checkboxes: `[x]` tasks are done — resume from the first unchecked one, don't redo
 finished work.
 
@@ -82,7 +89,9 @@ it — that's the seam verify relies on.
 
 Once every task is `[x]`, the targeted checks are green, **and the finalization review is clean**,
 dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on a feature
-branch), commit the work, and push. It returns the branch name and push confirmation.
+branch), commit the work, and push. It returns the branch name and push confirmation. A project
+slice is already on `mohammad/<slug>` at its `> Base:` — commit and push there, never re-branch
+off `main`.
 
 **Plan split into a migration PR and a stacked code PR** (plan's `### PR 1 — migration` /
 `### PR 2` groups): two branches, staged by path. `mohammad/<slug>-migration` off `main` carries
