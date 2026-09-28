@@ -99,7 +99,9 @@ fine (merge happens separately from your queue).
 
 Run these **per worktree**, for each one that passed its own gate.
 
-1. **Capture what outlives the worktree.** If this work belongs to a project with an entry under
+1. **Capture what outlives the worktree.** Find the project by re-reading
+   `knowledge-base/INDEX.md` from disk — not the copy imported at session start, which may predate
+   a split or rename. If this work belongs to a project with an entry under
    `knowledge-base/projects/`, invoke **`author-knowledge-base`** `update` to record what this PR actually changed —
    scope that shifted, decisions taken while implementing, anything I'd otherwise have to
    re-explain next session. If the **project itself** is finished (not just this PR), invoke

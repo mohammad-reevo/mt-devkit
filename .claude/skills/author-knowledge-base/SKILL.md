@@ -91,6 +91,8 @@ point of having a gate at all.
 knowledge-base/
 ├── INDEX.md              ← imported by CLAUDE.md; in every session's context
 ├── projects/<name>.md    ← where a project stands, what its tickets cover
+├── projects/<name>/      ← the same, split into several entries once one page isn't enough
+│   └── rules.md          ← optional: how this project's entries are to be kept
 └── concepts/<area>/<topic>.md
 ```
 
@@ -113,6 +115,13 @@ Check these whenever you touch the store:
   loaded by nothing.
 
 ## Modes
+
+**Before `add` or `update` touches `projects/`, re-read the store from disk.** The `INDEX.md` in
+your context is the session-start import, and an entry may have been split, renamed, or added
+since — a write proposed against it can name a path that no longer exists. Read
+`knowledge-base/INDEX.md` fresh, then read `projects/<project>/rules.md` if there is one, and
+shape the write to what it asks: when it says to keep a progress entry current, the write is a
+line in that entry, not a new one.
 
 ### `search <query>`
 The fallback for when the index didn't fire. Grep entry bodies (`knowledge-base/`), report which

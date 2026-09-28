@@ -26,6 +26,7 @@ file already exists — read it and revise from there with what changed; don't s
    or kill, not the frame.
 2. **Check the knowledge base.** Read `mt-devkit/knowledge-base/INDEX.md` and open any entry
    whose line fires, before reading code — it may already hold what you're about to re-derive.
+   When a project entry fires, also read `knowledge-base/projects/<project>/rules.md` if it exists.
 3. **Investigate — cause + difficulty.** You have no subagents: do the reading yourself with
    Read, Grep, Glob, and Bash (inspect-only). Grep to the line, read the surrounding block —
    don't read whole modules. The product repos are gitignored siblings of the mt-devkit root;

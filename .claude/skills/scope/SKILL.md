@@ -77,8 +77,10 @@ actually true here**: how does this work today, and where does it actually break
 
 **Check the knowledge base before reading code.** An entry may already hold what a research pass is
 about to re-derive — how a subsystem fits together, why something is shaped the way it is, what a
-project's tickets actually cover. Scan the index; if nothing there fires but the area feels
-previously-trodden, search the entries. This is cheap and it runs before the expensive part, which
+project's tickets actually cover. Read `knowledge-base/INDEX.md` from disk — the imported copy can
+predate an entry split or added mid-session; if nothing there fires but the area feels
+previously-trodden, search the entries. When a project entry fires, also open that project's
+`rules.md` if it has one — it carries how work on the project is to be done. This is cheap and it runs before the expensive part, which
 is the entire point — re-investigating what the KB already holds is the cost this store exists to
 remove.
 
