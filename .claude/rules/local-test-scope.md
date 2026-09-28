@@ -19,13 +19,14 @@ plus lint and type-check. Leave the exhaustive sweep to GitHub PR CI.
   that one is 605 test files (~17k tests) and costs about the same as the whole tree.
 - ❌ `make pytest …` — it runs with `-n 12`, fanning pytest-xdist across 12 cores.
 
-## Hard-enforced: at most 25 test files per run
+## Hard-enforced: at most 5 test files and 2 xdist workers per run
 
 `test_scope_gate_hook.py` (PreToolUse on Bash) **denies** any pytest run that covers more than
-**25 test files**, and any run that names no path at all (bare `pytest`, `make pytest`). Explicitly
-named test files always pass, however many — naming files *is* the targeted behavior. Two escape
-hatches, both visible in the command itself: `--collect-only`, and a literal `MT_TEST_SCOPE_GATE=0`
-prefix.
+**5 test files** (a named file counts 1, a directory counts the test files under it), any run
+that names no path at all (bare `pytest`, `make pytest`), and `make pytest-k` / `make falkor-ci`.
+A worker count above **2** (`-n 12`, `-n auto`, `make pytest <files>`) is **rewritten** to
+`-n 2` and runs. Two escape hatches, both visible in the command itself: `--collect-only`, and a
+literal `MT_TEST_SCOPE_GATE=0` prefix. The caps match salestech-be's Assimilation Harness.
 
 **Why a hook and not more words:** prose already failed here once. The `implementer` agent
 definition carried "never run a whole test suite locally" verbatim at the moment a subagent ran
