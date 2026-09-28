@@ -52,11 +52,12 @@ in it (and the worktree gate is satisfied):
 
 **Research, breakdown, and the write run in one `planner` agent** (`subagent_type: planner`),
 dispatched once the worktree is up, so the deep reading stays out of the main thread. Give it the
-scope file path (or the mini-scope), the plan file path, the worktree path, the mode, and any
-feedback on a previous version. It follows the three beats below and the file template, and
-returns the path, a short summary of the finished PR, the judgment calls it couldn't resolve
-(options + recommendation), and whether a diagram would help — it never asks me anything. The
-main thread keeps presenting the result, asking those calls, the diagram, and the gate.
+scope file path (or the mini-scope), the plan file path, the worktree path, the mode (read from the
+scope file's `> Mode:`, per `workflow` § Modes), and any feedback on a previous version. It follows
+the three beats below and the file template, and returns the path, a short summary of the finished
+PR, the judgment calls it couldn't resolve (options + recommendation), and whether a diagram would
+help — it never asks me anything. The main thread keeps presenting the result, asking those calls,
+the diagram, and the gate.
 
 **A revision is a fresh `planner`** with my feedback — the plan file is the contract, so it
 carries no hidden state from the last dispatch.
@@ -118,6 +119,7 @@ The file:
 
 > Scope: <slug>-scope.md  (or: scope-less — mini-scope below)
 > Repo: <repo root the plan targets — where checks and git run>
+> Mode: <assistant | agentic | investigate>   (copied from the scope file; kept on revision)
 > Project: <project>   (project drive only — these four lines; omit them otherwise)
 > Depends on: <none | other slice's slug>
 > Base: <mohammad/<project>-base | mohammad/<dependency> | main>   (the PR's base)

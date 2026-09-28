@@ -37,9 +37,15 @@ decision rule; the rule lives here and nowhere else.
 | **investigate** | Report the open question in the findings; don't decide it. The drive stops after scope. |
 
 - **Choosing it.** An explicit word in the invocation (`workflow agentic <idea>`, `workflow
-  investigate <idea>`), else assistant. Scope records it once in the scope file's header
-  (`> Mode: <mode>`), so every later phase and a resumed session read the same mode. A later
-  explicit mode word overrides it and updates that line.
+  investigate <idea>`), else assistant. Scope records it in the scope file's header
+  (`> Mode: <mode>`) and plan copies that line into the plan file's header, so every later phase
+  and a resumed session read the same mode. A later explicit mode word overrides it and updates
+  the `> Mode:` line in the scope file, the plan file if present, and the project index if any.
+- **Resolving it — from the files, never from the conversation.** A skill that behaves per mode
+  reads it fresh each time, so a compacted or resumed session still gets it right: branch
+  `mohammad/<name>` → the `> Mode:` line in `~/.claude/spec/<name>-plan.md`, else
+  `<name>-scope.md`; neither file, or no such line → assistant. A dispatched agent (scoper,
+  planner) takes the mode its dispatcher read this way.
 - **Where an Assumption lands.** In the phase's spec file — scope's `## Assumptions`, plan's
   `## Decisions` — and verify carries them into the PR body, which outlives both files.
 - **No recommended option, no Assumption.** A gate with nothing to recommend stops in every mode.
@@ -170,8 +176,8 @@ session's only view of the project — update it at every status change:
 ```
 
 Status is one of `scoping / scoped / planned / building / PR open / merged`. Each slice's scope
-and plan files carry `> Project: <project>`. Re-invoking with the project name resumes: read the
-index, then detect each slice's phase with the § 1 table.
+and plan files carry `> Project: <project>` and the index's `> Mode:` line. Re-invoking with the
+project name resumes: read the index, then detect each slice's phase with the § 1 table.
 
 The main session stays at the **mt-devkit root** for the whole drive — never `EnterWorktree`: a
 session that has entered one worktree is blocked from running git in the others. Every slice is
@@ -179,11 +185,11 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
 
 1. **Scope, in parallel.** Name each slice (scope's naming rule), write the index, then dispatch
    one `scoper` per slice in **one message** (several Agent calls), each with scope's usual brief
-   plus `> Project:`. Collect every scoper's open questions and resolve them in **one batched
-   ask** (assistant) or take the recommended options as Assumptions (agentic) — per § Modes — and
-   record the answers into each slice's scope file (re-dispatching a scoper only where an answer
-   needs new research). A premise-changed report stops that slice alone. Investigate → stop here,
-   every slice `scoped`.
+   plus `> Project:` and the index's mode. Collect every scoper's open questions and resolve them
+   in **one batched ask** (assistant) or take the recommended options as Assumptions (agentic) —
+   per § Modes — and record the answers into each slice's scope file (re-dispatching a scoper only
+   where an answer needs new research). A premise-changed report stops that slice alone.
+   Investigate → stop here, every slice `scoped`.
 2. **Branches.** In each affected repo, create the project base off fresh main — once, and never
    push to main: `git -C <primary repo> fetch origin`, then
    `git -C <primary repo> push origin origin/main:refs/heads/mohammad/<project>-base`.
@@ -200,7 +206,8 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
    `git -C <wt>/<repo> switch -C mohammad/<slug> origin/<base>`. A dependent slice is re-pointed
    at its dependency's branch once that is pushed.
 4. **Plan, in parallel.** One `planner` per slice in one message, each with its worktree path;
-   each records `> Project:`, `> Depends on:`, `> Base:`, and `> Worktree:` in its plan header.
+   each records `> Mode:`, `> Project:`, `> Depends on:`, `> Base:`, and `> Worktree:` in its plan
+   header.
    **One gate over all plans**: assistant — present every plan (per plan's close, one after
    another) and wait for one go; agentic — proceed (per § Modes). Status → `planned`.
 5. **Build + PR, in parallel.** Run `implement` and then `verify` per slice with its explicit

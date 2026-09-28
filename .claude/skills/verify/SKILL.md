@@ -63,8 +63,9 @@ branch, or `main`) — never `main` by default. For the
 description, use the **`pr-description` skill** — it routes to that repo's own convention,
 applies my house rules, and preflights the body against the repo's validator so a format miss
 doesn't cost a CI cycle. Fill it with what/why (from Goals) + the verification plan/results
-(note when in-app verification is still **pending**, and update it once it passes). An agentic
-drive also carries every `Assumption:` line from the scope and plan files (per `workflow` § Modes).
+(note when in-app verification is still **pending**, and update it once it passes). When the
+branch resolves to agentic (per `workflow` § Modes), it also carries every `Assumption:` line
+from the scope and plan files.
 In any mode, list every entry of the plan's `## Declined review findings` with its reason — a
 finding implement declined is still mine to make the final call on.
 

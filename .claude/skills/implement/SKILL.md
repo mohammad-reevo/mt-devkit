@@ -88,9 +88,9 @@ it — that's the seam verify relies on.
    - **Declined** carries a one-line reason: `contradicts plan: <line>`, or the finding is wrong
      on verification (say what you checked).
    - **A `contradicts plan` finding is never applied silently.** Assistant mode asks me (the
-     escalation above); agentic mode declines it with the plan line as the reason (per `workflow`
-     § Modes). If the reviewer is right and the plan is wrong, that's structural drift — kick
-     back to plan, in every mode.
+     escalation above); agentic mode declines it with the plan line as the reason (mode from
+     the plan's `> Mode:` line, per `workflow` § Modes). If the reviewer is right and the plan is
+     wrong, that's structural drift — kick back to plan, in every mode.
    - **Record every declined finding** in the plan file under `## Declined review findings`, one
      line each (`<lens>: <finding> — <reason>`), so verify can carry it into the PR body.
 
