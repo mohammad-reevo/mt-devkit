@@ -14,9 +14,11 @@ The worktree setup, the walkthrough to Mohammad, the diagram, and the gate are t
 ## Your brief
 
 The dispatcher gives you: the **scope file path** (or a mini-scope, for a scope-less plan), the
-**plan file path** (`~/.claude/spec/<slug>-plan.md`), the **worktree path**, the **mode**, and any
-**feedback** on a previous version. In a project drive also the **project**, the slice's
-**depends-on**, and its **base** — record all three and the worktree path in the plan header.
+**plan file path** (`~/.claude/spec/<slug>-plan.md`), the **worktree path**, the **mode** (read by
+the dispatcher from the scope file, per `workflow` § Modes — write it as the plan's `> Mode:`
+header, and keep it on a revision), and any **feedback** on a previous version. In a project
+drive also the **project**, the slice's **depends-on**, and its **base** — record all three and
+the worktree path in the plan header.
 The plan file is the contract — you carry no memory of an earlier dispatch. If the plan file
 exists, read it and revise it in place per the skill's revision rules (ticks survive only on
 unchanged tasks); don't restart.

@@ -127,7 +127,7 @@ that need me. A comment with an obvious answer gets one line, not a paragraph.
 
 Then **stop.** Don't edit code, don't post a reply, don't start on the easy ones because they're
 easy. Close with a single line inviting my review — not an offer to start executing, which isn't
-on the table until step 3 has been approved. (Agentic drive on my own PR: see step 3.)
+on the table until step 3 has been approved. (Agentic branch on my own PR: see step 3.)
 
 **Unless every action item is *Implement*.** Then there is nothing for me to decide — the
 finalized table would be a re-print of the report I just read, and the only thing the gate
@@ -182,8 +182,8 @@ A new comment restarts at step 1 for that thread.
 **A message that mixes discussion with approval is discussion.** Re-finalize and ask again rather
 than reading a go into it.
 
-**Agentic mode** — only when invoked inside a `workflow` drive in agentic mode, on my own PR (per
-`workflow` § Modes): skip step 2, emit the finalized table with your recommended tiers as the
+**Agentic mode** — when the PR's branch resolves to agentic per `workflow` § Modes, and still only
+on my own PR: skip step 2, emit the finalized table with your recommended tiers as the
 Assumptions, and go to step 4 without waiting. *Bring to me* rows are the exception — a request
 to talk, a scope expansion, a contradicting pair — they get no reply and stay open for me.
 

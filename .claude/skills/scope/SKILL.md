@@ -42,7 +42,8 @@ present it is § Reporting, below.
 
 **Frame, Investigate, Candidates, and the first write of the scope file run in one `scoper`
 agent** (`subagent_type: scoper`), so the repo reading stays out of the main thread. Dispatch it
-with the idea text or ticket id, the name, the mode, the scope file path, and any answers I've
+with the idea text or ticket id, the name, the mode (the invocation's word; on a revision, the
+scope file's `> Mode:` per `workflow` § Modes), the scope file path, and any answers I've
 already given. It follows the three phases below and the file template, and returns the path, the
 cause + difficulty, and its open questions with options and a recommendation — it never asks me
 anything. The main thread keeps the name, the Discuss phase, and updating the file with what I
