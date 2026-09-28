@@ -105,9 +105,13 @@ and their unresolved threads. See `worktree` § `create-review`.
 
 Run this once, after the target is resolved and before any lens work starts.
 
-**mini** if the diff is **≤ 2 hand-written files AND ≤ 200 hand-written changed lines**
-(insertions + deletions) **and stays within one repo**. **full** otherwise. Nothing else feeds
-the decision — not how risky the area looks, not what the PR title says.
+**mini** if the diff is **≤ 2 hand-written non-test files AND ≤ 200 hand-written changed lines**
+(insertions + deletions, test lines included) **and stays within one repo**. **full** otherwise.
+Nothing else feeds the decision — not how risky the area looks, not what the PR title says.
+
+**Tests count toward lines, not files.** A small fix with a unit and an integration test is the
+common shape of a good PR; counting its test files would charge it the trio for having tests.
+Its test lines still count, so a large test rewrite still gets `full`.
 
 **"Hand-written" is the load-bearing word.** Generated output counts toward neither number, or a
 one-file migration measures as three files and wrongly gets the trio:
@@ -119,12 +123,21 @@ git diff --stat <base>...HEAD -- . \
   ':(exclude)**/*.lock' ':(exclude)**/pnpm-lock.yaml' ':(exclude)**/package-lock.json'
 ```
 
+That gives the line count. For the file cap, rerun it with the test paths excluded too — a file
+is a test file if and only if it matches one of these:
+
+```bash
+  ':(exclude)**/tests/**' ':(exclude)**/test_*.py' ':(exclude)**/*_test.py' \
+  ':(exclude)**/__tests__/**' ':(exclude)**/*.test.ts' ':(exclude)**/*.test.tsx' \
+  ':(exclude)**/*.spec.ts' ':(exclude)**/*.spec.tsx'
+```
+
 For a working-tree target, add untracked files at their full length — they have no diff, but
 they are hand-written. **If the measurement is ambiguous or the command errors, run `full`** —
 the cheap mode is never the fallback for not knowing.
 
 **Say which mode ran and what decided it** — one clause in § 1 of the report, carrying the two
-numbers ("mini — 1 file / 138 lines"). A run whose mode is invisible can't be compared against
+numbers ("mini — 1 src + 2 test files / 121 lines"). A run whose mode is invisible can't be compared against
 another, and that comparability is why the threshold is fixed rather than judged.
 
 ## Run the trio (full mode)
@@ -215,7 +228,7 @@ reports, which name the load-bearing files as a side effect of reviewing them. D
 wholesale to build it, and **don't spawn an agent for it**.
 
 Open with the mode and the numbers behind it, as a clause rather than a line of its own —
-"*mini — 1 file / 138 lines*" or "*full — 3 files / 405 lines*" (§ Mode selection). Say it even
+"*mini — 1 src + 2 test files / 121 lines*" or "*full — 3 src + 1 test files / 405 lines*" (§ Mode selection). Say it even
 when I forced the mode myself, so every report carries the same stamp.
 
 ### 2. The comments, numbered and tiered
