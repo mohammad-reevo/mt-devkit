@@ -20,7 +20,7 @@ the mechanical work — `.env` secrets are handled on disk and never read into c
 the first entry of `git worktree list` in the parent repo; fall back to
 `~/Desktop/code/mt-devkit`. Worktrees live at `$MAIN/worktrees/<name>/`.
 
-## `create <name>`
+## `create <name> [--no-enter]`
 
 1. Run the setup script (it **syncs all four primary checkouts to fresh main** first, then
    creates the parent + sub-repo worktrees on `mohammad/<name>`,
@@ -28,15 +28,21 @@ the first entry of `git worktree list` in the parent repo; fall back to
    in the worktree's frontend env to `<worktree>/salestech-be` — rewriting the key in place, or
    appending it when the copied env doesn't carry it, so the path is set either way; line-scoped,
    so secrets are never read into context — **symlinks `knowledge-base/` and `tasks/` back to the
-   primary checkout**, runs `uv sync`, and **installs salestech-be's pre-commit hooks** — from
+   primary checkout**, runs `uv sync`, **installs salestech-be's pre-commit hooks** — from
    the primary, since worktrees share one hooks dir; see the script's comment for why the source
-   matters):
+   matters — and **applies the latest Assimilation Harness** (the team's salestech-be agent
+   overlay) to the worktree's salestech-be, printing one `AH:` line with the outcome):
    ```bash
    bash $HOME/Desktop/code/mt-devkit/.claude/skills/worktree/worktree_setup.sh "<name>" "$MAIN"
    ```
-2. Switch the session in: `EnterWorktree(path: "$MAIN/worktrees/<name>")`.
+2. Switch the session in: `EnterWorktree(path: "$MAIN/worktrees/<name>")`. **`--no-enter`**
+   skips this step — a `workflow` project drive keeps the session at the mt-devkit root, since a
+   session that has entered one worktree can't run git in its sibling slices' worktrees.
 3. Report: "Worktree `<name>` ready — sub-repos on `mohammad/<name>`, backend path fixed for
-   this worktree."
+   this worktree." (with `--no-enter`, also its path) Add the script's `AH:` line verbatim —
+   `applied (<sha>)`, or `NOT applied` with its reason, which the user fixes by re-running
+   `~/.cache/reevo/assimilation-harness/bootstrap.sh <worktree>/salestech-be` with
+   `REEVO_HARNESS_OVERLAY=1`.
 
 ## `create-review <name> <subrepo> <ref>`
 

@@ -62,6 +62,13 @@ from a human is still wrong. What differs is the default posture when you're uns
 Don't overcorrect into reflexive dismissal. "The bot said it" is not a reason to skip it, and most
 bot comments that survive verification are worth doing.
 
+**The plan outranks a bot, never a human.** When the PR's branch `mohammad/<name>` has a plan
+(`~/.claude/spec/<name>-plan.md`), check each **AI review bot** finding against its Goals,
+Decisions, and tasks. A bot finding that contradicts a choice the plan made deliberately tiers as
+**Push back and resolve**, its reply `contradicts plan: <the plan line>`. A **human** comment
+that contradicts the plan is never declined on plan grounds — humans can overrule the plan, so it
+tiers as **Bring to me**. No plan file → nothing to check against; triage as usual.
+
 **An approval carrying nits is not a gate.** A review that approves while leaving small comments
 still goes through all four steps — the nits get triaged, tiered and resolved like anything else —
 but nothing about the PR is blocked while that happens, so don't report it as if it were.
@@ -120,7 +127,7 @@ that need me. A comment with an obvious answer gets one line, not a paragraph.
 
 Then **stop.** Don't edit code, don't post a reply, don't start on the easy ones because they're
 easy. Close with a single line inviting my review — not an offer to start executing, which isn't
-on the table until step 3 has been approved.
+on the table until step 3 has been approved. (Agentic branch on my own PR: see step 3.)
 
 **Unless every action item is *Implement*.** Then there is nothing for me to decide — the
 finalized table would be a re-print of the report I just read, and the only thing the gate
@@ -174,6 +181,11 @@ A new comment restarts at step 1 for that thread.
 
 **A message that mixes discussion with approval is discussion.** Re-finalize and ask again rather
 than reading a go into it.
+
+**Agentic mode** — when the PR's branch resolves to agentic per `workflow` § Modes, and still only
+on my own PR: skip step 2, emit the finalized table with your recommended tiers as the
+Assumptions, and go to step 4 without waiting. *Bring to me* rows are the exception — a request
+to talk, a scope expansion, a contradicting pair — they get no reply and stay open for me.
 
 ## Step 4 — execute
 

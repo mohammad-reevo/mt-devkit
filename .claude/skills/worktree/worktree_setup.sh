@@ -234,6 +234,29 @@ if [[ -z "$review_ref" && -f "${be_main}/.pre-commit-config.yaml" ]]; then
     fi
 fi
 
+# Assimilation Harness (the team's salestech-be agent overlay): apply the latest into this
+# worktree's salestech-be. bootstrap.sh refreshes its cache from GitHub, then applies.
+# The opt-in is set inline for this one command, not via ~/.config/reevo/harness-overlay, so
+# worktrees made by other tools stay untouched. Feature trees only -- nothing runs in a review
+# tree. A failure never aborts the create; the `AH:` line is what the skill reports back.
+ah_cache="${XDG_CACHE_HOME:-$HOME/.cache}/reevo/assimilation-harness"
+if [[ -z "$review_ref" && -d "$be_wt" ]]; then
+    ah_rc=0
+    if [[ -x "${ah_cache}/bootstrap.sh" ]]; then
+        ah_out="$(REEVO_HARNESS_OVERLAY=1 bash "${ah_cache}/bootstrap.sh" "$be_wt" 2>&1)" || ah_rc=$?
+    elif ah_boot="$(gh api repos/ReevoAI/Assimilation-Harness/contents/bootstrap.sh -q .content 2>&1)"; then
+        ah_out="$(base64 -d <<<"$ah_boot" | REEVO_HARNESS_OVERLAY=1 bash -s -- "$be_wt" 2>&1)" || ah_rc=$?
+    else
+        ah_rc=1
+        ah_out="could not fetch bootstrap.sh with gh: ${ah_boot:-gh not found}"
+    fi
+    if [[ $ah_rc -eq 0 ]] && grep -q 'harness overlay: applied' <<<"$ah_out"; then
+        echo "AH: applied ($(git -C "$ah_cache" rev-parse --short HEAD 2>/dev/null))" >&2
+    else
+        echo "AH: NOT applied — $(tail -n 1 <<<"$ah_out")" >&2
+    fi
+fi
+
 if [[ -n "$review_ref" ]]; then
     echo "review worktree ready: ${wt} (${review_subrepo} detached at ${review_ref})" >&2
 else
