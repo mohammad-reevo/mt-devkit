@@ -318,6 +318,9 @@ and it covers the list I showed — not the next batch.
 
 ## Posting — only when I say so
 
+**Never agentic.** Posting to a teammate's PR is outward-facing, so `workflow`'s modes don't
+apply here (per `workflow` § Modes) — this gate always waits for me.
+
 **Default is hold.** Never post to GitHub until I say so *in that message*. "These are the
 must-leaves" is not approval; approval is me telling you to leave them. Approval covers the
 comments in the message I approved — not the next batch. **A message that mixes discussion with

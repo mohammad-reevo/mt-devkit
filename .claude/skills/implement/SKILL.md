@@ -26,6 +26,13 @@ Find the plan — glob `~/.claude/spec/*-plan.md` and match against the idea (**
 a slug from prose**; confirm with me if more than one could fit). No plan file → stop and
 point me to plan. The plan's `> Repo:` line is the repo every subagent operates in.
 
+**Explicit plan + worktree.** Invoked with a **plan path and a worktree path** (a `workflow`
+project drive, where the session stays at the mt-devkit root), use those — never the session's
+cwd. The worktree also comes from the plan's `> Worktree:` header when present. Every subagent
+then gets `<worktree>/<repo>` as the directory it works in, and every git command is
+`git -C <worktree>/<repo> …`. When the plan names a `> Base:`, the branch diff (reviewer target
+included) is against `origin/<base>`, not `main`.
+
 Check the checkboxes: `[x]` tasks are done — resume from the first unchecked one, don't redo
 finished work.
 
@@ -67,28 +74,39 @@ it — that's the seam verify relies on.
 
 1. **Dispatch the `reviewer` trio** over the branch — three subagents (`subagent_type: reviewer`,
    in the plan's repo), one per lens (`correctness`, `house-rules`, `duplication`), sent in a
-   single message so they run concurrently. Give each one the lens name, the repo, and the
-   target: **the branch and its working tree** (nothing is committed yet at this point). The
+   single message so they run concurrently. Give each one the lens name, the repo, the
+   target — **the branch and its working tree** (nothing is committed yet at this point) — and
+   **the plan path**, so a choice the plan made deliberately isn't flagged. The
    agent derives the diff and selects the repo's own rules itself, and carries the rest of the
    contract — so don't restate it inline. This is the same reviewer `/pr-review` uses — one
    definition, two entry points.
 2. **Clean** (all three) → proceed to commit.
-3. **Issues** → dispatch an `implementer` subagent to fix the findings, then re-dispatch the
+3. **Issues** → every finding ends **fixed**, **declined**, or **escalated** — never waved
+   through. Dispatch an `implementer` subagent to fix the ones that hold, then re-dispatch the
    trio over the new diff. Bounded to **~2 fix→re-review cycles**; still flagging real issues after that →
-   stop and escalate to me with the distilled findings. Same discipline as a check failure — a
-   finding is fixed or escalated, never waved through.
+   stop and escalate to me with the distilled findings. Same discipline as a check failure.
+   - **Declined** carries a one-line reason: `contradicts plan: <line>`, or the finding is wrong
+     on verification (say what you checked).
+   - **A `contradicts plan` finding is never applied silently.** Assistant mode asks me (the
+     escalation above); agentic mode declines it with the plan line as the reason (per `workflow`
+     § Modes). If the reviewer is right and the plan is wrong, that's structural drift — kick
+     back to plan, in every mode.
+   - **Record every declined finding** in the plan file under `## Declined review findings`, one
+     line each (`<lens>: <finding> — <reason>`), so verify can carry it into the PR body.
 
 ## Commit & push
 
-Once every task is `[x]`, the targeted checks are green, **and the finalization review is clean**,
-dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on a feature
-branch), commit the work, and push. It returns the branch name and push confirmation.
+Once every task is `[x]`, the targeted checks are green, **and every review finding is fixed or
+declined**, dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on
+a feature branch), commit the work, and push. It returns the branch name and push confirmation. A project
+slice is already on `mohammad/<slug>` at its `> Base:` — commit and push there, never re-branch
+off `main`.
 
 **Plan split into a migration PR and a stacked code PR** (plan's `### PR 1 — migration` /
 `### PR 2` groups): two branches, staged by path. `mohammad/<slug>-migration` off `main` carries
 only PR 1's files; `mohammad/<slug>` is then based on it and carries the rest. Push both.
 
-Report to me: tasks done, checks green, reviewed, branch pushed. Return to `/workflow` to
+Report to me: tasks done, checks green, reviewed (declined findings named), branch pushed. Return to `/workflow` to
 continue the funnel — it owns what comes next.
 
 ## Drift handling
@@ -108,6 +126,10 @@ Subagents surface drift; **you** decide — they never redesign mid-task:
 
 Every check failure gets fixed or escalated with specifics — never skipped, never labeled
 pre-existing, never routed around.
+
+**These stops hold in every mode.** The check-failure and review-cycle escalations and the
+structural-drift kickback are real failures, not gates — an agentic drive stops on them too (per
+`workflow` § Modes).
 
 ## Guardrails
 
