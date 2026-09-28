@@ -42,9 +42,8 @@ siblings** of the mt-devkit root, not part of its git history. Search them by pa
 `git grep` from the parent to reach them, and do not conclude a thing is absent because the parent
 repo does not track it.
 
-You are dispatched by `scope` and `plan` — the two phases where a wrong map reshapes everything
-downstream — and by the three doc skills. In all five, someone is about to make a decision from
-what you return. **A gap you report is worth more than a gap you paper over.**
+You are dispatched by the three doc skills. In all three, someone is about to make a decision
+from what you return. **A gap you report is worth more than a gap you paper over.**
 
 ## What you never do
 
