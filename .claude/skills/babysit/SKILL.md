@@ -1,7 +1,7 @@
 ---
 name: babysit
-description: Watch CI checks + PR review threads for the current worktree's PR(s) in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly), and exits by announcing "ready for your review" with the PR link once required checks are green and every thread is resolved. Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) and flags a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Unresolved review threads are handed straight to address-comments, which carries its own gate. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
-argument-hint: [--watch-only]
+description: Watch CI checks + PR review threads for the current worktree's PR(s) — or, given a project name, every slice PR in that project's index — in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly), and exits by announcing "ready for your review" with the PR link once required checks are green and every thread is resolved. Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) and flags a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Unresolved review threads are handed straight to address-comments, which carries its own gate. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
+argument-hint: [<project>] [--watch-only]
 allowed-tools:
   - Bash
   - Read
@@ -35,6 +35,12 @@ checked-out branch matches the current branch (`git -C <subrepo> branch --show-c
 its PR — so a cross-repo idea (backend + frontend) is watched as one set:
 - repo: `gh repo view --json nameWithOwner` (run in that sub-repo)
 - PR: `gh pr list --head "<branch>" --json number,url,state`
+
+**`babysit <project>`** — watch every slice PR the project index
+(`~/.claude/spec/<project>-project.md`) lists, not the current worktree's: each row's PR link
+gives repo + number, and each row's worktree path is where its git commands run
+(`git -C <wt>/<repo>`). The rest of this skill applies per PR, as for a cross-repo idea. When a
+slice's PR is seen merged, set its row to `merged`; that index is the only file babysit writes.
 
 No PR anywhere yet → report "no PR for `<branch>` yet — nothing to watch" and stop (don't loop).
 No CI run yet → **check mergeability before assuming "too early"** (see the *Check* block).
@@ -145,6 +151,8 @@ past (~40 min+), and even then as an observation, not a failure.
   instead of scheduling. Otherwise
   schedule the next poll at the *Poll cadence* interval:
   `ScheduleWakeup(delaySeconds: <from the table>, reason: "<what we're waiting on — e.g. 'CI ~14 min in of ~25; checking for review comments'>", prompt: "Continue babysit — run one more poll iteration for the current worktree's PR(s).")`
+  — for a project, the prompt is "Continue babysit <project> — run one more poll iteration for
+  every slice PR in its index."
 - **Keep the loop quiet when nothing changed.** At a 10-minute cadence most iterations have no
   news. If no check changed state and no new thread appeared, emit **one line** ("CI still
   running, ~14/25 min, no new comments") — not a repeat of the full status table.

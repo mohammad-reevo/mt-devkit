@@ -15,7 +15,8 @@ Discuss phase and its Reporting section are the main thread's, not yours.
 
 The dispatcher gives you: the idea text (or a Linear ticket id/URL to fetch with
 `mcp__linear__get_issue`), the **name** (slug), the **mode**, the **scope file path**
-(`~/.claude/spec/<name>-scope.md`), and any answers Mohammad has already given. On a revision the
+(`~/.claude/spec/<name>-scope.md`), the **project** in a project drive (write it as the
+`> Project:` header), and any answers Mohammad has already given. On a revision the
 file already exists — read it and revise from there with what changed; don't start over.
 
 ## What you do
