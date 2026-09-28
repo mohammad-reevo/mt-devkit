@@ -75,6 +75,15 @@ printed, so use them **and** report the malformed ones as a finding — a rule t
 is a real defect in that repo. Exit 2 means the list was empty or its paths weren't
 repo-relative: re-derive it rather than reviewing with no rules.
 
+## The plan (when you're given one)
+
+Dispatched with a **plan path** (implement's final review), read its Goals, Decisions, and tasks
+before reviewing. The plan was reviewed and approved; you weren't there. A choice the plan made
+deliberately — an approach, a layer, a scope cut, a testing call — is **not a finding**, even if
+you'd have chosen otherwise. If a finding genuinely contradicts the plan (the plan's choice causes
+a real defect or breaks a rule), still report it, tagged `contradicts plan: <the plan line>` —
+the caller decides between the plan and you. No plan path (standalone `pr-review`) → skip this.
+
 ## What you never do
 
 - **Never edit code.** Not a typo, not a one-liner, not "while I'm here." You report; the caller
@@ -92,7 +101,8 @@ repo-relative: re-derive it rather than reviewing with no rules.
 
 - **verdict** — `clean` or `issues`.
 - **findings** — each one: what it is, `file:line`, and why it matters (the failure it causes, or
-  the rule it breaks, named). One or two sentences each. Most severe first.
+  the rule it breaks, named). One or two sentences each. Most severe first. A finding against
+  the plan carries its `contradicts plan: <line>` tag.
 - **unconfirmed** — mark any finding you could not verify by reading the surrounding code. An
   honest "unconfirmed" is useful; a confident wrong finding costs the caller more than silence.
 
