@@ -154,6 +154,33 @@ Temporal-workflow and route fallbacks, not a licence to write `N/A`.
 > that sentence gets the PR denied — it was one of the three `salestech-be` PR #33134
 > failures.
 
+### `## Post-deployment Verification` is either one `N/A` line or real checks — never both
+
+Write exactly one of two shapes:
+
+- a single line `N/A — <reason>`, when the diff deploys nothing observable — no live caller
+  yet, tests-only, docs-only; or
+- items that each name a concrete endpoint, workflow, or behavior to check, with nested
+  `- [ ] Dev` / `- [ ] Prod` checkboxes.
+
+Never a nothing-to-verify statement with Dev/Prod boxes under it. The local preflight passes
+that; CI's LLM grader fails it as "not formatted correctly".
+
+```markdown
+<!-- ❌ salestech-be PR #36396, failed validate-description -->
+- Nothing to verify post-deploy: the new module has no live caller until the adapter wrapper registers it
+  - [ ] Dev
+  - [ ] Prod
+
+<!-- ✅ -->
+N/A — deploys no reachable behavior: nothing imports the new parser until the adapter wrapper registers it with the kernel ingest route, so there is nothing to observe in Dev or Prod
+```
+
+> supersedes: nothing upstream contradicts this — it is the CI grader's rule ("Post-deployment
+> Verification must include concrete checks with Dev/Prod checkboxes unless a clear
+> `N/A — <reason>` is justified by the change type"), stated here because the local preflight
+> can't enforce it.
+
 ## What the preflight cannot catch
 
 CI's validator is an LLM (`deepseek-v4-flash` via Fireworks) running **after** the
