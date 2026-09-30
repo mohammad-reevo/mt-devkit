@@ -1,6 +1,6 @@
 ---
 name: merged-prs-digest
-description: DM me on Slack a list of my PRs that merged in the last 24 hours across salestech-be and frontend-monorepo — one `• <title> - <repo>#<number>` line per PR, the `<repo>#<number>` a clickable link. Reads GitHub with `gh`, posts to my own Slack DM only. Triggers on "merged PRs digest", "DM me my merged PRs", "what did I merge today", "/merged-prs-digest".
+description: DM me on Slack a list of my PRs that merged in the last 24 hours across salestech-be and frontend-monorepo — one `• <title> - <repo>#<number>` line per PR, the `<repo>#<number>` a clickable link. Reads GitHub with `gh`, skips any PR I already linked in #team-crm-workflow-reviews in the last 24 hours, and posts to my own Slack DM only. Triggers on "merged PRs digest", "DM me my merged PRs", "what did I merge today", "/merged-prs-digest".
 ---
 
 # merged-prs-digest — DM me what merged
@@ -25,7 +25,15 @@ gh search prs --author=@me --merged --merged-at=">=<cutoff>" \
 
 "Mine" means PRs I authored — I merge my own, so author and merger are the same person.
 
-## 2. Draft the message
+## 2. Drop PRs I already announced
+
+`mcp__slack__conversations_history` with `channel_id: C0AQNQR0GV6` (#team-crm-workflow-reviews)
+and `limit: 1d`. Keep only rows whose `UserID` is `U09CJ1XJLEM` (me). Any PR whose
+`github.com/ReevoAI/<repo>/pull/<number>` appears in one of those messages is already sent —
+drop it from the list. Compare case-insensitively on repo + number; a message counts whatever
+its wording ("Merging …", a review ask).
+
+## 3. Draft the message
 
 ```
 PRs merged in the last 24 hours:
@@ -37,9 +45,10 @@ PRs merged in the last 24 hours:
 than the full URL. The `gsub`s escape `& < >` in the title, which Slack requires. Title otherwise
 verbatim — no rewording.
 
-**None merged ⇒ send nothing.** Tell me there were none and stop.
+**Nothing left ⇒ send nothing.** Tell me none merged, or that every one was already in the
+channel, and stop.
 
-## 3. Send it to my DM
+## 4. Send it to my DM
 
 `mcp__slack__conversations_add_message` with `channel_id: D09CJ1Z7201` (my self-DM; I'm
 `U09CJ1XJLEM`), `content_type: text/plain`, and the drafted message as `text`.
@@ -53,6 +62,7 @@ Don't work around it (no `curl` with the token). Tell me to add
 `~/.claude.json` and restart Claude Code. The channel-ID value allows posting only to
 that DM.
 
-## 4. Report
+## 5. Report
 
-Say it was sent and how many PRs, and give me the same list.
+Say it was sent and how many PRs, and give me the same list. Name any PRs dropped as already
+announced.
