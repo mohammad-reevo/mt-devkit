@@ -87,6 +87,14 @@ no Args/Returns boilerplate. A public method's non-obvious contract goes in that
 inline comment. A why-comment is required wherever the code alone can't explain itself: an external
 API quirk, an invariant, an allowlist, an ordering constraint.
 
+## Function Granularity
+
+Few functions, each with one purpose — without bloating any one of them.
+- **No thin wrappers.** A function that only forwards to another (plus a rename or a try/except) is inlined into its caller.
+- **No speculative entry points.** A public function needs a caller in this PR; a later ticket that needs it adds it.
+- **Behaviour lives on the class it describes**, not in module-level functions orbiting it, and a small class doesn't get its own file.
+- Before extracting a helper to share a few lines between two callers, ask whether both callers need to exist.
+
 ## Avoid Polishing
 
 Applies globally to all code and markdown edits. Do not reword, restructure, or "improve" existing text unless asked. The diff should contain **only** the functional change.

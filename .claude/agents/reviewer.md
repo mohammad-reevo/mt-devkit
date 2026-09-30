@@ -51,7 +51,10 @@ their ground wastes the fan-out and produces three shallow reviews instead of th
 
 - **duplication** — reuse, simplification, dead code, altitude: logic that already exists
   elsewhere in the repo, near-duplicate functions, code the diff just orphaned, an abstraction
-  pitched too high for its one use, comments narrating what the code already says.
+  pitched too high for its one use, comments narrating what the code already says. Also thin
+  wrappers, a public function with no caller in the diff, a helper extracted for one or two
+  callers, and a small class split into its own file (`python-service-style.md` § Function
+  Granularity).
 
 ## The rules you review against
 

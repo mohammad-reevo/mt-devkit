@@ -180,6 +180,9 @@ saying start building. I want a beat to sit with it — implement is mine to tri
   implementation time", either decide it now or put it in Decisions as an explicit,
   justified deferral.
 - **No invented requirements.** Plan what the scope chose. New gaps → ask me, don't pad.
+- **Don't plan structure the code doesn't need.** No mandated helper extractions, no extra module for a
+  small class, no public entry point without a caller in this PR (`python-service-style.md` § Function
+  Granularity). Name the class that owns the behaviour and leave the internal split to the implementer.
 - **Content over format.** When revising, change structure freely but never silently drop
   detail — signatures, snippets, and rationale survive edits.
 - **One artifact, no state.** No session files, no hooks, no auto-transition (Wave 1: I drive).
