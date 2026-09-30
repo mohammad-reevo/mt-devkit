@@ -81,6 +81,12 @@ is out of scope for this design — already shipped by Sa in PR #22305."""
 
 Do not embed developer names, PR numbers, ticket IDs, "out of scope" notes, or counts of sibling implementations.
 
+Minimal is not absent. A function or class whose name and types don't convey its contract gets a
+docstring of one line, two at most: what it returns (including on a miss), what it raises and when —
+no Args/Returns boilerplate. A public method's non-obvious contract goes in that docstring, not an
+inline comment. A why-comment is required wherever the code alone can't explain itself: an external
+API quirk, an invariant, an allowlist, an ordering constraint.
+
 ## Avoid Polishing
 
 Applies globally to all code and markdown edits. Do not reword, restructure, or "improve" existing text unless asked. The diff should contain **only** the functional change.
