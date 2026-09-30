@@ -1,0 +1,78 @@
+# Sub-repo skills we don't use
+
+The triaged-out half of `.claude/rules/subrepo-skills.md`. Updated together with it; a skill on
+neither list is new since the last triage.
+
+## salestech-be (last updated 2026-09-30)
+- agentic-code-review
+- ai-agent-create
+- ai-dev
+- ai-eval-create
+- ai-eval-run
+- ai-issue-triage
+- ai-llm-fallback
+- ai-module-create
+- ai-optimize
+- ai-tool-create
+- analytics-catalog-publish
+- analytics-eval-local
+- analytics-guide
+- backend-request
+- billing-quota-query
+- bounce-classify
+- ci-flake-investigation
+- classify-guidance
+- classify-guidance-workspace
+- code-review-calibrator
+- create-claude-rule
+- create-lance-migration
+- cross-repo-investigate
+- datadog-debug
+- db-migration
+- db-model-repo
+- dev-db
+- e2e-module-generator
+- e2e-test
+- e2e-tool
+- event-tracking
+- feat
+- frustration-sweep
+- fvd-parser-create
+- generate-pr-animation
+- generate-weave-dataset
+- get-branch-context
+- index-falkor
+- langfuse-debug
+- local-db
+- local-db-inspect
+- local-falkor-inspect
+- local-fe-be-e2e
+- local-kafka-inspect
+- local-temporal-inspect
+- mailbox-testing
+- new-worktree
+- populate-dev-data
+- post-change-check
+- posthog-debug
+- pr-description
+- pr-workflow
+- rebase-with-migration-conflicts
+- reevo-evals
+- reevo-local-stack
+- remove-worktree
+- reporting-dataset-review
+- sentry-debug
+- setup-for-development
+- setup-local-mcp
+- skill-builder
+- speckit-* (all 14)
+- start-ask-reevo
+- start-backend
+- start-frontend
+- start-realtime
+- update-claude-docs
+- update-code-review
+- update-openapi
+- update-seed-dev-data
+- wiki-generator
+- writing-use-case-tests

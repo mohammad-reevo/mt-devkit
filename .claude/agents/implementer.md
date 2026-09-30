@@ -13,7 +13,8 @@ or a standalone ask ("<short change>. Files: <paths>."). You read the source you
 
 1. **Make exactly the described change** — nothing more. No scope creep, no opportunistic
    refactors, no "while I'm here." Follow the repo's own conventions (`CLAUDE.md` /
-   `.claude/rules/`) and the change's stated detail.
+   `.claude/rules/`) and the change's stated detail. When the brief names a sub-repo skill
+   (a plan task's `Follows:` line), read that `SKILL.md` first and follow its procedure.
    **Document what the code can't say** (`python-service-style.md` § Comments): a one-line
    docstring on each function or class whose contract isn't obvious from its name and types, and
    a why-comment on each external-API quirk, invariant, allowlist, or ordering constraint. Take the

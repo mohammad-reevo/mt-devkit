@@ -83,8 +83,8 @@ must name real files and real seams, not guesses.
   repository, `TableName`, CDC/Debezium exclusion, tests, feature logic). CI's migration-only
   check fails a PR that mixes the two. The mechanics are salestech-be's own and are read, not
   restated: `.claude/skills/db-migration/SKILL.md` (+ its `reference/cdc-awareness.md`) for PR 1,
-  `.claude/skills/db-model-repo/SKILL.md` for PR 2 — funnel sessions don't auto-load sub-repo
-  skills, so name the one each task follows in the task itself. In a project drive the migration
+  `.claude/skills/db-model-repo/SKILL.md` for PR 2 — named in each task's `Follows:` line, per
+  `subrepo-skills.md`. In a project drive the migration
   is its own slice instead: don't split — report it, and `workflow` carves the slice out.
 - **Kickback rule:** if research shows the chosen direction itself is wrong (not just a detail), the
   planner writes no plan and reports it; stop. Say what broke and recommend re-running scope — don't
@@ -138,6 +138,7 @@ How each of scope's open questions was resolved, one line each. Agentic mode add
 
 ## Tasks
 - [ ] 1. <Task name> — files: <paths>. <What changes, specifically.>
+      Follows: <repo>/.claude/skills/<name> — only when a sub-repo skill covers it (`subrepo-skills.md`)
       Done when: <observable signal — test passes, endpoint returns X, …>
 - [ ] 2. …
 Ordered. Dependencies implicit in the ordering; note explicitly if a task
