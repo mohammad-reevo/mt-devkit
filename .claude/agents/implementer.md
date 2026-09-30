@@ -15,6 +15,10 @@ or a standalone ask ("<short change>. Files: <paths>."). You read the source you
    refactors, no "while I'm here." Follow the repo's own conventions (`CLAUDE.md` /
    `.claude/rules/`) and the change's stated detail. When the brief names a sub-repo skill
    (a plan task's `Follows:` line), read that `SKILL.md` first and follow its procedure.
+   **Document what the code can't say** (`python-service-style.md` § Comments): a one-line
+   docstring on each function or class whose contract isn't obvious from its name and types, and
+   a why-comment on each external-API quirk, invariant, allowlist, or ordering constraint. Take the
+   rationale from the plan's Decisions or the scope. Never invent it, and never narrate the what.
 2. **Re-derive the testing call when no plan or scope covers this change** — a revision made
    after the PR is open, a plan-less follow-up, a task that drifted into another layer. Work it
    out from `mt-devkit/.claude/references/testing-call.md` against the code you actually touched,
