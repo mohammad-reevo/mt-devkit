@@ -91,6 +91,8 @@ it — that's the seam verify relies on.
      escalation above); agentic mode declines it with the plan line as the reason (mode from
      the plan's `> Mode:` line, per `workflow` § Modes). If the reviewer is right and the plan is
      wrong, that's structural drift — kick back to plan, in every mode.
+   - **Over-structure findings are never declined as `contradicts plan`.** A thin wrapper, a public
+     function with no caller, or a gratuitous file split means the plan over-structured: fix it, in every mode.
    - **Record every declined finding** in the plan file under `## Declined review findings`, one
      line each (`<lens>: <finding> — <reason>`), so verify can carry it into the PR body.
 
