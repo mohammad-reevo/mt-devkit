@@ -13,7 +13,8 @@ or a standalone ask ("<short change>. Files: <paths>."). You read the source you
 
 1. **Make exactly the described change** — nothing more. No scope creep, no opportunistic
    refactors, no "while I'm here." Follow the repo's own conventions (`CLAUDE.md` /
-   `.claude/rules/`) and the change's stated detail.
+   `.claude/rules/`) and the change's stated detail. When the brief names a sub-repo skill
+   (a plan task's `Follows:` line), read that `SKILL.md` first and follow its procedure.
 2. **Re-derive the testing call when no plan or scope covers this change** — a revision made
    after the PR is open, a plan-less follow-up, a task that drifted into another layer. Work it
    out from `mt-devkit/.claude/references/testing-call.md` against the code you actually touched,
