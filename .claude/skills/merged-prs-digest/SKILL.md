@@ -12,15 +12,18 @@ My own DM is the only destination. This is not the "never message people" bounda
 
 ## 1. Find the PRs
 
+Two separate commands — a worktree-isolated session refuses a `gh` call with an inline
+`$(...)`. First the cutoff, then the search with it pasted in literally:
+
 ```bash
-gh search prs --author=@me --merged \
-  --merged-at=">=$(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ)" \
+date -u -v-24H +%Y-%m-%dT%H:%M:%SZ
+gh search prs --author=@me --merged --merged-at=">=<cutoff>" \
   --repo ReevoAI/salestech-be --repo ReevoAI/frontend-monorepo \
-  --json title,url,closedAt --limit 100
+  --json title,url,closedAt --limit 100 \
+  --jq 'sort_by(.closedAt)[] | "- \(.title): \(.url)"'
 ```
 
-"Mine" means PRs I authored — I merge my own, so author and merger are the same person. Sort
-by `closedAt`, oldest first.
+"Mine" means PRs I authored — I merge my own, so author and merger are the same person.
 
 ## 2. Draft the message
 
@@ -37,7 +40,10 @@ Title and URL verbatim from the search — no repo prefix, no rewording.
 ## 3. Send it to my DM
 
 `mcp__slack__conversations_add_message` with `channel_id: D09CJ1Z7201` (my self-DM; I'm
-`U09CJ1XJLEM`), `content_type: text/plain`, and the drafted text as the payload.
+`U09CJ1XJLEM`), `content_type: text/plain`, and the drafted message as `text`.
+
+**`missing_scope`?** The `xoxp` user token in `~/.claude.json` lacks `chat:write`. Tell me
+to add it under User Token Scopes in the Slack app, reinstall, and swap the new token in.
 
 **Tool missing?** `slack-mcp-server` hides it unless `SLACK_MCP_ADD_MESSAGE_TOOL` is set.
 Don't work around it (no `curl` with the token). Tell me to add
