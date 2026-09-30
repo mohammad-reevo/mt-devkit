@@ -1,6 +1,6 @@
 ---
 name: merged-prs-digest
-description: DM me on Slack a list of my PRs that merged in the last 24 hours across salestech-be and frontend-monorepo — one `- <title>: <link>` line per PR. Reads GitHub with `gh`, posts to my own Slack DM only. Triggers on "merged PRs digest", "DM me my merged PRs", "what did I merge today", "/merged-prs-digest".
+description: DM me on Slack a list of my PRs that merged in the last 24 hours across salestech-be and frontend-monorepo — one `• <title>: <link>` line per PR. Reads GitHub with `gh`, posts to my own Slack DM only. Triggers on "merged PRs digest", "DM me my merged PRs", "what did I merge today", "/merged-prs-digest".
 ---
 
 # merged-prs-digest — DM me what merged
@@ -20,7 +20,7 @@ date -u -v-24H +%Y-%m-%dT%H:%M:%SZ
 gh search prs --author=@me --merged --merged-at=">=<cutoff>" \
   --repo ReevoAI/salestech-be --repo ReevoAI/frontend-monorepo \
   --json title,url,closedAt --limit 100 \
-  --jq 'sort_by(.closedAt)[] | "- \(.title): \(.url)"'
+  --jq 'sort_by(.closedAt)[] | "• \(.title): \(.url)"'
 ```
 
 "Mine" means PRs I authored — I merge my own, so author and merger are the same person.
@@ -29,8 +29,8 @@ gh search prs --author=@me --merged --merged-at=">=<cutoff>" \
 
 ```
 PRs merged in the last 24 hours:
-- <PR TITLE>: <PR LINK>
-- ...
+• <PR TITLE>: <PR LINK>
+• ...
 ```
 
 Title and URL verbatim from the search — no repo prefix, no rewording.
