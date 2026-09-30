@@ -1,26 +1,33 @@
-# Sub-repo skills — find them, read the one that fits
+# Sub-repo skills worth using
 
 ## When to Apply
-Scoping, planning, or implementing work in `salestech-be` or `frontend-monorepo`. Sessions run
-from the mt-devkit root, so Claude Code never auto-loads those repos' own skills.
+Scoping, planning, or implementing salestech-be work. Sessions run from the mt-devkit root, so
+Claude Code never loads salestech-be's skills on its own. When one below fits the work, read its
+`salestech-be/.claude/skills/<name>/SKILL.md` and follow it; a plan task names it in `Follows:`.
 
-## Rule
-Before designing or building in an area, check whether the repo already has a procedure for it:
+## salestech-be (last updated 2026-09-30)
+- `flow-trigger-create` — new workflow trigger event: payload, UI filter conditions, registration.
+- `flow-verify-trigger` — checks a trigger has all its files, config, registrations, and tests.
+- `flow-node-create` — new customer-facing workflow node: config + UI rendering, executor, wiring.
+- `flow-verify-node` — checks a node has all its files, config, registrations, and tests.
+- `flow-node-agent-create` — new Flow Builder node agent: signature, examples, registration, training.
+- `flow-node-agent-ship` — build, train, audit, and ship a node agent end to end.
+- `flow-template-create` — new workflow template, from a flow saved in dev or from scratch.
+- `create-or-modify-api` — house conventions for any change under `salestech_be/web/api/`.
+- `create-or-modify-service` — house conventions for creating or changing a `salestech_be/core/` service.
+- `add-domain-model-field` — adding fields or nested types to ContactV2, AccountV2, etc.
+- `reporting-field-replication` — whether a new domain-model field replicates to reporting.
+- `temporal-workflow-patching` — required for any edit under `temporal/workflows/` (replay safety).
+- `sequence-step-type-create` — new sequence step type: enums, content, dispatch, schema, registration.
+- `clean-feature-flag` — removing a fully rolled-out flag: enum entry, checks, branches, test mocks.
+- `writing-unit-tests` — house conventions for unit tests.
+- `writing-integration-tests` — house conventions for repository, service, and endpoint integration tests.
+- `cleanup-flow-db` — finds and fixes corrupt flow definitions in dev or prod.
+- `temporal-debug` — read-only investigation of Temporal workflow failures and timeouts.
+- `investigate-prod` — starting point for a prod issue spanning Sentry, Langfuse, Temporal, Datadog, Postgres.
+- `linearize-migrations` — fixes Alembic migration-chain conflicts on merge.
 
-```bash
-grep -H '^description:' <repo>/.claude/skills/*/SKILL.md   # .agents/skills is a symlink to the same dir
-```
-
-Read the matching `SKILL.md` in full and follow it — e.g. `flow-trigger-create` for a new
-workflow trigger, `db-migration` for a migration, `flow-verify-trigger` to prove one works.
-A plan task that follows one names it (`follows: <repo>/.claude/skills/<name>`), so the
-implementer reads it too.
-
-mt-devkit wins where both have a skill for the same job — worktrees, code review, PR
-descriptions/workflow, local env and DB, starting services. Assimilation Harness skills are
-governed by `assimilation-harness.md`, not this rule.
-
-**Why:** the repos encode tested procedures (surfaces to register, conventions, grounding);
-skipping them means re-deriving the surface list and missing steps.
+Every other salestech-be skill was triaged out: `.claude/references/subrepo-skills-unused.md`.
+Assimilation Harness skills are governed by `assimilation-harness.md`.
 
 This applies across all sessions working in this workspace.
