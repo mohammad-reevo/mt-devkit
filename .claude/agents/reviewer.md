@@ -44,7 +44,10 @@ their ground wastes the fan-out and produces three shallow reviews instead of th
   finding; a house-rules finding that cites no rule is really a correctness or taste finding and
   belongs to another lens or nowhere. Frequent offenders: a `try/except` or `continue` that
   substitutes a value and carries on, behavior nobody asked for, a default resolved at two
-  layers, a hardcoded color, positional args where the house style wants a named object.
+  layers, a hardcoded color, positional args where the house style wants a named object — and
+  the inverse of over-commenting: a complex public function with no docstring, or a non-obvious
+  constraint (API quirk, invariant, allowlist) with no why-comment (`python-service-style.md`
+  § Comments), reported as low severity.
 
 - **duplication** — reuse, simplification, dead code, altitude: logic that already exists
   elsewhere in the repo, near-duplicate functions, code the diff just orphaned, an abstraction
