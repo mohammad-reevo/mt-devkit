@@ -1,6 +1,6 @@
 ---
 name: claude-task
-description: Manage deferred tooling tasks in `tasks/` — "revisit later" chores against my own harness (personal `~/.claude/` or the mt-devkit repo). Not Linear (product work), not memory (facts). Three subcommands — `claude-task defer` captures a task, `claude-task list` shows all tasks, `claude-task open <fuzzy>` reads one out from zero context, checks it's still true, and proposes a plan it waits for my go on. Draining a finished task belongs to `/done`. Triggers on "claude task", "defer this", "note this for later", "list claude tasks", "open a claude task", "explain that task", "/claude-task".
+description: Manage deferred tooling tasks in `tasks/` — "revisit later" chores against my own harness (personal `~/.claude/` or the mt-devkit repo). Not Linear (product work), not memory (facts). Three subcommands — `claude-task defer` captures a task, `claude-task list` shows all tasks, `claude-task open <fuzzy>` reads one out from zero context, checks it's still true, and proposes a plan it waits for my go on. The moment a session starts engaging with a task — even just discussing it — the task is marked in progress, so other sessions can see it's taken. Draining a finished task belongs to `/done`. Triggers on "claude task", "defer this", "note this for later", "list claude tasks", "open a claude task", "explain that task", "/claude-task".
 ---
 
 # claude-task — capture, list, and open deferred tooling chores
@@ -24,6 +24,10 @@ Dispatch on how the skill was invoked:
 - **No/ambiguous subcommand** → if the intent reads as capture-a-new-thing, use
   Defer; if it reads as work-on-an-existing-thing, use Open; otherwise run
   List and ask what they want.
+
+Whichever path a session takes, the first time it engages with one specific task —
+Open, or me just saying I'm working on / want to discuss it — run **§ Claim** on it
+before anything else.
 
 `tasks/TASKS.md` is the index, loaded on demand (when working with
 tasks), not every session.
@@ -120,10 +124,41 @@ Tell the user the file path and one line on what was captured. Done.
 
 ---
 
+## § Claim — mark a task in progress
+
+So I can tell, from any session, which tasks another session already has in hand.
+Fires **once per session per task**, the first time the session engages with it — no
+code needs to be on the way; discussion is enough. A task that's already
+marked is not re-claimed: say "already in progress since <date> — another session may
+have it" and carry on unless I stop you.
+
+Two Bash edits, today's date as `<date>`:
+
+```
+sed -i '' '/^created:/a\
+status: in-progress\
+claimed: <date>
+' tasks/<slug>.md
+sed -i '' '/^- \[<slug>\](/ s/$/ — **in progress** (since <date>)/' tasks/TASKS.md
+```
+
+**Release** — undo both, returning the task to open:
+
+```
+sed -i '' '/^status: in-progress$/d; /^claimed: /d' tasks/<slug>.md
+sed -i '' '/^- \[<slug>\](/ s/ — \*\*in progress\*\* (since [0-9-]*)$//' tasks/TASKS.md
+```
+
+`/done` releases a task its session claimed but didn't finish; a finished one is drained
+(deleted) instead, which takes the marker with it.
+
+---
+
 ## § List — show all deferred tasks
 
-Read `tasks/TASKS.md`, show the tasks (slug — target — hook), and
-**stop**. Display-only: do not select or execute anything.
+Read `tasks/TASKS.md`, show the tasks (slug — target — hook), with each
+in-progress task flagged and its claim date, and **stop**. Display-only: do not
+select, claim, or execute anything.
 
 ---
 
@@ -143,7 +178,7 @@ the ordinary rules — a worktree and a PR for the harness, a direct edit for
   - No match → say so, show the full list, and ask.
 - **No name given** → read `TASKS.md`, show the list, and ask which one.
 
-Read the selected `tasks/<slug>.md` in full.
+Read the selected `tasks/<slug>.md` in full, then **§ Claim** it.
 
 ### 2. Check the note is still true
 A deferred note is a claim about the past, and the harness moved on without it.
@@ -178,7 +213,9 @@ for the harness, a direct edit for `~/.claude/` — which need no second ceremon
 ## Guardrails
 - **Tooling scope only.** Product/eng work → Linear, not this. A fact to remember
   → memory, not this. Redirect and don't file it here.
-- **Defer is creation only.** No status field, no `done/`. Finishing a task =
+- **One status: in progress.** Set by § Claim, cleared by Release; absent means open.
+  No other states, no `done/`.
+- **Defer is creation only.** Finishing a task =
   deleting its file — which **`/done` does at close-out**, for the tasks a
   session actually finished. When the work lands with no worktree to tear down
   (a `~/.claude/` fix), delete the file and its `TASKS.md` line yourself once
