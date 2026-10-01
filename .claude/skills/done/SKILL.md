@@ -121,9 +121,12 @@ Run these **per worktree**, for each one that passed its own gate.
    it fires, so I don't have to remember a task was in flight and drain it by hand.
    Take the list **from the conversation**, the same way you resolved the worktrees — never infer
    a task by matching its title against a branch name or a PR summary.
-   **A partly-addressed task is not drained**: if the PR closed one half of a task, leave the file
-   untouched and say which half is still open. Name every task you drained in the report —
+   **A partly-addressed task is not drained**: if the PR closed one half of a task, leave its
+   content untouched and say which half is still open. Name every task you drained in the report —
    `tasks/` is gitignored, so the delete is permanent.
+   **Release every task the session claimed but didn't drain** — partly addressed, only
+   discussed, or any task under **cancel** — per `claude-task` § Claim, so it doesn't read as
+   in progress after this session is gone. Name released tasks in the report too.
 4. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
    the worktree first, removes the sub-repo + parent worktrees, and deletes the **local**
    feature branches: `mohammad/<slug>` **and** whatever each tree actually had checked out).
@@ -135,8 +138,8 @@ Run these **per worktree**, for each one that passed its own gate.
 
 ## Report
 What was closed, **per worktree**: the PR link(s), what went into the knowledge base (or that
-nothing did), which spec files were deleted, **which deferred tasks were drained** (by slug, or
-that none were), and that the worktree was removed. If a PR passed on the queued-to-merge exception, **say so and name the
+nothing did), which spec files were deleted, **which deferred tasks were drained or released** (by
+slug, or that none were), and that the worktree was removed. If a PR passed on the queued-to-merge exception, **say so and name the
 checks still running** — I'm closing out before CI finished, and GitHub will land it unattended.
 Name any worktree left standing because its own gate failed, so nothing is silently skipped.
 
