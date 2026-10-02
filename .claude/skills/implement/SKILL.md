@@ -57,7 +57,7 @@ Work the tasks **in plan order**, one at a time (each builds on the last):
 After the last task: dispatch **one** subagent to run the **targeted checks** for what the branch
 changed — exactly the test files named in the plan's Verification section (that list is the
 ceiling, not a starting point — **never** a whole tree, a broad directory above them, or `make
-pytest`), plus lint and types. It returns pass/fail + distilled failures. All green before review.
+pytest`) — never lint or types, which the commit hook and CI own. It returns pass/fail + distilled failures. All green before review.
 GitHub PR CI runs the full suite on every push, so a broad local run only duplicates CI and pins
 the machine (see `local-test-scope.md`, hard-enforced at 25 test files per run).
 
@@ -102,7 +102,8 @@ Once every task is `[x]`, the targeted checks are green, **and every review find
 declined**, dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on
 a feature branch), commit the work, and push. It returns the branch name and push confirmation. A project
 slice is already on `mohammad/<slug>` at its `> Base:` — commit and push there, never re-branch
-off `main`.
+off `main`. The commit hook is the lint and type gate: a hook failure is a check failure —
+re-dispatch with its output (step 3 above), never `--no-verify`.
 
 **Plan split into a migration PR and a stacked code PR** (plan's `### PR 1 — migration` /
 `### PR 2` groups): two branches, staged by path. `mohammad/<slug>-migration` off `main` carries

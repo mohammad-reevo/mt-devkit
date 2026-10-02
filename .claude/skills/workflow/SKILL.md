@@ -204,7 +204,9 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
    (the setup script fast-forwards the shared primaries, so parallel creates race). Then point
    each slice's branch at its base, per repo:
    `git -C <wt>/<repo> switch -C mohammad/<slug> origin/<base>`. A dependent slice is re-pointed
-   at its dependency's branch once that is pushed.
+   at its dependency's branch once that is pushed. **Never share one worktree across slices** or
+   switch a slice's tree to another slice's branch — this overrides `worktrees.md`'s
+   one-per-session reuse.
 4. **Plan, in parallel.** One `planner` per slice in one message, each with its worktree path;
    each records `> Mode:`, `> Project:`, `> Depends on:`, `> Base:`, and `> Worktree:` in its plan
    header.
@@ -229,8 +231,15 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
    (`pr-description-no-merge-order.md`). babysit marks a row `merged` once its PR merges.
 8. **Final PR.** Once every slice based on the project base (directly or through a chain) reads
    `merged`, open the project PR `mohammad/<project>-base` → `main` via `verify` (ready, never
-   draft), its body linking every slice PR, and add it to the index as the last row. babysit it
-   like any PR; `done <project>` after it merges stays mine.
+   draft), its body linking every slice PR, and add it to the index as the last row. This PR is
+   where `main` is reconciled: merge `origin/main` into the project base **once** and resolve every
+   conflict and cascading CI failure there. babysit it like any PR; `done <project>` after it
+   merges stays mine.
+
+**Never update-branch across the stack.** No slice is ever synced with `main`, and a parent's
+later fixes aren't merged down into its children — not for a conflict, not for red CI inherited
+from the base. Each slice lands into the one below as it is (step 7), and `main` meets the stack
+exactly once, in step 8.
 
 ## Guardrails
 
