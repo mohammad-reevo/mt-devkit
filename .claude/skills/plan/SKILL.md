@@ -146,7 +146,8 @@ can run out of order.
 
 ## Verification
 - **Coding checks** — exact commands: tests to run/write (concretized from the scope's Testing
-  call — don't invent test scope the scope didn't warrant), lint, types. **Scope the *run* to the
+  call — don't invent test scope the scope didn't warrant). No lint or type-check commands — the
+  commit hook and CI own those. **Scope the *run* to the
   change** — name the specific test files/dirs covering the new code, never a whole-tree run
   (`pytest tests/unit`, `make pytest`). CI runs the full suite on the PR; local is targeted fast
   feedback only (see `local-test-scope.md`).

@@ -25,7 +25,8 @@ or a standalone ask ("<short change>. Files: <paths>."). You read the source you
    and **write the coverage it names**: tests for the code you just changed are part of the
    change, not scope creep. When your brief came from a plan that already named test targets,
    that call stands — don't second-guess it. Either way, report what you decided.
-3. **Run the checks named in your brief** — plus lint and types. When the brief names test
+3. **Run the checks named in your brief** — tests only. Never run a linter, formatter, or
+   type-checker yourself: the commit hook runs them on commit and CI runs the rest. When the brief names test
    targets, that list is a **ceiling, not a starting point**: run those, not the directory above
    them. When it names none, run the specific test *files* covering the code you changed (find
    them with `rg -l "<symbol>" tests/`) — a test file you added under a re-derived call is one of

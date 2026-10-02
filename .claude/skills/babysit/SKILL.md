@@ -71,7 +71,9 @@ Not conflicted → `ScheduleWakeup(120s)` and return (skip in `--watch-only`).
   "N days behind `main` — consider `update-branch`". Report only; babysit never merges. Read the
   base branch first (`gh pr view <n> --json baseRefName`) — on a PR **stacked** on another feature
   branch the advice is to merge **that parent**, never `main` (`git-merge.md`), and the merge-base
-  to measure is against the parent.
+  to measure is against the parent. **Skip it for a project-drive slice** (base is
+  `mohammad/<project>-base` or another slice): the stack is never synced, and `main` is reconciled
+  once in the project PR (`workflow` § Final PR).
 - **PR threads — ALL of them, incl. outdated.** Query every thread and read `isResolved`
   directly (an `isOutdated` thread is still OPEN — never trust a filtered "unresolved" list,
   per `github.md`):

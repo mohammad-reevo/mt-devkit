@@ -69,8 +69,8 @@ from the scope and plan files.
 In any mode, list every entry of the plan's `## Declined review findings` with its reason — a
 finding implement declined is still mine to make the final call on.
 
-**The body gets the strategy's outcome, never the coding checks.** implement already ran lint,
-type-check and the targeted tests, and CI runs them again — a green PR says so without a
+**The body gets the strategy's outcome, never the coding checks.** implement already ran the
+targeted tests, the commit hook ran lint and types, and CI runs them again — a green PR says so without a
 sentence. Don't transcribe those results into the body; `## Verification` is for what CI cannot
 prove (`pr-description` § Overrides).
 

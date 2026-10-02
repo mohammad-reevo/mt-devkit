@@ -60,6 +60,11 @@ sub-repo worktrees, switching the relevant one to a new branch. Create a fresh
 worktree (via the `worktree` skill) only for a genuinely separate, **parallel**
 session that needs its own isolated tree.
 
+**Exception — stacked PRs get one worktree each.** A stack or a `workflow` project drive gives
+every PR its own worktree, and nothing ever switches one tree between them: a switch costs the
+Assimilation Harness overlay remove → switch → re-apply dance and throws away that tree's mypy
+cache, on every hop.
+
 ## Reviews — by convention
 
 The Edit/Write gate can't see a review (reviews don't mutate files). So for

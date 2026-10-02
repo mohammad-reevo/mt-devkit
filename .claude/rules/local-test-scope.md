@@ -7,13 +7,13 @@ Whenever tests are about to be **run** locally against a product repo (`salestec
 
 ## The Rule
 **Never run a large or whole test suite locally.** Run only the tests that cover the body of
-work in front of you — the specific test files or directories exercising the changed code —
-plus lint and type-check. Leave the exhaustive sweep to GitHub PR CI.
+work in front of you — the specific test files or directories exercising the changed code.
+Leave the exhaustive sweep to GitHub PR CI.
 
 - ✅ `uv run pytest tests/unit/<area>/test_<thing_you_changed>.py` — the file(s) or directory
   covering the change.
-- ✅ **lint + type-check locally** — cheap, cached, and the fastest way to catch the common
-  breakages. Get these right locally rather than leaning on CI for them.
+- ❌ **lint / format / type-check by hand** — the commit hook runs them on every commit, and CI
+  runs the rest.
 - ❌ `pytest tests/unit` / `pytest tests/integration` — the whole tree.
 - ❌ `pytest tests/unit/core/flow/` — a *subdirectory* is not automatically targeted;
   that one is 605 test files (~17k tests) and costs about the same as the whole tree.
