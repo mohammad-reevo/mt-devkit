@@ -87,6 +87,9 @@ no Args/Returns boilerplate. A public method's non-obvious contract goes in that
 inline comment. A why-comment is required wherever the code alone can't explain itself: an external
 API quirk, an invariant, an allowlist, an ordering constraint.
 
+A new file gets a module docstring: one line for a simple file, a few for a complex one — what the
+file does and the key rule a reader needs. Never restate the file or module name.
+
 ## Function Granularity
 
 Few functions, each with one purpose — without bloating any one of them.
