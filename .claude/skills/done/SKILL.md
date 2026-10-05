@@ -37,6 +37,12 @@ records, no session state. The PR is the source of truth.
    `mohammad/<slug>`) are *exactly* what this close-out handles — nothing else.
 3. For each branch, find its open PR: `gh pr list --head "<branch>" --json number,url,state`
    (run from that sub-repo so the repo is inferred).
+4. **A project base branch's PR is not gated.** A branch equal to the `> Base:` line of any
+   `~/.claude/spec/*-project.md` — or, once no index is left, named `mohammad/*-base` with its PR
+   into `main` — is a project drive's base. Its PR into `main` stays open until the last slice
+   lands, and I decide when its CI matters; the slice PRs into it are what got gated. Skip the
+   gate for it and report one line: "project base PR #N <url> not gated — your call". The
+   worktree still tears down (local branch only). Slice PRs targeting the base are gated as usual.
 
 **`/done <project>`** — the worktrees are every slice row's worktree path in
 `~/.claude/spec/<project>-project.md`, not the conversation's list; steps 2–3, the gate, and the
@@ -44,7 +50,7 @@ teardown then run per slice worktree exactly as above (each slice gates independ
 each closed slice's row from the index, and delete the index once no row is left. The remote
 project base branch is never touched.
 
-## Normal mode — the gate (every resolved PR must pass BOTH)
+## Normal mode — the gate (every resolved PR but a project base's must pass BOTH)
 
 One query answers the whole gate — required-ness, merge-queue state, and every thread:
 
@@ -142,6 +148,7 @@ nothing did), which spec files were deleted, **which deferred tasks were drained
 slug, or that none were), and that the worktree was removed. If a PR passed on the queued-to-merge exception, **say so and name the
 checks still running** — I'm closing out before CI finished, and GitHub will land it unattended.
 Name any worktree left standing because its own gate failed, so nothing is silently skipped.
+Name every project base PR the gate skipped, with its link.
 
 Two things the report must not leave out:
 - **Every red non-required check the gate waived**, by name and with what it was. It didn't block
