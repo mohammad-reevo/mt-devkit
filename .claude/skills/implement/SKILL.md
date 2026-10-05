@@ -102,13 +102,15 @@ Once every task is `[x]`, the targeted checks are green, **and every review find
 declined**, dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on
 a feature branch), commit the work, and push. It returns the branch name and push confirmation. A project
 slice is already on `mohammad/<slug>` at its `> Base:` — commit and push there, never re-branch
-off `main`. A split PR's branch is `mohammad/<slug>-<n>-<short>` (the plan filename minus
-`-plan.md`), not `mohammad/<slug>`. The commit hook is the lint and type gate: a hook failure is a check failure —
+off `main`. The commit hook is the lint and type gate: a hook failure is a check failure —
 re-dispatch with its output (step 3 above), never `--no-verify`.
 
 **Plan split into a migration PR and a stacked code PR** (plan's `### PR 1 — migration` /
 `### PR 2` groups): two branches, staged by path. `mohammad/<slug>-migration` off `main` carries
 only PR 1's files; `mohammad/<slug>` is then based on it and carries the rest. Push both.
+
+**Split PR** (one PR of a split scope): its branch is `mohammad/<slug>-<n>-<short>` — the plan
+filename minus `-plan.md` — not `mohammad/<slug>`.
 
 Report to me: tasks done, checks green, reviewed (declined findings named), branch pushed. Return to `/workflow` to
 continue the funnel — it owns what comes next.
