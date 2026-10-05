@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Build phase of my personal dev workflow. Consumes ~/.claude/spec/<slug>-plan.md and conducts the build — dispatches a subagent per task to implement it and run its checks (keeping raw code and check output out of main context), tracks progress in the plan file, runs a final review over the branch via the shared `reviewer` agent to finalize all coding, then commits and pushes a reviewed green branch. Hands off to verify for verification and the PR. Use after plan has produced an approved plan.
+description: Build phase of my personal dev workflow. Consumes ~/.claude/spec/<slug>-plan.md and conducts the build — dispatches a subagent per task (or per bundle of tightly coupled tasks) to implement it and run its checks (keeping raw code and check output out of main context), tracks progress in the plan file, runs a final review over the branch via the shared `reviewer` agent to finalize all coding, then commits and pushes a reviewed green branch. Hands off to verify for verification and the PR. Use after plan has produced an approved plan.
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -38,18 +38,24 @@ finished work.
 
 ## The build loop (you conduct; subagents perform)
 
-Work the tasks **in plan order**, one at a time (each builds on the last):
+Work the tasks **in plan order**, one bundle at a time (each builds on the last). A **bundle**
+is a run of adjacent tasks over the same module — typically a code task and the task that tests
+it; every other task is a bundle of one. Two cold-start subagents loading the same files back to
+back is the cost a bundle removes.
 
 1. **Dispatch an `implementer` subagent** (`subagent_type: implementer`, working in the plan's
-   repo) for the task. Give it the task verbatim — files, what changes, the done-signal — and
-   **the test targets from the plan's Verification section that cover this task, as its ceiling**
-   ("run these; wider coverage is drift, report it"). The plan already names them; passing them
-   is what makes them binding instead of advisory. The
+   repo) for the bundle, with a **context packet** rather than a pointer to the plan: each task
+   verbatim — files, what changes, the done-signal — the plan's Decisions lines those tasks rely
+   on, quoted (not summarized), any `Follows:` skill, and **the test targets from the plan's
+   Verification section that cover the bundle, as its ceiling** ("run these; wider coverage is
+   drift, report it"). The plan already names them; passing them is what makes them binding
+   instead of advisory. Re-reading a long plan is most of a cold start, so don't send the plan
+   path. The
    `implementer` agent already carries the contract (make exactly that change, run the checks
    for what it touched, return a lean report, never touch the plan file, report drift rather
    than redesign) — don't restate it inline.
-2. **On green** → tick the task's checkbox in the plan file. You own the progress record;
-   subagents never edit it.
+2. **On green** → tick each of the bundle's checkboxes in the plan file. You own the progress
+   record; subagents never edit it.
 3. **On check failure** → decide: re-dispatch with fix guidance (bounded — ~2 attempts), or
    escalate to me with the distilled error. Never skip, never label pre-existing.
 4. **On drift** (the subagent reports it, doesn't redesign) → apply the drift rules below.
@@ -102,7 +108,10 @@ Once every task is `[x]`, the targeted checks are green, **and every review find
 declined**, dispatch a subagent to: create branch `mohammad/<slug>` off `main` (if not already on
 a feature branch), commit the work, and push. It returns the branch name and push confirmation. A project
 slice is already on `mohammad/<slug>` at its `> Base:` — commit and push there, never re-branch
-off `main`. The commit hook is the lint and type gate: a hook failure is a check failure —
+off `main`. This is the build's **one** commit — nothing is committed per task, because every
+attempt reruns the repo's whole commit hook. The commit hook is the lint and type gate: a hook
+that only rewrote files (formatter, end-of-file, whitespace — "files were modified by this hook")
+is re-staged and recommitted once, no investigation; any other hook failure is a check failure —
 re-dispatch with its output (step 3 above), never `--no-verify`.
 
 **Plan split into a migration PR and a stacked code PR** (plan's `### PR 1 — migration` /
@@ -141,8 +150,9 @@ structural-drift kickback are real failures, not gates — an agentic drive stop
   exactly the bloat this skill exists to avoid — and `implementer_gate_hook.py` enforces it
   (product-repo edits ≥30 lines from the orchestrator are blocked). See
   [[delegate-product-code]].
-- **One task, one subagent.** No bundling multiple tasks into one dispatch — the loop exists
-  so a failure points at one task.
+- **One bundle, one subagent.** Only adjacent tasks over the same module bundle; anything else
+  is one task per dispatch. The subagent reports the done-signal per task, so a failure still
+  points at one task.
 - **Main owns the plan file.** Checkboxes, amendments, and kickback decisions are yours;
   subagents return reports and never edit the plan.
 - **Lean reports only.** Subagents return pass/fail + distilled failures, not raw logs or file
