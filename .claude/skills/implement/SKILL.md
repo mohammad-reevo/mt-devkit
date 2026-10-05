@@ -118,6 +118,9 @@ re-dispatch with its output (step 3 above), never `--no-verify`.
 `### PR 2` groups): two branches, staged by path. `mohammad/<slug>-migration` off `main` carries
 only PR 1's files; `mohammad/<slug>` is then based on it and carries the rest. Push both.
 
+**Split PR** (one PR of a split scope): its branch is `mohammad/<slug>-<n>-<short>` — the plan
+filename minus `-plan.md` — not `mohammad/<slug>`.
+
 Report to me: tasks done, checks green, reviewed (declined findings named), branch pushed. Return to `/workflow` to
 continue the funnel — it owns what comes next.
 

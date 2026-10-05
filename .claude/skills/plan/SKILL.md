@@ -28,6 +28,12 @@ from the scope file's `> Name:` header (it also matches the filename).
   (note the resets in the plan).
 - **Only `<slug>-scope.md` exists** → normal path. Read it; its Chosen direction is your
   brief, its Open questions are your TODO list, its Out of scope is your fence.
+- **The scope's Chosen direction records a PR split** → plan one PR per invocation: the one I
+  name (default: the lowest-numbered with no plan file; confirm if ambiguous). Its file is
+  `<slug>-<n>-<short>-plan.md`, reading the shared `<slug>-scope.md`; its branch
+  `mohammad/<slug>-<n>-<short>`. Plan only that PR's slice of the direction — the other PRs are
+  its Out of scope — and its `> Repo:` is that PR's repo. A revision re-reads the shared scope
+  and diffs only this PR's lines.
 - **Neither exists** → scope-less quick plan. Say so in one line, pick a slug, and capture
   a 3-line mini-scope (problem, direction, out of scope) inline at the top of the plan
   file. Echo the slug + full filename back to me so downstream phases can be pointed at it
@@ -45,6 +51,9 @@ in it (and the worktree gate is satisfied):
   for `<name>` already exists (a revision, or you made one), it's reused — just confirm we're
   inside it. Skip only if I explicitly say I don't want a worktree.
 - (Scope-less quick plan: pick the name first, then this same worktree step.)
+- (Split PR: the name is `<slug>-<n>-<short>`. Stacked on another split PR — its `> Base:` is
+  that PR's pushed branch — bring the new branch onto it before any edit:
+  `git -C <worktree>/<repo> merge origin/<base>`.)
 - **Project drive** — skip this step: `workflow` has already created the slice's worktree without
   entering it and dispatches the planner with its path (`workflow` § Project drive).
 
@@ -120,9 +129,9 @@ The file:
 > Scope: <slug>-scope.md  (or: scope-less — mini-scope below)
 > Repo: <repo root the plan targets — where checks and git run>
 > Mode: <assistant | agentic | investigate>   (copied from the scope file; kept on revision)
-> Project: <project>   (project drive only — these four lines; omit them otherwise)
-> Depends on: <none | other slice's slug>
-> Base: <mohammad/<project>-base | mohammad/<dependency> | main>   (the PR's base)
+> Project: <project>   (project drive only, with Worktree; omit them otherwise)
+> Depends on: <none | other slice's slug>   (project drive or split PR)
+> Base: <mohammad/<project>-base | mohammad/<dependency> | main>   (the PR's base; project drive or split PR)
 > Worktree: <worktree path>
 
 ## Goals

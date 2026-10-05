@@ -57,9 +57,10 @@ PR *is* the deliverable, since it carries the pending check list I'll work from.
 
 Create one PR per repo the change touches, **ready for review — never draft** — two in
 salestech-be when implement split out a migration: `mohammad/<slug>-migration` against `main`,
-and `mohammad/<slug>` against that migration branch, so its diff shows only the code. A project
-slice's PR goes against the plan's `> Base:` (`--base <base>`: the project base, the dependency's
-branch, or `main`) — never `main` by default. For the
+and `mohammad/<slug>` against that migration branch, so its diff shows only the code. A split
+PR's branch is the plan filename minus `-plan.md`. A project slice's or split PR's PR goes against
+the plan's `> Base:` (`--base <base>`: the project base, the dependency's branch, or `main`) when
+it has one — a project slice never `main` by default. For the
 description, use the **`pr-description` skill** — it routes to that repo's own convention,
 applies my house rules, and preflights the body against the repo's validator so a format miss
 doesn't cost a CI cycle. Fill it with what/why (from Goals) + the verification plan/results

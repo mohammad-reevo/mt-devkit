@@ -120,7 +120,9 @@ Run these **per worktree**, for each one that passed its own gate.
    scratch dir `~/.claude/tmp/<slug>/` if present (see `scratch-files.md`). Plan-optional: a
    branch with no spec files just skips the spec part. Use plain `rm` for the spec files and
    `rm -r` for the scratch dir — **never `rm -rf`** (the `-f` flag is permission-blocked and
-   treated as dangerous; it gets denied).
+   treated as dangerous; it gets denied). A split PR (no `<slug>-scope.md` of its own): read
+   its plan's `> Scope:` header first, delete only its plan, and delete that shared scope only
+   when no `<scope-slug>-*-plan.md` remains and every PR the scope lists has been planned.
 3. **Drain any deferred task this session finished.** A `tasks/` chore that this
    session's PR actually resolves is done once that PR is up — delete `tasks/<slug>.md`
    **and** its line in `TASKS.md`. That is the `claude-task` protocol; close-out is simply where
