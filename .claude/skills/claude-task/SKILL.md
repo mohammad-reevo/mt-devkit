@@ -156,8 +156,9 @@ sed -i '' '/^- \[<slug>\](/ s/ — \*\*in progress\*\* (since [0-9-]*)$//' tasks
 
 ## § List — show all deferred tasks
 
-Read `tasks/TASKS.md`, show the tasks (slug — target — hook), with each
-in-progress task flagged and its claim date, and **stop**. Display-only: do not
+Read `tasks/TASKS.md` and show the tasks (slug — target — hook) as two lists, each
+numbered from 1 in index order: **Todo** (no in-progress marker), then **In progress**
+(with its claim date). An empty list says "none". Then **stop**. Display-only: do not
 select, claim, or execute anything.
 
 ---
