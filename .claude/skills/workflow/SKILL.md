@@ -44,8 +44,8 @@ decision rule; the rule lives here and nowhere else.
 - **Resolving it — from the files, never from the conversation.** A skill that behaves per mode
   reads it fresh each time, so a compacted or resumed session still gets it right: branch
   `mohammad/<name>` → the `> Mode:` line in `~/.claude/spec/<name>-plan.md`, else
-  `<name>-scope.md`; neither file, or no such line → assistant. A dispatched agent (scoper,
-  planner) takes the mode its dispatcher read this way.
+  `<name>-scope.md` (a split PR: the scope its `> Scope:` names); neither file, or no such
+  line → assistant. A dispatched agent (scoper, planner) takes the mode its dispatcher read this way.
 - **Where an Assumption lands.** In the phase's spec file — scope's `## Assumptions`, plan's
   `## Decisions` — and verify carries them into the PR body, which outlives both files.
 - **No recommended option, no Assumption.** A gate with nothing to recommend stops in every mode.
@@ -67,7 +67,7 @@ Scan `~/.claude/spec/*-scope.md` and `*-plan.md`. For each idea, one line:
 - plan all `[x]`, PR open → **in review — <PR link> (babysit watching / done when green)**
 
 The last two rows need a quick `gh pr list --head mohammad/<name>` per built idea. Read-only —
-this advances nothing.
+this advances nothing. A split scope's per-PR plans group under it, one line per listed PR.
 
 Then scan `~/.claude/spec/*-project.md`: one block per project — its name, mode, and base — with
 one line per slice (slug, ticket, status, PR link) read from the index. A slice's scope/plan files
@@ -86,6 +86,11 @@ scope/plan file; a Linear ticket → identifier lowercased). Detect where it sta
 | plan with unchecked `[ ]` tasks | **implement** |
 | plan all `[x]`, no PR for `mohammad/<name>` | **verify** |
 | plan all `[x]`, PR open | **babysit** — pick the watch back up; done (when green) is mine |
+
+A split scope (its Chosen direction lists several PRs) is detected per PR: each
+`<slug>-<n>-<short>-plan.md` runs through the table with branch `mohammad/<slug>-<n>-<short>`, and
+a listed PR with no plan file is **scoped — ready to plan**. Drive only the PRs I name, one loop
+each; never decide build order.
 
 State where we are and the phase you're entering. Invoking me mid-funnel is my go-ahead to run
 that phase.

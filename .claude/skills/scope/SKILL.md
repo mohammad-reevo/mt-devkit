@@ -25,7 +25,8 @@ derive a short human-readable kebab-case name from the idea — never use the ba
 (e.g. `CRMF-1641` "Expand eval dataset using GTM traces" → `expand-eval-dataset`, not
 `crmf-1641`). This name is the **slug for the whole funnel** — it names the
 scope/plan files, the worktree, and the branch `mohammad/<name>`, and it's recorded in the
-scope file (below) so downstream phases read it rather than re-derive it.
+scope file (below) so downstream phases read it rather than re-derive it. A split scope keeps
+one slug; each PR's plan file, worktree and branch append `-<n>-<short>`.
 
 **Re-entrancy.** Check `~/.claude/spec/<name>-scope.md`:
 - **Exists** → revision (plan kicked it back, or I changed my mind). Read it, state the
@@ -185,6 +186,8 @@ the validation pass actually found, never a hand-wave.
 ## Chosen direction
 What we're doing, at altitude. The shape of the solution — never tasks, never a file-level
 change plan.
+If the work ships as several PRs, record the agreed split here — one numbered line per PR
+(`<n>. **<short>** — what it carries; depends on <n>|none`) and the per-PR plan/branch names.
 
 ## Testing
 What testing the chosen direction warrants, at altitude — the kinds of tests + what they cover,
