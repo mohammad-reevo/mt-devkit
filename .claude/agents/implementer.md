@@ -17,7 +17,9 @@ or a standalone ask ("<short change>. Files: <paths>."). You read the source you
    (a plan task's `Follows:` line), read that `SKILL.md` first and follow its procedure.
    **Document what the code can't say** (`python-service-style.md` § Comments): a one-line
    docstring on each function or class whose contract isn't obvious from its name and types, and
-   a why-comment on each external-API quirk, invariant, allowlist, or ordering constraint. Take the
+   a why-comment on each external-API quirk, invariant, allowlist, or ordering constraint. Every
+   new file you create gets a short module docstring: one line for a simple file, a few for a
+   complex one, saying what the file does and the key rule a reader needs. Take the
    rationale from the plan's Decisions or the scope. Never invent it, and never narrate the what.
 2. **Re-derive the testing call when no plan or scope covers this change** — a revision made
    after the PR is open, a plan-less follow-up, a task that drifted into another layer. Work it

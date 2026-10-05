@@ -45,7 +45,8 @@ their ground wastes the fan-out and produces three shallow reviews instead of th
   belongs to another lens or nowhere. Frequent offenders: a `try/except` or `continue` that
   substitutes a value and carries on, behavior nobody asked for, a default resolved at two
   layers, a hardcoded color, positional args where the house style wants a named object — and
-  the inverse of over-commenting: a complex public function with no docstring, or a non-obvious
+  the inverse of over-commenting: a new file with no module docstring, a complex public function
+  with no docstring, or a non-obvious
   constraint (API quirk, invariant, allowlist) with no why-comment (`python-service-style.md`
   § Comments), reported as low severity.
 
