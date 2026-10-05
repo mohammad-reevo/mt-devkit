@@ -67,13 +67,16 @@ KB_DIR_RE = r"(?<![\w-])" + KB_DIR_SEGMENT
 WRITE_MARKER = "MT_KB_WRITE=1"
 
 # Write operators worth recognising. Read-only commands (grep/ls/cat-without-
-# redirect) deliberately do not appear -- reading the store is free.
+# redirect) deliberately do not appear -- reading the store is free. The operator
+# and the kb path must sit in one statement (no ; & or newline between them), or
+# `rm -r <scratch>; cat knowledge-base/...` reads as a write. python keeps
+# crossing newlines: a heredoc script names its kb path lines after `python3`.
 WRITE_PATTERNS = (
     r">\s*\S*" + KB_DIR_RE,           # cat > kb/... , >> kb/...
     KB_DIR_RE + r"\S*\s*<<",           # heredoc into a kb path
-    r"\btee\b[^|]*" + KB_DIR_RE,       # tee kb/...
-    r"\bsed\b[^|]*-i[^|]*" + KB_DIR_RE,
-    r"\b(cp|mv|rm|mkdir|touch|ln)\b[^|]*" + KB_DIR_RE,
+    r"\btee\b[^|;&\n]*" + KB_DIR_RE,       # tee kb/...
+    r"\bsed\b[^|;&\n]*-i[^|;&\n]*" + KB_DIR_RE,
+    r"\b(cp|mv|rm|mkdir|touch|ln)\b[^|;&\n]*" + KB_DIR_RE,
     r"\bpython3?\b[^|]*" + KB_DIR_RE,  # a script that names a kb path
 )
 
@@ -125,7 +128,7 @@ def main():
         "nothing after the fact will show it changed, so no write happens "
         "unseen.\n"
         "  1. Show the change as a fenced ```diff block (- old, + new).\n"
-        "  2. Get an explicit yes.\n"
+        "  2. Get an explicit yes (a progress update skips this; the diff follows the write).\n"
         "  3. Re-run the command prefixed with {marker} .\n"
         "  The `author-knowledge-base` skill does all three and owns the index-line "
         "and one-page rules; prefer it over a hand-rolled write.".format(marker=WRITE_MARKER)
