@@ -1,6 +1,6 @@
 ---
 name: author-knowledge-base
-description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. Every write is explained and shown as a diff in one message, then approved once before anything touches the store — except a progress update to a project's progress entry, which is written straight away and shown after. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Writing happens at `/done` close-out or on an explicit ask — never offered mid-session, however KB-worthy a deep dive or a deferred task feels at the time. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/author-knowledge-base".
+description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. Every write is explained and shown as a diff in one message, then approved once before anything touches the store — except a write under `projects/` (and that project's index lines), which is written straight away and shown after. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Writing happens at `/done` close-out or on an explicit ask — never offered mid-session, however KB-worthy a deep dive or a deferred task feels at the time. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/author-knowledge-base".
 argument-hint: '[search <query> | add | update <entry> | graduate <project>]'
 ---
 
@@ -14,7 +14,7 @@ have to be re-explained every time and a settled concept doesn't get re-derived.
 
 Where author-knowledge-base ends: **an entry read, or a proposed change shown as a diff.** You never write without
 first saying what you intend to write and showing what changes — together, then one yes. The one
-exception is a progress update (§ Progress updates skip the yes).
+exception is a write under `projects/` (§ Project writes skip the yes).
 
 ## When to offer a write
 
@@ -68,8 +68,8 @@ MT_KB_WRITE=1 cat > knowledge-base/<path>.md <<'KB_EOF'
 KB_EOF
 ```
 
-**The gate applies to every write but one** — a new entry, an `update`, a one-line index-line fix,
-an `updated:` bump. No write is small enough to skip it: "which writes are small enough?" is
+**The gate applies to every `concepts/` write** — a new entry, an `update`, a one-line index-line
+fix, an `updated:` bump. No write is small enough to skip it: "which writes are small enough?" is
 exactly the judgment call that erodes a gate. The exception is defined by *which file and what
 kind of change*, never by size — see below.
 
@@ -85,22 +85,21 @@ happened.** Doing so converts the one real safeguard on this store into decorati
 Keep to that shape. A write in some other form may slip past the matcher, which defeats the
 point of having a gate at all.
 
-### Progress updates skip the yes
+### Project writes skip the yes
 
-A project's progress entry (`projects/<project>/progress.md`, or whichever entry its `rules.md`
-says to keep current) changes every session a ticket moves, so it is written without waiting.
-**Write first, then show** the same one-to-three sentences and the ```diff in your reply, so the
-change is still seen as it lands. The `MT_KB_WRITE=1` marker stays on the command.
+`projects/` is working state: it churns every session a ticket moves and is deleted when the
+project ships, so a wrong line costs little and is easy to correct. Writes there go through
+without waiting. **Write first, then show** the same one-to-three sentences and the ```diff in
+your reply, so the change is still seen as it lands. The `MT_KB_WRITE=1` marker stays on the
+command.
 
-What qualifies — all of it, or the yes is back:
-- the file is the project's progress entry, and it already exists;
-- the change records state: a ticket moving done / in flight / blocked, what that means for the
-  others, what merged, the `updated:` bump.
+What qualifies: any write under `knowledge-base/projects/` — a new project entry, an `update`,
+restructuring one, deleting one after `graduate` — plus that project's lines in the `## Projects`
+section of `INDEX.md`.
 
-Everything else still waits for a yes — a new progress entry, restructuring one, touching its
-index line, `rules.md`, any other `projects/` entry, any `concepts/` entry. A write that mixes a
-progress update with anything else is gated as a whole; split it if you want the progress half to
-go through on its own.
+`concepts/` still waits for a yes — its entries are maintained indefinitely, and so are their index
+lines. A write that mixes the two is gated as a whole; split it if you want the project half to go
+through on its own.
 
 ## The store
 
@@ -155,11 +154,12 @@ index gets good; without it, a silently-missed entry looks identical to a missin
 4. **Write the index line** — see below. This is the part that decides whether the entry is ever
    found, so spend real thought here, not on the prose.
 5. **Say what it is and show the diff, then wait** — § Writing's single gate. The entry and the
-   new index line, both.
+   new index line, both. A `projects/` entry writes first and shows after (§ Project writes skip
+   the yes).
 
 ### `update <entry>`
-Same gate — what's changing and why, with the diff, in one message; then wait. A progress update
-writes first and shows after (§ Progress updates skip the yes).
+Same gate — what's changing and why, with the diff, in one message; then wait. A `projects/`
+update writes first and shows after (§ Project writes skip the yes).
 Two things to get right: bump `updated`, and **re-read the index line** — an entry that has grown
 or changed direction usually needs a different trigger than the one it was filed under.
 
@@ -213,10 +213,10 @@ it, and do not turn this into a debate.
 
 ## Guardrails
 
-- **One gate on every write, and no write is too small for it.** Say what's changing and why,
-  show the diff in the same message, and get a yes before anything is written. This holds for a
-  new entry, a one-line index fix, and an `updated:` bump alike. The sole exception is a
-  progress update, which is still shown — just after the write instead of before.
+- **One gate on every `concepts/` write, and no write is too small for it.** Say what's changing
+  and why, show the diff in the same message, and get a yes before anything is written. This
+  holds for a new entry, a one-line index fix, and an `updated:` bump alike. The sole exception is
+  a `projects/` write, which is still shown — just after the write instead of before.
 - **An ambivalent mention is not an instruction.** "I might save this" opens a conversation, not
   a write.
 - **Never edit an entry as a side effect** of reading or searching it.

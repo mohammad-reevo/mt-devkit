@@ -82,7 +82,7 @@ find yourself investigating something an entry already covers, the index line wa
 report the line as a bug — that is a fix to the line, not a cue to file anything new.
 
 Reading an entry is free. **Writing goes through the `author-knowledge-base` skill**, which says what it's about to
-write and shows the diff in one message, then waits for a yes (a project progress update is written
+write and shows the diff in one message, then waits for a yes (a `projects/` write is written
 first and shown after) — never hand-edit the store. **Writes happen
 at `/done` or when I explicitly ask, and nowhere else** — don't offer to file things mid-session,
 however KB-worthy they feel at the time, and don't read "I might save this" as an instruction.
