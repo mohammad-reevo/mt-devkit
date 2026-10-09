@@ -140,7 +140,8 @@ past (~40 min+), and even then as an observation, not a failure.
 - **`--watch-only`** → print the status table + unresolved threads, then exit. No wakeup, no loop.
 - **Loop mode (default)** → every PR's `--required` checks passed **and** zero unresolved threads
   → **ready for your review**: announce it and exit (do **not** invoke or suggest done — `/done` ends the
-  whole session, not one PR — and do **not** write any state). The announcement:
+  whole session, not one PR — and do **not** write any state beyond marking the PR ready for
+  review in the session's todo list, per `todo-list`). The announcement:
   - leads with **"Ready for your review"** and each PR's link, one line per PR (links every time,
     per `github.md`);
   - lists any non-required check that failed or is still running, one line each, marked
