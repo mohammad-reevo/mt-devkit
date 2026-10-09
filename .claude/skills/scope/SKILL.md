@@ -234,7 +234,8 @@ usually goes wrong: the investigation is fine and the message is a form I have t
 **`response-altitude.md` governs the shape** — read it as binding here. Note it's a different
 axis from the "stay at altitude" rule everywhere else in this skill: that one is about how deep
 to *think* (no task lists, no file-level plans); this one is about how much to *show*. Getting
-the first right doesn't get you the second.
+the first right doesn't get you the second. Every round after the first follows
+`discussion-turns.md`: one numbered item per question, findings inside the question they bear on.
 
 What that means concretely for a scope message:
 
