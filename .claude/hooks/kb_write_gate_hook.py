@@ -128,7 +128,7 @@ def main():
         "nothing after the fact will show it changed, so no write happens "
         "unseen.\n"
         "  1. Show the change as a fenced ```diff block (- old, + new).\n"
-        "  2. Get an explicit yes (a progress update skips this; the diff follows the write).\n"
+        "  2. Get an explicit yes (a projects/ write skips this; the diff follows the write).\n"
         "  3. Re-run the command prefixed with {marker} .\n"
         "  The `author-knowledge-base` skill does all three and owns the index-line "
         "and one-page rules; prefer it over a hand-rolled write.".format(marker=WRITE_MARKER)
