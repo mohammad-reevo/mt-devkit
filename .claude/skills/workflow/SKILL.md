@@ -138,10 +138,9 @@ Invoke each phase skill and let it run to completion — each handles its own in
   comments still surface quickly) and reports what it finds — it does **not** fix, and reaching
   green does **not** close anything out. It ends by announcing **"ready for your review"** with
   the PR link — that line comes first, because my review is the next step. **done stays
-  explicit**: `/done` is mine, and it closes the whole session, not this PR. Surface it after the
-  ready line only when this PR is the session's last planned work — no remaining PR of a split
-  scope, no other drive queued; never run it. Surface any verification still outstanding after
-  the ready line either way, so I know what's left for me to run.
+  explicit**: `/done` is mine, and it closes the whole session, not this PR. Never run it, and
+  never surface it — I run it at every session's end (`todo-list`). Surface any verification
+  still outstanding after the ready line, so I know what's left for me to run.
 - **Review comments → `address-comments`, handed over by babysit.** When a poll finds unresolved
   threads, babysit schedules its next wakeup and then enters `address-comments` in the same turn.
   That is not auto-fixing: the skill triages every thread into a numbered report, finalizes it,
@@ -169,7 +168,8 @@ is only what differs. § Modes applies unchanged — one mode for the whole proj
 
 **Project + index.** The name is mine if given, else derived (kebab-case, from the shared theme or
 the tickets' Linear project). The index `~/.claude/spec/<project>-project.md` is the main
-session's only view of the project — update it at every status change:
+session's only view of the project — update it at every status change. It is also the drive's
+todo list: `todo-list` renders from it rather than keeping a second file.
 
 ```markdown
 # <Project title> — Project
@@ -264,7 +264,8 @@ exactly once, in step 8.
   gate-less hop stays gate-less; an incidental phase list in the kickoff never invents a second
   gate.
 - **babysit auto-runs as the tail; done never does.** Flowing verify → babysit is the drive
-  finishing its job. `/done` is the one transition that stays mine — the workflow only surfaces it.
+  finishing its job. `/done` is the one transition that stays mine — the workflow never runs or
+  surfaces it.
 - **Outstanding manual testing is never a gate.** The drive runs to a watched PR whether or not
   I've tested it yet; pending verification is reported as a reminder, not a reason to stop one
   step short of done.
