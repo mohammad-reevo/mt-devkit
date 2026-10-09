@@ -24,7 +24,9 @@ later phases (**verify**, **babysit**) — don't do them here.
 
 Find the plan — glob `~/.claude/spec/*-plan.md` and match against the idea (**never re-derive
 a slug from prose**; confirm with me if more than one could fit). No plan file → stop and
-point me to plan. The plan's `> Repo:` line is the repo every subagent operates in.
+point me to plan. A plan whose first line is `> STATUS: STALE — …` was invalidated mid-discussion
+→ stop, quote that line, and point me back to plan. The plan's `> Repo:` line is the repo every
+subagent operates in.
 
 **Explicit plan + worktree.** Invoked with a **plan path and a worktree path** (a `workflow`
 project drive, where the session stays at the mt-devkit root), use those — never the session's

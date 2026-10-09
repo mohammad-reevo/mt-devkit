@@ -62,6 +62,7 @@ Scan `~/.claude/spec/*-scope.md` and `*-plan.md`. For each idea, one line:
 
 - scope file only → **scoped — ready to plan** (plan didn't follow scope; pick it back up), or
   **investigated — scope only** when its header reads `> Mode: investigate`
+- plan opening with `> STATUS: STALE` → **plan stale — re-plan**
 - plan, some tasks `[ ]` → **implementing — N/M tasks done**
 - plan all `[x]`, no PR for `mohammad/<name>` → **built — ready to verify**
 - plan all `[x]`, PR open → **in review — <PR link> (babysit watching / done when green)**
@@ -83,6 +84,7 @@ scope/plan file; a Linear ticket → identifier lowercased). Detect where it sta
 |---|---|
 | no `<name>-scope.md` | **scope** |
 | scope only | **plan** — unless `> Mode: investigate` and I named no other mode: stop |
+| plan opening with `> STATUS: STALE` | **plan** — revise for what the marker names |
 | plan with unchecked `[ ]` tasks | **implement** |
 | plan all `[x]`, no PR for `mohammad/<name>` | **verify** |
 | plan all `[x]`, PR open | **babysit** — pick the watch back up; done (when green) is mine |
