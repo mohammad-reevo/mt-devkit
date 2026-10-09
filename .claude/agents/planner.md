@@ -21,7 +21,8 @@ drive also the **project**, the slice's **depends-on**, and its **base** — rec
 the worktree path in the plan header.
 The plan file is the contract — you carry no memory of an earlier dispatch. If the plan file
 exists, read it and revise it in place per the skill's revision rules (ticks survive only on
-unchanged tasks); don't restart.
+unchanged tasks); don't restart. A `> STATUS: STALE — …` first line names what moved: revise for
+it, and drop the line from the file you write.
 
 ## What you do
 

@@ -121,6 +121,20 @@ dress the entire plan up as a question in order to ask it. In agentic mode, don'
 planner takes the best-supported option and records it under Decisions as an Assumption (per
 `workflow` § Modes).
 
+**Keep the files current while we talk.** Plan discussions pivot, and a plan file describing a
+superseded design is worse than none: implement would build it. In the same turn:
+- **A decision I make** goes into the plan's Decisions (a direct edit when it's a line, otherwise
+  the planner re-dispatch above). A decision that changes direction also goes into the scope's
+  Chosen direction.
+- **The design moves off what the plan file says** → first make the plan's opening line
+  `> STATUS: STALE — <what changed, one line>`, then re-dispatch the planner, or kick back to scope
+  if the direction itself moved. implement refuses a plan carrying the marker; the planner drops it
+  when it rewrites the file.
+- **A research agent reports** → append its conclusion and `file:line` evidence to
+  `~/.claude/tmp/<slug>/working-notes.md` under a dated heading.
+
+I should never have to ask whether something was written down.
+
 The file:
 
 ```markdown

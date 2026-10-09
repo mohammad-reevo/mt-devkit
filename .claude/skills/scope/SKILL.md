@@ -140,6 +140,13 @@ with those four fields filled in. Shape it per § Reporting.
 Then discuss. This is conversational and may take multiple rounds. I pick the direction —
 you advocate, you don't decide.
 
+**Write it down as it happens, not at the end.** The scoper already wrote the scope file, so keep
+it current through the discussion: in the same turn I answer a question or the direction moves,
+update its Chosen direction / Open questions / Assumptions. When a re-dispatched agent reports,
+append its conclusion and `file:line` evidence to `~/.claude/tmp/<slug>/working-notes.md` under a
+dated heading. A long discussion, a compaction, or a dropped session must never leave the live
+state only in chat.
+
 **This discussion is my checkpoint before plan.** Under `/workflow` there is no stop between
 the scope file and plan. So anything that needs my call gets asked *now*, in the conversation,
 not parked in the file for a later gate that no longer exists: resolve what you can yourself (a
