@@ -65,7 +65,7 @@ Scan `~/.claude/spec/*-scope.md` and `*-plan.md`. For each idea, one line:
 - plan opening with `> STATUS: STALE` → **plan stale — re-plan**
 - plan, some tasks `[ ]` → **implementing — N/M tasks done**
 - plan all `[x]`, no PR for `mohammad/<name>` → **built — ready to verify**
-- plan all `[x]`, PR open → **in review — <PR link> (babysit watching / done when green)**
+- plan all `[x]`, PR open → **in review — <PR link> (babysit watching)**
 
 The last two rows need a quick `gh pr list --head mohammad/<name>` per built idea. Read-only —
 this advances nothing. A split scope's per-PR plans group under it, one line per listed PR.
@@ -87,7 +87,7 @@ scope/plan file; a Linear ticket → identifier lowercased). Detect where it sta
 | plan opening with `> STATUS: STALE` | **plan** — revise for what the marker names |
 | plan with unchecked `[ ]` tasks | **implement** |
 | plan all `[x]`, no PR for `mohammad/<name>` | **verify** |
-| plan all `[x]`, PR open | **babysit** — pick the watch back up; done (when green) is mine |
+| plan all `[x]`, PR open | **babysit** — pick the watch back up; done (at session end) is mine |
 
 A split scope (its Chosen direction lists several PRs) is detected per PR: each
 `<slug>-<n>-<short>-plan.md` runs through the table with branch `mohammad/<slug>-<n>-<short>`, and
@@ -138,9 +138,10 @@ Invoke each phase skill and let it run to completion — each handles its own in
   comments still surface quickly) and reports what it finds — it does **not** fix, and reaching
   green does **not** close anything out. It ends by announcing **"ready for your review"** with
   the PR link — that line comes first, because my review is the next step. **done stays
-  explicit**: `/done` is mine to invoke after that review, once CI's green and threads are
-  resolved. Surface it after the ready line as the move that follows; never run it — and surface
-  any verification still outstanding alongside it, so I know what's left for me to run.
+  explicit**: `/done` is mine, and it closes the whole session, not this PR. Surface it after the
+  ready line only when this PR is the session's last planned work — no remaining PR of a split
+  scope, no other drive queued; never run it. Surface any verification still outstanding after
+  the ready line either way, so I know what's left for me to run.
 - **Review comments → `address-comments`, handed over by babysit.** When a poll finds unresolved
   threads, babysit schedules its next wakeup and then enters `address-comments` in the same turn.
   That is not auto-fixing: the skill triages every thread into a numbered report, finalizes it,

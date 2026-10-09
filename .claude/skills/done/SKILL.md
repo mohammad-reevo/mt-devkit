@@ -1,6 +1,6 @@
 ---
 name: done
-description: Close out the session's worktree(s) — gate the PR(s) for each one's checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, drain any `tasks/` chore the session actually finished, then tear down the worktrees + local branches. Manual only. `/done cancel` abandons an idea without the gate. Use when a PR is ready to close out of your active set (merge happens separately). Triggers on "/done", "close this out", "done with this".
+description: Close out the session's worktree(s) — gate the PR(s) for each one's checked-out branches (CI green + all review threads resolved), delete matching plan/scope spec files, drain any `tasks/` chore the session actually finished, then tear down the worktrees + local branches. Manual only. `/done cancel` abandons an idea without the gate. Use at the end of a session, once all of its PRs are reviewed — closes every worktree and PR the session touched in one pass (merge happens separately). Triggers on "/done", "close this out", "done with this".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -9,6 +9,9 @@ description: Close out the session's worktree(s) — gate the PR(s) for each one
 # done — close out the session's worktrees
 
 **Manual only.** Runs only when I explicitly invoke `/done`. Never auto — I review the PRs.
+
+**The session's last step, not a per-PR one.** Never suggest it while the session still has work
+planned — another PR of a split scope, another drive, a follow-up on a merged PR.
 
 You close out **every worktree this session worked in** — usually one, but a session that
 reviewed two PRs or split its work has several, and closing only the one you happen to be
