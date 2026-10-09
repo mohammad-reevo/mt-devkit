@@ -155,7 +155,9 @@ RT_PORT=$((8787 + INDEX))
 # FalkorDB's browser UI) gets handed out: the frontend then dies, or Next quietly
 # moves to 3011 while every env var still says 3010, and neither failure mentions
 # FalkorDB. Catch it here instead, before any env file is rewritten.
-port_holder() { lsof -nP -iTCP:"$1" -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1" (pid "$2")"}'; }
+# lsof exits 1 when nothing listens; under pipefail + -e that would end the script
+# on exactly the free port we want, so a free port must read as empty output.
+port_holder() { lsof -nP -iTCP:"$1" -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1" (pid "$2")"}' || true; }
 
 BUSY=""
 for pair in "backend:$BE_PORT" "frontend:$FE_PORT" "realtime:$RT_PORT"; do
