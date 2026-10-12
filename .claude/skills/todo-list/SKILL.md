@@ -1,6 +1,6 @@
 ---
 name: todo-list
-description: Keep and render the session's todo list — two lists, Completed then Todo, one item per unit of work (a PR, or a set of PRs that land together) with its chores (CI, update-branch, review comments, deploy waits) as sub-bullets, persisted to a file so the answer is a read, not a reconstruction. Never lists /done or its close-out steps. Kept unasked in any session with two or more PRs. Triggers on "todo list", "what's left", "where are we", "remind me what's left", "anything left", "/todo-list".
+description: Keep and render the session's todo list — two lists, Completed then Todo, one item per unit of work (a PR, or a set of PRs that land together) with its chores (CI, update-branch, review comments, deploy waits) as sub-bullets, persisted to a file so the answer is a read, not a reconstruction; every ask (a bare /todo-list included) re-checks each PR's state, CI, branch and threads live before rendering. Never lists /done or its close-out steps. Kept unasked in any session with two or more PRs. Triggers on "todo list", "what's left", "where are we", "remind me what's left", "anything left", "/todo-list".
 ---
 
 # todo-list — the session's todo list
@@ -24,8 +24,28 @@ under each slice's PR.
   the file and keep it current without being asked.
 - **Update at every state change:** a PR opens, merges, or goes ready for review; a chore
   appears (CI red, branch stale, threads open) or clears. Do it in the same turn as the change.
-- **Answer from the file.** On "what's left", read it — refresh PR states with `gh pr view` —
-  rather than re-deriving the list from the conversation or a compaction summary.
+- **Answer from the file.** On "what's left", read it — then re-check it, below — rather than
+  re-deriving the list from the conversation or a compaction summary.
+
+## On ask — re-check, then render
+
+A bare `/todo-list` (no arguments), or any "what's left" ask, means: re-check every status
+live, write the result back to the file, then render the two lists. The file says *which* PRs
+and chores exist; it is never trusted for their *current state* — neither is the conversation.
+
+For every PR in the list, in one pass:
+
+```bash
+gh pr view <url> --json state,mergedAt,isDraft,reviewDecision,mergeStateStatus,statusCheckRollup
+```
+
+plus its review threads (`isResolved` on every thread, per `github.md` — never a filtered
+"unresolved" list). From that, set the PR's state and rebuild its chores: a merged PR drops its
+chores; a failing check, `mergeStateStatus` `BEHIND` / `DIRTY`, or an unresolved thread adds
+one; one that has cleared goes. Move a unit to Completed once every PR in it is merged.
+
+No file yet → build it from the session's PRs (`gh pr list --author @me --head <branch>` for
+each repo's checked-out branch in the worktree), write it, then render.
 
 ## The shape
 
