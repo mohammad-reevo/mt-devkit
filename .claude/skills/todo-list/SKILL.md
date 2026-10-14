@@ -36,13 +36,24 @@ and chores exist; it is never trusted for their *current state* — neither is t
 For every PR in the list, in one pass:
 
 ```bash
-gh pr view <url> --json state,mergedAt,isDraft,reviewDecision,mergeStateStatus,statusCheckRollup
+gh pr view <url> --json state,mergedAt,isDraft,reviewDecision,mergeStateStatus
+gh pr checks <url> --json name,bucket,workflow
+gh api graphql -f query='query { repository(owner:"<owner>",name:"<repo>") {
+  pullRequest(number:<n>) { isInMergeQueue mergeQueueEntry { state position }
+    reviewThreads(first:100) { nodes { isResolved } } } } }'
 ```
 
-plus its review threads (`isResolved` on every thread, per `github.md` — never a filtered
-"unresolved" list). From that, set the PR's state and rebuild its chores: a merged PR drops its
-chores; a failing check, `mergeStateStatus` `BEHIND` / `DIRTY`, or an unresolved thread adds
-one; one that has cleared goes. Move a unit to Completed once every PR in it is merged.
+Threads: `isResolved` on every one, per `github.md` — never a filtered "unresolved" list.
+
+**CI comes from `gh pr checks`, never `statusCheckRollup`.** The rollup keeps a failed entry from
+an older run of a check after a newer run of it passed, so it reports a green PR as red;
+`gh pr checks` shows each check's current run. A `fail` bucket is a failing check.
+
+From that, set the PR's state and rebuild its chores: a merged PR drops its chores; a failing
+check, `mergeStateStatus` `BEHIND` / `DIRTY`, or an unresolved thread adds one; one that has
+cleared goes. **`isInMergeQueue` true** → the state is `in merge queue (position <n>, <state>)`
+and the CI and update-branch chores drop, since the queue owns both; unresolved threads still
+count. Move a unit to Completed once every PR in it is merged.
 
 No file yet → build it from the session's PRs (`gh pr list --author @me --head <branch>` for
 each repo's checked-out branch in the worktree), write it, then render.
@@ -56,7 +67,7 @@ each repo's checked-out branch in the worktree), write it, then render.
 
 **Todo**
 1. <unit of work>
-   - <PR link> — <state: open / CI red / ready for review / approved>
+   - <PR link> — <state: open / CI red / ready for review / approved / in merge queue (position N, <state>)>
      - <chore: fix CI (<check>) / update-branch / address N comments / wait for deploy>
 ```
 
