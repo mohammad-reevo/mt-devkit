@@ -57,20 +57,23 @@ if [[ "$TARGET" == "dev" ]]; then
   DB_HOST="reevo-dev-v2-aurora-rds.cluster-cjg208q4q0s8.us-west-2.rds.amazonaws.com"
   DB_PORT="5432"
   DB_NAME="reevo_main"
-  DB_USER="reevo_db_user"
+  if ! command -v chamber &>/dev/null; then
+    echo "Error: dev target needs chamber installed (brew install chamber)." >&2
+    exit 1
+  fi
+  # Dev secrets live in the dev-v2 AWS account, not the shell's default profile (prod keys
+  # only). The user is rotated, so it's read rather than hardcoded; the password sits in the
+  # `secrets-` namespace. Stale SSO surfaces as UnrecognizedClientException — `aws sso login`.
+  DB_USER=$(AWS_PROFILE=dev-v2 chamber read "reevo-be-dev" "salestech_be_db_user" -q)
   export PGPASSWORD
   if [[ -n "${DB_PASSWORD:-}" ]]; then
     PGPASSWORD="$DB_PASSWORD"
-  elif command -v chamber &>/dev/null; then
-    # Stale SSO surfaces here as UnrecognizedClientException — run `aws sso login` and retry.
-    PGPASSWORD=$(chamber read "reevo-be-dev" "salestech_be_db_pass" -q)
   else
-    echo "Error: dev target needs DB_PASSWORD set, or chamber installed (brew install chamber)." >&2
-    exit 1
+    PGPASSWORD=$(AWS_PROFILE=dev-v2 chamber read "secrets-reevo-be-dev" "salestech_be_db_pass" -q)
   fi
   if ! pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -q 2>/dev/null; then
     echo "Error: cannot reach the Dev writer at $DB_HOST:$DB_PORT" >&2
-    echo "Make sure Tailscale VPN is connected (and 'aws sso login' if the token is stale)." >&2
+    echo "Make sure Tailscale VPN is connected (and 'aws sso login --profile dev-v2' if the token is stale)." >&2
     exit 1
   fi
 else
