@@ -60,6 +60,14 @@ Not conflicted → `ScheduleWakeup(120s)` and return (skip in `--watch-only`).
     never triggers the go-loud rule below. On salestech-be the required set is two entries
     (`All Tests Passed`, `Frontend Breaking Changes Check`) — `All Tests Passed` is the
     aggregator the individual test jobs roll up into, so a real test failure still surfaces.
+  - **salestech-be's description verdict: never read it from `gh pr checks`.**
+    `validate-description` runs only when the body changes and is *skipped* on every push, so
+    after any push the head commit shows `skipping` and a failing description looks clean. The
+    verdict is the latest **non-skipped** run of the workflow on the PR's branch:
+    `gh api "repos/ReevoAI/salestech-be/actions/workflows/pr-description-validation.yml/runs?branch=<headRefName>&per_page=20" --jq '[.workflow_runs[]|select(.conclusion!="skipped")][0].conclusion'`.
+    On `failure`, the failed sections are the `**❌` lines of the latest comment containing
+    `<!-- pr-description-validation -->` (the bot edits that comment in place but never marks
+    a pass, so read it only after the run says `failure`).
 - **Mergeability — why a run may not exist at all.** `gh pr view <n> --json
   mergeable,mergeStateStatus`. `CONFLICTING` → the PR is dirty, and **a conflicted PR gets no CI
   runs scheduled at all** — so an absent run means dirty far more often than it means too early.
@@ -144,9 +152,12 @@ past (~40 min+), and even then as an observation, not a failure.
   review in the session's todo list, per `todo-list`). The announcement:
   - leads with **"Ready for your review"** and each PR's link, one line per PR (links every time,
     per `github.md`);
-  - lists any non-required check that failed or is still running, one line each, marked
-    non-blocking — e.g. `validate-description` failing its LLM grade while every required check
-    is green. These never hold the announcement back;
+  - when the description verdict (above) is `failure`, says so right under the links: each
+    failed section in one line, and who fixes it — `## Verification` is mine (real results
+    replace the pending list), `## Verification Metrics` is the harness's (offer to rewrite
+    that section per `pr-description` § Overrides). It doesn't hold the announcement back;
+  - lists any other non-required check that failed or is still running, one line each, marked
+    non-blocking. These never hold the announcement back;
   - is also sent as a `PushNotification` (load it via `ToolSearch` if deferred) — "PR ready for
     your review" + the link — since this is the moment I'm most likely away from the session.
 
