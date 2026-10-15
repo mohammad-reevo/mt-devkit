@@ -95,6 +95,16 @@ must name real files and real seams, not guesses.
   `.claude/skills/db-model-repo/SKILL.md` for PR 2 — named in each task's `Follows:` line, per
   `subrepo-skills.md`. In a project drive the migration
   is its own slice instead: don't split — report it, and `workflow` carves the slice out.
+- **A part that needs an extra reviewing team is its own PR.** A team beyond the repo default
+  gates the whole PR on its review, so that part is split out and reviewed alone. In salestech-be,
+  pipe the files the tasks touch to `python3 .claude/harness/code_owners.py owners` (run in the
+  worktree's `salestech-be/`; paths on stdin, new files included). Each row names a team beyond the
+  catch-all default, `required` or `requested`; both count. Group the rows by team. A team needed
+  by only part of the PR moves that part into its own `### PR <n> — <team> review` (base `main`, or
+  stacked when it needs the other PR's code). A team the PR's core change needs stays. When the
+  split changes a PR split the scope already records, or what I asked for, don't make it: write
+  `Pending: split <part> into its own PR for <team> review? — recommended: yes` under Decisions, and
+  the gate asks me. In a project drive, report it instead, and `workflow` carves the slice out.
 - **Kickback rule:** if research shows the chosen direction itself is wrong (not just a detail), the
   planner writes no plan and reports it; stop. Say what broke and recommend re-running scope — don't
   quietly re-scope inside the plan.

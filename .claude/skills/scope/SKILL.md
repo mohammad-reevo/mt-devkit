@@ -195,6 +195,8 @@ What we're doing, at altitude. The shape of the solution — never tasks, never 
 change plan.
 If the work ships as several PRs, record the agreed split here — one numbered line per PR
 (`<n>. **<short>** — what it carries; depends on <n>|none`) and the per-PR plan/branch names.
+A part that needs a reviewing team the rest doesn't is its own PR (`plan` § Resolve and break down).
+Split it here when the scope already shows it.
 
 ## Testing
 What testing the chosen direction warrants, at altitude — the kinds of tests + what they cover,
