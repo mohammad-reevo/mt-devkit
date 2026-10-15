@@ -67,7 +67,7 @@ changed — exactly the test files named in the plan's Verification section (tha
 ceiling, not a starting point — **never** a whole tree, a broad directory above them, or `make
 pytest`) — never lint or types, which the commit hook and CI own. It returns pass/fail + distilled failures. All green before review.
 GitHub PR CI runs the full suite on every push, so a broad local run only duplicates CI and pins
-the machine (see `local-test-scope.md`, hard-enforced at 25 test files per run).
+the machine (see `local-test-scope.md`, hard-enforced at 5 test files per run and one run at a time).
 
 **Don't start a run of your own while that subagent is working** — you can't see its processes,
 and two suites against the same local Postgres/Redis/Temporal both pin the machine and make any

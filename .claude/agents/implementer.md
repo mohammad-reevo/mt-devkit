@@ -36,7 +36,9 @@ carries the plan context you need, so don't go read the plan file.
    them with `rg -l "<symbol>" tests/`) — a test file you added under a re-derived call is one of
    them, so run it. GitHub PR CI runs the exhaustive suite on every push, so
    a broad local run proves nothing CI won't and pins the machine. A hook enforces this — a run
-   covering more than 25 test files is denied. **If you believe wider coverage is genuinely
+   covering more than 5 test files is denied, and so is a run while another pytest is alive:
+   one test run at a time, in the foreground, never re-launched over one still running. A
+   collision with someone else's run is drift to report, not to wait out. **If you believe wider coverage is genuinely
    needed, report it as drift** (below) and let the orchestrator decide; never widen on your own
    initiative. Fix what you broke and re-run until green, within reason.
 4. **Return a lean report** and nothing else (see below).
