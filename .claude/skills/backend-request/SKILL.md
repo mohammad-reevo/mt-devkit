@@ -30,7 +30,7 @@ Response JSON → **stdout**; HTTP status + per-call timing + diagnostics → **
 |---|---|---|
 | base URL | `http://localhost:8000` | `https://api-ng-private-dev.reevo.ai` |
 | identity | `identity.json` | `identity.dev.json` |
-| signing key | local dev default | `reevo-be-dev` chamber |
+| signing key | local dev default | `secrets-reevo-be-dev` chamber, `AWS_PROFILE=dev-v2` |
 | token cache | `~/.claude/tmp/backend-request/token.json` | `…/token.dev.json` |
 | prereqs | backend running locally | **Tailscale** + **chamber** + AWS SSO |
 
@@ -43,12 +43,12 @@ Response JSON → **stdout**; HTTP status + per-call timing + diagnostics → **
 - The CLI's default permission claim is `admin:*`, which clears the `require_*_access` gates. `--super-admin` is fingerprint-locked to the local E2E secret and is neither available nor needed for dev.
 
 ### What `--dev` actually swaps
-Dev uses the **same symmetric HS256 scheme** as local — Auth0 is only the upstream login IdP, and the backend mints its own HS256 token afterwards. So a locally-minted token is valid on dev given the right inputs, read from the `reevo-be-dev` chamber namespace:
+Dev uses the **same symmetric HS256 scheme** as local — Auth0 is only the upstream login IdP, and the backend mints its own HS256 token afterwards. So a locally-minted token is valid on dev given the right inputs, read via chamber from the **dev-v2** AWS account (`AWS_PROFILE=dev-v2`; the shell's default profile holds prod keys only). Plain config sits in `reevo-be-dev`, secrets in `secrets-reevo-be-dev`:
 
-- `salestech_be_jwt_secret` — the signing key. **Must be passed via env**: the CLI's `--jwt-secret` flag is parsed but never applied (signing reads `settings.jwt_secret`).
+- `secrets-reevo-be-dev/salestech_be_jwt_secret` — the signing key. **Must be passed via env**: the CLI's `--jwt-secret` flag is parsed but never applied (signing reads `settings.jwt_secret`).
 - `salestech_be_jwt_issuer` / `salestech_be_jwt_audience` — `jwt.decode` validates `iss`/`aud`, so a mismatch is a hard reject. These *are* read from argv.
 - `salestech_be_jwt_minimum_required_token_version` — `ReevoJWTClaims.version` defaults to the **client's** setting, and the server rejects `version <` its own minimum with `401 "token refresh required"`. Local defaults to 0, dev requires 1.
-- `salestech_be_db_pass` + the dev Aurora host — minting reads the user's current `jwt_version` from the database and stamps it into the claim. It must read the **dev** DB (hence Tailscale); a token signed with the dev key but stamped from the local DB is a valid signature with the wrong `jwt_ver`, rejected as `401 "token has been invalidated"`.
+- `reevo-be-dev/salestech_be_db_user` + `secrets-reevo-be-dev/salestech_be_db_pass` + the dev Aurora host — minting reads the user's current `jwt_version` from the database and stamps it into the claim. It must read the **dev** DB (hence Tailscale); a token signed with the dev key but stamped from the local DB is a valid signature with the wrong `jwt_ver`, rejected as `401 "token has been invalidated"`.
 
 ## Change org / user
 Edit the relevant identity file (change `user_id` **and** `org_id` together — the user must belong to the org). The cache re-mints automatically when the identity no longer matches.
@@ -57,4 +57,4 @@ Edit the relevant identity file (change `user_id` **and** `org_id` together — 
 - **Host allowlist.** Local target accepts only `localhost` / `127.0.0.1` / `::1`; dev target accepts only `api-ng-private-dev.reevo.ai`. Any other host is refused, so **prod is structurally unreachable** — there is no flag that reaches it.
 - **Writes on dev require `--write`.** Any non-GET method with `--dev` is refused without it. Dev is shared, real data that other people depend on — the flag is the deliberate pause.
 - If the backend isn't up locally, the health check says so — start it via the `env-manager` skill (`run backend`). On dev, a failed health check usually means Tailscale is disconnected.
-- If a chamber read fails with an SSO/credentials error, run `aws sso login` and retry.
+- If a chamber read fails with an SSO/credentials error, run `aws sso login --profile dev-v2` and retry.

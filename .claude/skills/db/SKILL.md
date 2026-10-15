@@ -36,9 +36,12 @@ hardcode credentials.
 | | local (default) | dev (`--dev`) |
 |---|---|---|
 | host | `localhost:5432` | Aurora **writer** endpoint |
-| db / user | `salestech_be` / `salestech_be` | `reevo_main` / `reevo_db_user` |
-| password | trivial local Docker creds (baked in) | `DB_PASSWORD` env, else `chamber read reevo-be-dev salestech_be_db_pass` |
-| prereqs | Docker + local backend up | **Tailscale VPN** + **chamber** + AWS SSO |
+| db / user | `salestech_be` / `salestech_be` | `reevo_main` / `chamber read reevo-be-dev salestech_be_db_user` |
+| password | trivial local Docker creds (baked in) | `DB_PASSWORD` env, else `chamber read secrets-reevo-be-dev salestech_be_db_pass` |
+| prereqs | Docker + local backend up | **Tailscale VPN** + **chamber** + AWS SSO for the `dev-v2` profile |
+
+Dev chamber reads run with `AWS_PROFILE=dev-v2` (account `861648135468`); the shell's default
+profile holds prod keys only, so a read under it fails with `secret not found`.
 
 ## Guardrails
 
@@ -49,7 +52,7 @@ hardcode credentials.
 - **Preflight** — the script runs `pg_isready` first and gives a targeted hint on failure:
   - local unreachable → start the backend/Docker via env-manager (`run be`).
   - dev unreachable → connect Tailscale; if the chamber read fails with `UnrecognizedClientException`,
-    run `aws sso login` and retry.
+    run `aws sso login --profile dev-v2` and retry.
 
 ## Notes
 

@@ -6,8 +6,8 @@ it until near expiry, and sends it as `Bearer` + `x-reevo-*` headers.
 
 Two targets, allowlisted by host — prod is structurally unreachable:
   * local (default): localhost/127.0.0.1, signed with the local dev key.
-  * dev (--dev): https://api-ng-private-dev.reevo.ai, signed with the dev key read from
-    the `reevo-be-dev` chamber namespace. Requires Tailscale + AWS SSO, because
+  * dev (--dev): https://api-ng-private-dev.reevo.ai, signed with the dev key read via
+    chamber from the dev-v2 AWS account. Requires Tailscale + AWS SSO, because
     minting reads the user's current `jwt_version` from the dev database.
 
 Self-contained (no devkit dependency; devkit's backend-request was reference only).
@@ -54,8 +54,12 @@ _LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
 # (public webhook intake) and 404s every /api route.
 _DEV_HOSTS = {"api-ng-private-dev.reevo.ai"}
 
-# Chamber namespace holding the dev signing key and dev DB password.
+# Dev secrets live in the dev-v2 AWS account; the shell's default profile holds prod keys
+# only. Plain config (JWT issuer/audience/min version, DB user) sits in `reevo-be-dev`,
+# secrets (JWT signing key, DB password) in `secrets-reevo-be-dev`.
+_AWS_PROFILE = "dev-v2"
 _CHAMBER_NS = "reevo-be-dev"
+_CHAMBER_SECRETS_NS = "secrets-reevo-be-dev"
 
 # Minting against dev must read `user.jwt_version` from the DEV database — a token
 # signed with the dev key but stamped from the local DB yields a valid signature
@@ -66,7 +70,6 @@ _DEV_DB_ENV = {
     ),
     "SALESTECH_BE_DB_PORT": "5432",
     "SALESTECH_BE_DB_BASE": "reevo_main",
-    "SALESTECH_BE_DB_USER": "reevo_db_user",
 }
 
 
@@ -92,24 +95,26 @@ def backend_dir() -> Path:
     sys.exit("could not locate salestech-be to mint a token")
 
 
-def _chamber(key: str) -> str:
-    """Read one value from the dev chamber namespace. Values are never printed."""
+def _chamber(key: str, namespace: str = _CHAMBER_NS) -> str:
+    """Read one value from a dev chamber namespace. Values are never printed."""
     result = subprocess.run(
-        ["chamber", "read", _CHAMBER_NS, key, "-q"],
+        ["chamber", "read", namespace, key, "-q"],
         capture_output=True,
         text=True,
         timeout=120,
         check=False,
+        env=dict(os.environ, AWS_PROFILE=_AWS_PROFILE),
     )
     if result.returncode != 0:
         sys.exit(
-            f"chamber read {_CHAMBER_NS}/{key} failed (exit {result.returncode}):\n"
+            f"chamber read {namespace}/{key} failed (exit {result.returncode}):\n"
             f"{result.stderr.strip()}\n"
-            "If this is an SSO/credentials error, run `aws sso login` and retry."
+            f"If this is an SSO/credentials error, run `aws sso login --profile {_AWS_PROFILE}` "
+            "and retry."
         )
     value = result.stdout.strip()
     if not value:
-        sys.exit(f"chamber read {_CHAMBER_NS}/{key} returned an empty value")
+        sys.exit(f"chamber read {namespace}/{key} returned an empty value")
     return value
 
 
@@ -121,7 +126,7 @@ def dev_mint_env() -> dict[str, str]:
     """
     env = dict(os.environ)
     env.update(_DEV_DB_ENV)
-    env["SALESTECH_BE_JWT_SECRET"] = _chamber("salestech_be_jwt_secret")
+    env["SALESTECH_BE_JWT_SECRET"] = _chamber("salestech_be_jwt_secret", _CHAMBER_SECRETS_NS)
     env["SALESTECH_BE_JWT_ISSUER"] = _chamber("salestech_be_jwt_issuer")
     env["SALESTECH_BE_JWT_AUDIENCE"] = _chamber("salestech_be_jwt_audience")
     # ReevoJWTClaims.version defaults to the CLIENT's setting (types.py:88), while the
@@ -130,8 +135,9 @@ def dev_mint_env() -> dict[str, str]:
     env["SALESTECH_BE_JWT_MINIMUM_REQUIRED_TOKEN_VERSION"] = _chamber(
         "salestech_be_jwt_minimum_required_token_version"
     )
+    env["SALESTECH_BE_DB_USER"] = _chamber("salestech_be_db_user")
     env["SALESTECH_BE_DB_PASS"] = os.environ.get("DB_PASSWORD") or _chamber(
-        "salestech_be_db_pass"
+        "salestech_be_db_pass", _CHAMBER_SECRETS_NS
     )
     return env
 
