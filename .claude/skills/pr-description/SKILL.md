@@ -138,21 +138,27 @@ evidence there is — state it. In a repo with CI, it isn't.
 > list; on PR #33943 it produced several paragraphs of pytest / ruff / mypy / bake-staleness
 > results ahead of the one live spot-check that actually mattered.
 
-### Never claim `N/A` in `## Verification Metrics` on a runtime-relevant diff
+### `## Verification Metrics` lists only what the diff can regress — else a specific `N/A`
 
-If the diff touches anything executable — any `.py` outside `tests/`, a migration,
-`pyproject.toml` / `uv.lock`, `scripts/`, a Makefile, a Dockerfile — the section must carry
-real `metric:` / `dashboard:` / `monitor:` checkbox lines. `N/A` is for a diff that deploys
-no behaviour at all (docs-only, tests-only, repo-metadata-only).
+Every metric line must watch something the diff actually changes: a touched route, a touched
+`@workflow.defn` / `@activity.defn`, a new metric call, or a default declared in the touched
+domain's `CLAUDE.md`. Never add a metric for code the diff doesn't touch to fill the
+section — a generic `temporal_activity_execution_failed{activity_type:execute_flow_segment}`
+on a copy or config change is the classic case. CI's LLM grader fails it as irrelevant.
 
-If the work to find a metric turns up nothing, that is a signal to look harder at the
-Temporal-workflow and route fallbacks, not a licence to write `N/A`.
+When that search finds nothing on a runtime diff, write one line `N/A — <specific reason>`
+that names the change, e.g. `N/A — copy-only change to V2 node field labels; no route,
+workflow or activity changed`. Two shapes the deterministic validator rejects, so never
+write them on a runtime diff:
 
-> supersedes: `salestech-be` `.agents/skills/pr-description/SKILL.md` claims "the bot's
-> parser treats absence of `- [ ]` checkbox lines as a no-op, so `N/A` lines are trivially
-> ignored." The deterministic validator actively rejects a runtime-diff `N/A`, so following
-> that sentence gets the PR denied — it was one of the three `salestech-be` PR #33134
-> failures.
+- an `N/A` whose reason says docs-only / tests-only / metadata-only / documentation;
+- any `N/A` when the diff touches an Alembic migration or a route `views.py` — emit those
+  metrics instead.
+
+> supersedes: an earlier version of this override banned every runtime-diff `N/A`, on the
+> belief that the validator rejects them all. It rejects only the two shapes above, and the
+> ban made the agent pad the section with unrelated metrics — about ten `salestech-be` PRs
+> failed validate-description on metric relevance in Oct 2026 (#39236, #39188, #38765).
 
 ### `## Post-deployment Verification` is either one `N/A` line or real checks — never both
 
