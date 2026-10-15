@@ -19,14 +19,21 @@ Leave the exhaustive sweep to GitHub PR CI.
   that one is 605 test files (~17k tests) and costs about the same as the whole tree.
 - ❌ `make pytest …` — it runs with `-n 12`, fanning pytest-xdist across 12 cores.
 
-## Hard-enforced: at most 5 test files and 2 xdist workers per run
+## Hard-enforced: one run at a time, at most 5 test files and 2 xdist workers
 
 `test_scope_gate_hook.py` (PreToolUse on Bash) **denies** any pytest run that covers more than
 **5 test files** (a named file counts 1, a directory counts the test files under it), any run
 that names no path at all (bare `pytest`, `make pytest`), and `make pytest-k` / `make falkor-ci`.
 A worker count above **2** (`-n 12`, `-n auto`, `make pytest <files>`) is **rewritten** to
-`-n 2` and runs. Two escape hatches, both visible in the command itself: `--collect-only`, and a
+`-n 2` and runs — **1** when any path is under `tests/integration/`, since each integration worker
+holds the whole app. Two escape hatches, both visible in the command itself: `--collect-only`, and a
 literal `MT_TEST_SCOPE_GATE=0` prefix. The caps match salestech-be's Assimilation Harness.
+
+It also **denies a run while another pytest is alive** on the machine (any session or subagent;
+the message names the PID) and any `run_in_background` pytest, and raises a Bash `timeout` under
+10 minutes to 10 minutes so a run is never auto-backgrounded. Per-command caps couldn't see the
+2026-10-12 incident: four in-scope runs overlapped — one a timed-out run relaunched on top of
+itself — and reached ~60 GB on a 36 GB machine.
 
 **Why a hook and not more words:** prose already failed here once. The `implementer` agent
 definition carried "never run a whole test suite locally" verbatim at the moment a subagent ran
