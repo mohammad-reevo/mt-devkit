@@ -1,14 +1,14 @@
 ---
 name: merged-prs-digest
-description: DM me on Slack a list of my PRs that merged across salestech-be and frontend-monorepo — the last 24 hours by default, or an optional date range split into one message per day. One `• <title> - <repo>#<number>` line per PR, the `<repo>#<number>` a clickable link. Reads GitHub with `gh`, skips any PR I already linked in #team-crm-workflow-reviews (checked with a paginated search, never a capped history read), and posts to my own Slack DM only. Triggers on "merged PRs digest", "DM me my merged PRs", "what did I merge today", "what did I merge this week", "/merged-prs-digest".
+description: Post to my Slack channel #workflow-slack-testing a list of my PRs that merged across salestech-be and frontend-monorepo — the last 24 hours by default, or an optional date range split into one message per day. One `• <title> - <repo>#<number>` line per PR, the `<repo>#<number>` a clickable link. Reads GitHub with `gh`, skips any PR I already linked in #team-crm-workflow-reviews (checked with a paginated search, never a capped history read), and posts to #workflow-slack-testing only. Triggers on "merged PRs digest", "post my merged PRs", "what did I merge today", "what did I merge this week", "/merged-prs-digest".
 ---
 
-# merged-prs-digest — DM me what merged
+# merged-prs-digest — post what merged to my channel
 
 > Personal harness skill, self-contained. Standalone.
 
-My own DM is the only destination. This is not the "never message people" boundary in
-`github.md` — nobody else receives anything.
+My own channel, #workflow-slack-testing, is the only destination. Posting there is my standing
+ask, not the "never message people" boundary in `github.md`.
 
 ## 0. Pick the mode
 
@@ -102,10 +102,10 @@ verbatim — no rewording.
 **Nothing left ⇒ send nothing.** Tell me none merged, or that every one was already in the
 channel, and stop.
 
-## 4. Send it to my DM
+## 4. Post it to my channel
 
-`mcp__slack__conversations_add_message` with `channel_id: D09CJ1Z7201` (my self-DM; I'm
-`U09CJ1XJLEM`), `content_type: text/plain`, and the drafted message as `text` — one call per
+`mcp__slack__conversations_add_message` with `channel_id: C09PUH99X6C`
+(#workflow-slack-testing), `content_type: text/plain`, and the drafted message as `text` — one call per
 message, oldest day first.
 
 **`missing_scope`?** The `xoxp` user token in `~/.claude.json` lacks `chat:write`. Tell me
@@ -113,9 +113,9 @@ to add it under User Token Scopes in the Slack app, reinstall, and swap the new 
 
 **Tool missing?** `slack-mcp-server` hides it unless `SLACK_MCP_ADD_MESSAGE_TOOL` is set.
 Don't work around it (no `curl` with the token). Tell me to add
-`"SLACK_MCP_ADD_MESSAGE_TOOL": "D09CJ1Z7201"` to the `slack` server's `env` in
+`"SLACK_MCP_ADD_MESSAGE_TOOL": "C09PUH99X6C"` to the `slack` server's `env` in
 `~/.claude.json` and restart Claude Code. The channel-ID value allows posting only to
-that DM.
+that channel.
 
 ## 5. Report
 
