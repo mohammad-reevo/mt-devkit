@@ -25,7 +25,11 @@ Pushing it triggers no CI. Its images are private to repo members, like the PR.
 `<!-- vercel-deploy-previews -->`), which talks to the dev backend. Anything needing a backend
 change: a local stack (`local-stack`).
 
-**Sign in as the agent user** — `mohammad+agent@reevo.ai`, an admin of the dev org
+**On a local stack, skip sign-in.** The agent user doesn't exist in the stack's pool org;
+`local-stack up` writes the frontend a session override for the pool org's seeded admin, so the
+stack's frontend opens already signed in.
+
+**On the Vercel preview, sign in as the agent user** — `mohammad+agent@reevo.ai`, an admin of the dev org
 `cce7b290-8a08-4904-a6c7-2b6613877cf5`. Credentials live in `~/.config/reevo/agent-login.env`
 (`AGENT_EMAIL`, `AGENT_PASSWORD`, mode 600). **Never print the password or type it through a tool
 argument** — the transcript would keep it. Instead, serve it once from localhost and have the
