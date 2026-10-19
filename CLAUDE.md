@@ -24,7 +24,8 @@ scope → plan → implement → verify → babysit → done   (conducted by wor
 Standalone tools: `pr-review` (review a diff or a teammate’s PR), `pr-explanation` (orient me to
 a PR/branch/diff — files in reading order, no findings), `address-comments` (triage the
 review comments on my PR, then act on the agreed ones), `pr-description` (write a PR body —
-routes to the target repo’s convention and preflights it), `progress-report` (a lead-facing project progress report in Notion), `todo-list` (the session's per-PR todo list, kept in a file), `make-diagram` (ASCII diagram
+routes to the target repo’s convention and preflights it), `pr-screenshots` (capture app
+screenshots as the agent's dev user and embed them in a PR body via the `pr-media` branch), `progress-report` (a lead-facing project progress report in Notion), `todo-list` (the session's per-PR todo list, kept in a file), `make-diagram` (ASCII diagram
 of a design or flow), `author-knowledge-base` (the cross-session knowledge base), `worktree`, `db` (local/dev
 Postgres), `snowflake` (reporting warehouse),
 `langfuse-traces` (analyze LLM traces — latency, throughput, tokens),

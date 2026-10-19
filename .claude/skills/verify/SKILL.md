@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Verification phase of my personal dev workflow. Takes the pushed, reviewed branch from implement, implicitly picks a verification strategy (run scripts / skip / in-app), opens the PR (using the relevant repo's own pr-description skill + template), then proves it works — in-app checks included, run by the agent itself against the PR's Vercel preview (FE-only) or a local stack (BE), with screenshots saved to ~/Downloads/images/<slug>/ and listed in the PR body. Only what genuinely needs me stays pending in the PR body. Directly invocable on any branch. Use after implement, or to verify + PR a branch on its own.
+description: Verification phase of my personal dev workflow. Takes the pushed, reviewed branch from implement, implicitly picks a verification strategy (run scripts / skip / in-app), opens the PR (using the relevant repo's own pr-description skill + template), then proves it works — in-app checks included, run by the agent itself against the PR's Vercel preview (FE-only) or a local stack (BE), with screenshots captured and attached to the PR body via pr-screenshots. Only what genuinely needs me stays pending in the PR body. Directly invocable on any branch. Use after implement, or to verify + PR a branch on its own.
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -11,7 +11,7 @@ description: Verification phase of my personal dev workflow. Takes the pushed, r
 
 You pick up a **pushed, reviewed, green branch** (from implement) and carry it to an **open
 PR**, with the change proven as far as it can be proven without me. Two jobs: open the PR, and
-run the verification. Only what genuinely needs me (a human login I haven't provided) is written
+run the verification. Only what genuinely needs me (a human login the agent doesn't have) is written
 into the PR body as pending — I pick that up with the PR, never during the drive.
 
 Not your job: unit/integration **test-building** is decided in scope and built in
@@ -49,7 +49,7 @@ for me — all three strategies run to completion inside the drive.
 
 Open the PR on the pushed branch as soon as you've picked the strategy. The branch is already
 reviewed and green from implement, so the PR isn't premature — and the in-app strategy needs it:
-the Vercel preview builds from it, and its body lists the screenshots. (For a fast
+the Vercel preview builds from it, and its body carries the screenshots. (For a fast
 **scripts-only / N/A** strategy the order doesn't matter — run the check first if you like.)
 
 Create one PR per repo the change touches, **ready for review — never draft** — two in
@@ -95,14 +95,11 @@ you run the verification.
   patching a contact (`PATCH /api/v1/contacts/{id}`), poll
   `POST /api/v1/flow/user_flow/{id}/flow_runs/_list`, and read `GET /api/v1/flow/flow_run/{id}`.
 
-  **Screenshots** go to `~/Downloads/images/<slug>/` (create it; unlike `~/.claude/tmp/`, it
-  survives `/done`) — give any verifier subagent the same path. GitHub image upload is UI-only, so
-  list each path and what it shows in the PR body's verification section (frontend-monorepo: above
-  `# Visual Verification & UI Demo`; salestech-be: in `## Verification`), noting
-  `validate-description` stays red until one is attached. Edit from the live body, never a local
-  draft.
+  For UI changes, capture and attach screenshots with the **`pr-screenshots`** skill — it signs in
+  as the agent's own dev user, saves to `~/Downloads/images/<slug>/`, and embeds the images in the
+  PR body itself. Give any verifier subagent the same skill.
 
-  Still mine: anything needing a real human login I haven't provided, and attaching the images.
+  Still mine: anything needing a real human login the agent doesn't have.
 
 **Never fake a pass.** If something can't be exercised as it stands (flag off, missing data,
 expired auth), don't route around it with a hack and don't report a result that never ran.
@@ -144,7 +141,7 @@ doesn't wait on that decision.
   convention live and preflights the body — never devkit's PR skills, and nothing duplicated
   into the harness.
 - **Testing is yours to run, never the funnel's to wait on me for.** Only what genuinely needs
-  me (a human login, the image upload) stays in the PR body as pending, named in the hand-back —
+  me (a human login the agent doesn't have) stays in the PR body as pending, named in the hand-back —
   and the drive still carries on to a ready PR.
 - **No state, no auto-transition** (Wave 1: I drive). babysit is a separate phase — don't invoke
   it yourself; hand back to `workflow`, which starts it once the PR is open.

@@ -69,6 +69,8 @@ These are mine and apply to every repo:
 - **Editing an existing PR: fetch the live body first** (`gh pr view <n> --json body -q .body`)
   and edit that text. Never rebuild it from a local draft — that silently wipes screenshots
   and videos I attached in the UI (`github.md`).
+- **Visual Verification media is attached with the `pr-screenshots` skill**, not left for me to
+  drag in. Until it runs, leave the template placeholder in place.
 
 ## Step 4 — preflight before the PR goes up
 
