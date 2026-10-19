@@ -1,6 +1,6 @@
 ---
 name: local-stack
-description: Run several port-isolated local stacks at once — one per worktree, so more than one in-flight PR can be exercised in the app simultaneously. Each stack gets its own backend/frontend/realtime ports, its own Temporal namespace and Kafka consumer groups, and its own seeded dev org. Three modes — up / down / list. Distinct from `env-manager`, which owns the single default stack on 8000/3000/8787. Triggers on "run a second stack", "run two backends", "spin up a stack for this worktree", "start a parallel stack", "local-stack up/down/list", "/local-stack".
+description: Run several port-isolated local stacks at once — one per worktree, so more than one in-flight PR can be exercised in the app simultaneously. Each stack gets its own backend/frontend/realtime ports, its own Temporal namespace and Kafka consumer groups, and an org from a fixed pool of pre-seeded orgs. Modes — up / down / list / down-all / seed-pool. Distinct from `env-manager`, which owns the single default stack on 8000/3000/8787. Triggers on "run a second stack", "run two backends", "spin up a stack for this worktree", "start a parallel stack", "local-stack up/down/list", "/local-stack".
 ---
 
 > Personal rebuild — mt-devkit owns the front door; salestech-be still owns the isolation.
@@ -8,7 +8,8 @@ description: Run several port-isolated local stacks at once — one per worktree
 # local-stack — one stack per worktree
 
 Bring up a **port-isolated** backend + frontend + realtime for a worktree, so several PRs can be
-running locally at the same time. Ports derive from a slot index (1–15):
+running locally at the same time. Ports derive from a slot index — the lowest free one in the
+pool (1–5):
 
 ```
 backend 8000+index    frontend 3000+index    realtime 8787+index
@@ -18,7 +19,9 @@ backend 8000+index    frontend 3000+index    realtime 8787+index
 bash .claude/skills/local-stack/stack.sh up
 bash .claude/skills/local-stack/stack.sh up --name planner-inline-first -- --askreevo --skip-org-setup
 bash .claude/skills/local-stack/stack.sh down --name planner-inline-first
-bash .claude/skills/local-stack/stack.sh list
+bash .claude/skills/local-stack/stack.sh list         # every stack, and which of its ports are listening
+bash .claude/skills/local-stack/stack.sh down-all     # every stack (env-manager's `kill stacks`)
+bash .claude/skills/local-stack/stack.sh seed-pool    # once, from main: seed the pool orgs
 ```
 
 `--name` is the **worktree** name (under `<main>/worktrees/`); omit it and the worktree
@@ -26,7 +29,27 @@ containing the cwd is used. Everything after `--` passes through to the underlyi
 `--workers <flows,graph,bulk,crm-sync>`, `--askreevo`, `--no-fe`, `--skip-org-setup` on `up`;
 `--restore-env` on `down`.
 
-**Use `--skip-org-setup` on every re-run** — org setup takes minutes and is idempotent.
+## Framework — who owns what
+
+- **Each worktree session owns its own stack**: `up` when it needs the app, `down` when it's
+  finished. `/done` runs `down` for every worktree it tears down. The default stack
+  (:8000/:3000/:8787, `env-manager`) is reserved for the orchestrator session on `main`.
+- **The orchestrator owns the shared layer**: Docker, migrations, and resets (`env-manager`'s
+  `reset envs` runs `down-all` first). Migrations happen once, from `main`; a stack that needs an
+  unmerged migration is answered by merging it first.
+- **Slots and orgs come from a pool of 5.** `up` takes the lowest free slot, and the org is derived
+  from the slot, so the first concurrent stack runs on pool org 1, the second on org 2. `seed-pool`
+  seeds all five once; integrations a fresh org lacks (Outreach OAuth) are added to each by hand,
+  once. Nothing creates or removes a pool org, so `down` has nothing to clean up there.
+- **Every `up` re-writes only the frontend's session token** for its slot's org (`--org-token-only`)
+  — seconds, not the minutes a full org setup takes. After a reset a session may come back on a
+  different slot; that's fine, the pool orgs are seeded alike. An `up` on an unseeded pool org
+  fails and names `seed-pool`.
+- **A salestech-be branch that predates the pool** runs as before: a hashed slot (1–15) and its
+  own per-slot org, seeded on first `up`. `stack.sh` prints a note when that happens.
+
+Which slots are claimed lives in one host-global registry (`~/.config/reevo/instances.json`,
+`fcntl`-locked), so two sessions never take the same slot. `list` reads it and probes each port.
 
 ## What this owns, and what it delegates
 
@@ -75,7 +98,8 @@ holding `salestech-be/` and `frontend-monorepo/` as siblings), so they agree on 
 port-agnostic — `kill-be` is `pkill -f salestech_be`, `kill-rt` is `pkill -f "pnpm.*dev"` — so
 either one kills **every** stack on the machine, which is precisely what this skill exists to
 prevent. `stack.sh down` is scoped: a PID file plus a process-tree walk, then `reevo-local down`
-frees the slot and deletes that instance's Kafka topics.
+frees the slot and deletes that instance's Kafka topics. `env-manager`'s `kill stacks` row is the
+exception that proves it: it delegates to `down-all` here rather than killing anything itself.
 
 Conversely, `env-manager`'s `run backend` starts an un-namespaced backend on :8000. That is fine
 alongside numbered stacks (different port, different Temporal namespace) — just don't kill it with
@@ -88,7 +112,7 @@ this skill or vice versa.
 | Ports (backend / frontend / realtime) | **Postgres** — one database, one set of migrations |
 | Temporal namespace | **Redis**, **FalkorDB** |
 | Kafka topics + consumer groups | **Kafka broker**, **Temporal server** |
-| Seeded dev org (deterministic per slot) | The Docker dep stack itself |
+| Pool org (slot N ⇒ org N) | The Docker dep stack itself |
 
 So a migration you run in one stack is live in all of them, and FalkorDB writes are not org-filtered
 per instance. Isolation is about *processes and message routing*, not data.
@@ -109,9 +133,8 @@ would overwrite each other. See `.claude/rules/local-logs.md`.
   seed are backend contract. Wrap them; don't fork them.
 - **Never tear down with `env-manager`** (and never tell me to) — its kills hit every stack.
 - **Never start or stop Docker from here.** One shared dep stack, owned by `env-manager`.
-- **Slots are allocated lazily at `up`**, never at `worktree create` — there are only 15, and most
-  worktrees never run a stack.
-- **A preflight failure is not retried under the same name.** The slot is a hash of the instance
-  id, so the same name lands on the same slot; `down` first, then use a differently-named worktree.
+- **Slots are allocated lazily at `up`**, never at `worktree create` — there are only 5 in the
+  pool, and most worktrees never run a stack.
+- **A preflight failure keeps its slot claimed.** Free the port, or `down` to release the slot.
 - **Every stack needs its own three checkouts.** That is what the `worktree` skill produces; don't
   point two stacks at one frontend checkout, whatever the flags allow.

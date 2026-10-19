@@ -18,11 +18,13 @@ PASSTHRU=""
 
 usage() {
   cat <<'EOF'
-Usage: stack.sh up|down|list [--name <worktree>] [-- <passthrough flags>]
+Usage: stack.sh up|down|list|down-all|seed-pool [--name <worktree>] [-- <passthrough flags>]
 
-  up     allocate a slot, preflight its ports, bring the stack up
-  down   tear this worktree's stack down and free its slot
-  list   show every allocated instance and its ports
+  up         take the lowest free pool slot (1-5), preflight its ports, bring the stack up
+  down       tear this worktree's stack down and free its slot
+  list       show every allocated instance, its ports, and which ports are listening
+  down-all   tear down every allocated instance (env-manager's `kill stacks`)
+  seed-pool  seed + bootstrap the pool orgs (slots 1-5) once; re-running is safe
 
   --name <worktree>   worktree under <main>/worktrees/ (default: the one cwd sits in)
 
@@ -41,7 +43,7 @@ EOF
 [ $# -gt 0 ] || { usage; exit 2; }
 MODE="$1"; shift
 case "$MODE" in
-  up|down|list) ;;
+  up|down|list|down-all|seed-pool) ;;
   -h|--help) usage; exit 0 ;;
   *) echo "error: unknown mode '$MODE'" >&2; usage; exit 2 ;;
 esac
@@ -111,9 +113,82 @@ normalize_instance_id() {
 
 INSTANCE="$(normalize_instance_id "$(basename "$WT")")"
 
+# --- pool ---------------------------------------------------------------------
+# Every stack draws from a fixed pool of POOL_SIZE orgs, seeded once by `seed-pool`:
+# REEVO_SLOT_POOL makes the allocator hand out the lowest free slot, and the org is
+# derived from the slot, so the Nth concurrent stack runs on pool org N. A pool org
+# is never created per stack and never removed, so connections added to it by hand
+# (Outreach OAuth) survive every down/up.
+POOL_SIZE=5
+# A salestech-be branch cut before the pool landed has neither the allocator's
+# REEVO_SLOT_POOL nor stack_up.sh's --org-token-only. Legit business flow: such a
+# stack runs exactly as before (hashed slot, its own per-slot org), not an error.
+if grep -q -- '--org-token-only' "$STACK_SCRIPTS/stack_up.sh"; then
+  POOL=1
+  export REEVO_SLOT_POOL="$POOL_SIZE"
+else
+  POOL=0
+  echo "note: this worktree's salestech-be predates the org pool — hashed slot, per-slot org" >&2
+fi
+
+# Every registry record as "<index> <instance id> <salestech-be path>", one per line.
+registry_records() {
+  ( cd "$BE_DIR" && uv run python - <<'PY'
+from scripts.local_dev.instance_isolation import InstanceRegistry
+
+for record in InstanceRegistry().list_all():
+    print(record.index, record.instance_id, record.workspace_path)
+PY
+  )
+}
+
+port_state() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1 && echo "up" || echo "down"; }
+
 # --- list ---------------------------------------------------------------------
+# The registry says which slots are claimed, not whether anything still runs on
+# them, so each port is probed the way env-manager's `check` rows do.
 if [ "$MODE" = "list" ]; then
-  ( cd "$BE_DIR" && uv run python -m scripts.local_dev.cli list )
+  records="$(registry_records)"
+  [ -n "$records" ] || { echo "no stacks allocated"; exit 0; }
+  printf '%s\n' "$records" | while read -r index id path; do
+    be=$((8000 + index)); fe=$((3000 + index)); rt=$((8787 + index))
+    printf '  [%2s] %-24s backend :%s %s · frontend :%s %s · realtime :%s %s   %s\n' \
+      "$index" "$id" "$be" "$(port_state "$be")" "$fe" "$(port_state "$fe")" \
+      "$rt" "$(port_state "$rt")" "$(dirname "$path")"
+  done
+  exit 0
+fi
+
+# --- down-all -----------------------------------------------------------------
+# Each stack is torn down by its own worktree's stack_down.sh, so a stack on an older
+# salestech-be branch is stopped by the scripts it was started with.
+if [ "$MODE" = "down-all" ]; then
+  records="$(registry_records)"
+  [ -n "$records" ] || { echo "no stacks allocated"; exit 0; }
+  printf '%s\n' "$records" | while read -r index id path; do
+    wt="$(dirname "$path")"
+    if ! is_worktree_root "$wt"; then
+      # Legit business flow: a stack started outside the mt-devkit layout has no
+      # sibling frontend/realtime to derive; it is named in the output, left running,
+      # and the caller reports it.
+      echo "left running: '$id' (slot $index) — $path is not an mt-devkit worktree; stop it with \`reevo-local down $id\`"
+      continue
+    fi
+    echo "tearing down '$id' (slot $index, worktree: $wt)"
+    ( cd "$path" && bash "$path/.claude/skills/reevo-local-stack/scripts/stack_down.sh" \
+        --name "$id" --fe-repo "$wt/frontend-monorepo" --realtime-repo "$wt/reevo-realtime" ) </dev/null
+  done
+  exit 0
+fi
+
+# --- seed-pool ----------------------------------------------------------------
+if [ "$MODE" = "seed-pool" ]; then
+  [ "$POOL" -eq 1 ] || { echo "error: seed-pool needs a salestech-be with the org pool (run it from main)" >&2; exit 1; }
+  for slot in $(seq 1 "$POOL_SIZE"); do
+    echo "seeding pool org for slot $slot…"
+    ( cd "$BE_DIR" && uv run python -m scripts.local_dev.cli org-setup --slot "$slot" )
+  done
+  echo "pool seeded: slots 1-$POOL_SIZE. Add per-org integrations (e.g. Outreach) by hand, once."
   exit 0
 fi
 
@@ -171,11 +246,20 @@ if [ -n "$BUSY" ]; then
   printf '%s' "$BUSY" >&2
   cat >&2 <<EOF
 
-The slot is a hash of the instance name, so re-running under '$INSTANCE' lands on
-slot $INDEX again. Free the port, or run the stack from a differently-named worktree.
-Release this slot first:  stack.sh down --name $(basename "$WT")
+Free the port, then re-run. The slot stays claimed until you release it:
+  stack.sh down --name $(basename "$WT")
 EOF
   exit 1
+fi
+
+# A pool org is already seeded, so the slow org-setup (migrate + seed + bootstrap)
+# is skipped and only the frontend's session token is written for this slot's org —
+# which can differ from this worktree's last run, so the token is never reused.
+if [ "$POOL" -eq 1 ]; then
+  case " $PASSTHRU " in
+    *" --skip-org-setup "*) ;;
+    *) PASSTHRU="$PASSTHRU --org-token-only" ;;
+  esac
 fi
 
 echo "slot $INDEX — backend :$BE_PORT  frontend :$FE_PORT  realtime :$RT_PORT"
