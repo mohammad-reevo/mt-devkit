@@ -12,6 +12,10 @@ walking through review comments, or any design discussion.
   they bear on, never as their own block. A finding that bears on no open question waits.
 - **Ask only what blocks the next step.** Questions that only arise from my answers come in the
   next turn.
+- **Research before you ask, never offer to.** When a question turns on a fact the code or a
+  read-only tool can settle, settle it first — a subagent keeps it out of context. Never end a
+  turn with "want me to check?". Writes, outward-facing actions and long investigations still
+  get asked.
 - **Answering me:** ≤5 lines, one point, no tables. Depth only when I ask for it ("explain in more
   detail", "deep dive").
 - A skill's own report format (address-comments' numbered report, pr-review's tiers) still wins
