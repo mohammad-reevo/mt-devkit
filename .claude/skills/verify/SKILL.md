@@ -72,8 +72,7 @@ targeted tests, the commit hook ran lint and types, and CI runs them again — a
 sentence. Don't transcribe those results into the body; `## Verification` is for what CI cannot
 prove (`pr-description` § Overrides).
 
-Report the PR link right away, so I can start attaching my own verification media to it while
-you run the verification.
+Report the PR link right away, so I can start reading it while you run the verification.
 
 ## 3. Verify per the strategy
 
