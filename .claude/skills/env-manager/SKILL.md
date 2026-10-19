@@ -1,6 +1,6 @@
 ---
 name: env-manager
-description: Manage local Reevo dev environment (backend, frontend, realtime, docker) via envctl.sh, the script the user's ~/.zshrc aliases also wrap. Triggers on "run backend", "kill backend", "re-run backend", "check backend", "generate backend openapi spec", "run frontend", "run frontend with dev", "kill frontend", "re-run frontend", "check frontend", "generate frontend openapi spec", "run realtime", "kill realtime", "re-run realtime", "check realtime", "run all-envs", "kill all-envs", "re-run all-envs", "check all-envs", "run docker", "kill docker", "re-run docker", "restart docker", "check docker", "reset envs", "reload aliases", "pull <env_name>", "checkout <branch_name> <env_name>", "merge <branch_name> <env_name>", "check branch <env_name>".
+description: Manage local Reevo dev environment (backend, frontend, realtime, docker) via envctl.sh, the script the user's ~/.zshrc aliases also wrap. Triggers on "run backend", "kill backend", "re-run backend", "check backend", "generate backend openapi spec", "run frontend", "run frontend with dev", "kill frontend", "re-run frontend", "check frontend", "generate frontend openapi spec", "run realtime", "kill realtime", "re-run realtime", "check realtime", "run all-envs", "kill all-envs", "re-run all-envs", "check all-envs", "kill stacks", "run docker", "kill docker", "re-run docker", "restart docker", "check docker", "reset envs", "reload aliases", "pull <env_name>", "checkout <branch_name> <env_name>", "merge <branch_name> <env_name>", "check branch <env_name>".
 ---
 
 # env-manager
@@ -85,6 +85,8 @@ The map is split into sections by domain. When a row delegates to another row, t
 
 **This skill owns the single default stack — `local-stack` owns the numbered ones.** Every row
 here is pinned to backend :8000, frontend :3000, realtime :8787, and one shared Docker dep stack.
+The default stack is the orchestrator's (the session on `main`); a worktree session runs its own
+numbered stack with `local-stack up` instead.
 Running several stacks at once (one per worktree, on offset ports) is the `local-stack` skill.
 **Never use these kill rows on a numbered stack**: `kill-be` is `pkill -f salestech_be`, which is
 port-agnostic and would kill every stack on the machine. Tear a numbered stack down with
@@ -101,13 +103,14 @@ that the shortcut is "just a reset".
 
 | You say | I run |
 |---|---|
-| reset envs | **kill all-envs** (All-Envs section) → **run docker** (Docker section), in that order. The morning reset: tear the whole stack down, then bring the shared Docker infra back up against fresh `main`. Both rows run start-to-finish — including `run docker`'s `main` refresh (step 0) and its FalkorDB reap (step 4), which is where a night's accumulated test-org graphs get reclaimed. Leaves backend / frontend / realtime **stopped**: `run docker` starts the compose deps only. |
+| reset envs | **kill stacks** (All-Envs section) → **kill backend** / **kill realtime** / **kill frontend** (their sections) — each only if its default port (8000 / 8787 / 3000) is listening → **kill docker** (Docker section) → **run docker** (Docker section), in that order. The morning reset: tear every stack down, then bring the shared Docker infra back up against fresh `main`. Stacks go first so the process-name-based default-stack kills find nothing of theirs to hit, and so each one's slot and Kafka topics are released cleanly; a worktree session just runs `local-stack up` again afterwards (pool orgs live in Postgres, which survives). Both rows run start-to-finish — including `run docker`'s `main` refresh (step 0) and its FalkorDB reap (step 4), which is where a night's accumulated test-org graphs get reclaimed. Leaves backend / frontend / realtime **stopped**: `run docker` starts the compose deps only. |
 
 ### All-Envs
 
 | You say | I run |
 |---|---|
 | run all-envs | **run docker** (Docker section) → **run backend** (Backend section) → **run realtime** (Realtime section) → **run frontend** (Frontend section), in that order. Each `run` is idempotent (stops any running instance first, then starts), so this also recycles whatever is already up — no separate re-run needed. Then poll-until-listening per Rule 8. |
+| kill stacks | `bash $HOME/Desktop/code/mt-devkit/.claude/skills/local-stack/stack.sh down-all`, run from the primary checkout — tears down every numbered stack through its own worktree's scripts and frees its slot. Report each stack it tore down, and any it left running (named in its output). Leaves the default stack and Docker alone. |
 | kill all-envs | **kill backend** (Backend section) → **kill realtime** (Realtime section) → **kill frontend** (Frontend section) → **kill docker** (Docker section), in that order. |
 | check all-envs | **check mt-devkit** (mt-devkit section) → **check backend** (Backend section) → **check frontend** (Frontend section) → **check realtime** (Realtime section) → **check docker** (Docker section), in that order. Run all five and report combined results as **five separate lines** (one per sub-check, preserving each sub-row's "Report a single line" output verbatim — do not join with separators like `·` or `\|`). Do not stop on a NOT LISTENING / NOT RUNNING result (this is a status query, not a workflow step, so Rule 7 does not apply). |
 

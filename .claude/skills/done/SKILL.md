@@ -138,14 +138,18 @@ Run these **per worktree**, for each one that passed its own gate.
    **Release every task the session claimed but didn't drain** — partly addressed, only
    discussed, or any task under **cancel** — per `claude-task` § Claim, so it doesn't read as
    in progress after this session is gone. Name released tasks in the report too.
-4. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
+4. **Release the worktree's local stack** —
+   `bash $MAIN/.claude/skills/local-stack/stack.sh down --name <name>`, run from the primary
+   checkout (no-op if it never ran one; see Guardrails). It must run before step 5 — it tears
+   down through the worktree's own salestech-be scripts.
+5. **Remove the worktree + local branches** — invoke `worktree` `remove <name>` (it exits
    the worktree first, removes the sub-repo + parent worktrees, and deletes the **local**
    feature branches: `mohammad/<slug>` **and** whatever each tree actually had checked out).
    Those differ whenever a session splits its work — one sub-repo ends up on a branch named
    for the second PR rather than for the worktree, and matching on the worktree name alone
    strands it in the primary checkout. **Remote branches are never touched** — they back the
    open PRs and GitHub deletes them on merge.
-5. **Don't touch or pull main** — I handle that separately.
+6. **Don't touch or pull main** — I handle that separately.
 
 ## Report
 What was closed, **per worktree**: the PR link(s), what went into the knowledge base (or that
@@ -158,8 +162,9 @@ Name every project base PR the gate skipped, with its link.
 Two things the report must not leave out:
 - **Every red non-required check the gate waived**, by name and with what it was. It didn't block
   the close-out, but I decide whether it deserves a look.
-- **Whether the removed worktree was hosting a running local service** — the stack is now broken
-  and that's expected, not mysterious. `env-manager` restarts it from wherever I want it next.
+- **Whether the removed worktree had a local stack**, and that `local-stack down` released it — or,
+  if the default stack (`env-manager`, :8000/:3000/:8787) was serving from it, that it is now broken
+  and `env-manager` restarts it from wherever I want it next.
 
 ## Guardrails
 - **Explicit only.** Never auto-run — only on my `/done`.
@@ -176,12 +181,13 @@ Two things the report must not leave out:
   same sentence.
 - **Queued-to-merge waives only *incomplete* CI** — never a red required check, never an open
   thread. It's a wait-skip (the merge is already committed to), not a quality bypass.
-- **Never start, stop, or restart a local service.** A worktree may be hosting the running stack,
-  and removing it breaks that stack — **say so in the report** and leave the killing to
-  `env-manager` in a separate session. This is a rule, not an omission: env-manager's kills are
-  port- and process-name-based (`pkill -9 -f salestech_be`, free tcp:3000) and therefore
-  worktree-agnostic, so a `done` here would take down a backend deliberately started from a
-  different worktree. Closing out one idea must not break another idea's stack.
+- **Stop only the worktree's own stack.** Before removing a worktree, run
+  `bash $MAIN/.claude/skills/local-stack/stack.sh down --name <worktree>` — scoped to that
+  worktree's PIDs and slot, a no-op when it never ran one. Never touch any other stack, the
+  default stack, or Docker: `env-manager`'s kills are port- and process-name-based
+  (`pkill -9 -f salestech_be`, free tcp:3000) and therefore worktree-agnostic, so they would take
+  down a stack deliberately started from a different worktree. Closing out one idea must not break
+  another idea's stack.
 - **All threads, not a filtered list.** Query every thread's `isResolved`; outdated counts as
   open (per `github.md`).
 - **Local branches only.** Never delete or push a remote branch.
