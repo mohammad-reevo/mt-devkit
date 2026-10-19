@@ -1,6 +1,6 @@
 ---
 name: todo-list
-description: Keep and render the session's todo list — two lists, Completed then Todo, one item per unit of work (a PR, or a set of PRs that land together) with its chores (CI, update-branch, review comments, deploy waits) as sub-bullets, persisted to a file so the answer is a read, not a reconstruction; every ask (a bare /todo-list included) re-checks each PR's state, CI, branch and threads live before rendering. Never lists /done or its close-out steps. Kept unasked in any session with two or more PRs. Triggers on "todo list", "what's left", "where are we", "remind me what's left", "anything left", "/todo-list".
+description: Keep and render the session's todo list — two lists, Completed then Todo, one item per unit of work (a PR, or a set of PRs that land together) with its chores (CI, update-branch, review comments, deploy waits) as sub-bullets, persisted to a file so the answer is a read, not a reconstruction; every ask (a bare /todo-list included) re-checks each PR's state, CI, branch and threads live before rendering; when a decision only I can make blocks a PR, the render leads with it and explains it plainly. Never lists /done or its close-out steps. Kept unasked in any session with two or more PRs. Triggers on "todo list", "what's left", "where are we", "remind me what's left", "anything left", "/todo-list".
 ---
 
 # todo-list — the session's todo list
@@ -24,6 +24,10 @@ under each slice's PR.
   the file and keep it current without being asked.
 - **Update at every state change:** a PR opens, merges, or goes ready for review; a chore
   appears (CI red, branch stale, threads open) or clears. Do it in the same turn as the change.
+- **A decision only I can make is a chore too**, under the PR it blocks:
+  `- decision: <question> — recommended: <option>`. Its sources: an open gate question, a review
+  finding that contradicts the plan, a `Pending:` plan line. GitHub can't show it, so the re-check
+  never clears it — it goes when I answer.
 - **Answer from the file.** On "what's left", read it — then re-check it, below — rather than
   re-deriving the list from the conversation or a compaction summary.
 
@@ -82,3 +86,18 @@ each repo's checked-out branch in the worktree), write it, then render.
 - **Never list `/done` or what it does** — worktree teardown, scratch or throwaway-DB cleanup,
   knowledge-base writes, draining a `tasks/` chore. It runs at the end of every session, so it is
   implied; listing it makes a finished list look unfinished.
+
+## A pending decision
+
+When the file holds a `decision:` chore, the render changes so I never have to ask "what do you
+need from me?". No decision → the shape above, unchanged.
+
+1. **Lead line:** "I need one decision from you before <PR> can <next step>."
+2. **The two lists**, as above — the decision stays a terse sub-bullet there.
+3. **The decision**, in plain terms for someone who has lost the thread: what the feature is,
+   what the plan says, what the rule or constraint says and who raised it, what each option
+   costs. A few lines, per `discussion-turns.md`.
+4. **Recommendation** — one line, with why.
+5. **The question**, asked directly.
+
+Several decisions → one numbered block each for 3–5, the lead line counting them.
