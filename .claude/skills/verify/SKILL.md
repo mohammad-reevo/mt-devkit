@@ -93,7 +93,9 @@ you run the verification.
   fresh backend). Don't use `run all-envs` here: it additionally recycles docker and realtime, which
   a webapp check doesn't need and which costs minutes. Then drive the app live (browser MCP) with
   **me directing**: you propose a check, run it when I say go, we look at the result together, I
-  call pass/fail. You can suggest checks; I steer. Capture a screenshot for UI changes.
+  call pass/fail. You can suggest checks; I steer. For UI changes, capture and attach screenshots
+  with the **`pr-screenshots`** skill — it signs in as the agent's own dev user and embeds the
+  images in the PR body itself, so `validate-description` never waits on me.
 
   **Check whose services are already running first.** Ports 8000/3000 are shared across worktrees,
   so another session's stack may hold them — and verifying against it proves nothing about your
