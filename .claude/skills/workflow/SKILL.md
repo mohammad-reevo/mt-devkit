@@ -120,7 +120,7 @@ Invoke each phase skill and let it run to completion — each handles its own in
 - **implement → verify — no gate.** implement ends at a pushed, reviewed, green branch (no PR).
   **Go straight into verify — don't ask, don't wait for me.** Once running, verify opens the PR
   and then runs the verification itself, in-app checks included, before babysit starts. Only a
-  check that genuinely needs me (a human login I haven't provided) is left pending in the PR body —
+  check that genuinely needs me (a human login the agent doesn't have) is left pending in the PR body —
   my touchpoint is when I pick the PR up to review it, not a pause anywhere inside the drive.
 - **verify → babysit — no gate, with an explanation in between.** Once verify opens the PR,
   report the PR link, then run `pr-explanation` on it — the PR is the first thing I read, and the
