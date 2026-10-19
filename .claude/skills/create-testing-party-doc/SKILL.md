@@ -27,7 +27,8 @@ Split by when they're actually needed.
 - **Target Notion page URL** — where the doc gets written (often a blank placeholder page).
 - **PRD URL** — often linked off the Linear project; look there before asking.
 - **Reference testing-party doc URL** (optional) — for structure only; do **not** copy it.
-  Its shape fits *its* feature; derive this doc's shape from this feature (§5).
+  Its shape fits *its* feature; derive this doc's shape from this feature (§5). If none is
+  given, use whichever of the two in § Reference docs fits.
 - **PR context** — which authors and what window. A Linear project's issue assignees
   usually answer this; don't ask what you can look up.
 
@@ -111,6 +112,29 @@ Suggestions come last.
   **Name the concrete input source in each** (a webhook payload, a created/existing
   account, a form field) so each is directly testable. Invite testers to invent their own.
   These are inspiration, not instruction — "What to test" carries the actual work.
+
+**A complex party** — several surfaces × sources, several testers, data that has to exist
+before anyone can test — adds three things to the outline:
+
+- **Test data** — named records per tester (e.g. "[Testing Party] <name> 1–8"), staged before
+  the party, plus anything already set up for them (pre-enrolled records, a shared setup
+  workflow and how to fire it).
+- **Ownership split by surface** — one owner per surface, so no two testers burn the same data.
+- **One checklist table per person** — columns Check / Status (⚪ → 🟢 works · 🟡 off · 🔴
+  broken) / Details & links, so results land in the doc itself.
+
+## Reference docs
+
+Structure only — never copy (§1).
+
+- **Simple** — one feature on one surface:
+  [Workflows Inline Computed Fields Testing Party](https://app.notion.com/p/reevo/Workflows-Inline-Computed-Fields-Testing-Party-3c87019cb5b1800294d6e776210dc56c).
+- **Complex** — several surfaces × sources, five testers, staged data:
+  [Sequences Integration - Testing Party](https://app.notion.com/p/reevo/Sequences-Integration-Testing-Party-3fb7019cb5b180faa2b4d01c62c3a337).
+
+**The complex template still needs work — improve it the next time a complex party comes up.**
+Its outcome had too many checklist rows and a structure that's hard to get through. Try dialing
+each person down to one feature or use case, and raise it with the user before drafting.
 
 ## 6. What does not go in the doc
 
