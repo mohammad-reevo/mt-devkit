@@ -1,6 +1,6 @@
 ---
 name: babysit
-description: Watch CI checks + PR review threads for the current worktree's PR(s) — or, given a project name, every slice PR in that project's index — in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly), and exits by announcing "ready for your review" with the PR link once required checks are green and every thread is resolved. Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) and flags a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Unresolved review threads are handed straight to address-comments, which carries its own gate. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
+description: Watch CI checks + PR review threads for the current worktree's PR(s) — or, given a project name, every slice PR in that project's index — in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly), and exits by announcing "ready for your review" with the PR link once required checks are green and every thread is resolved. Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) and runs update-branch on a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Unresolved review threads are handed straight to address-comments, which carries its own gate. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
 argument-hint: [<project>] [--watch-only]
 allowed-tools:
   - Bash
@@ -71,15 +71,15 @@ Not conflicted → `ScheduleWakeup(120s)` and return (skip in `--watch-only`).
 - **Mergeability — why a run may not exist at all.** `gh pr view <n> --json
   mergeable,mergeStateStatus`. `CONFLICTING` → the PR is dirty, and **a conflicted PR gets no CI
   runs scheduled at all** — so an absent run means dirty far more often than it means too early.
-  Report it, and poll on the 600s comment-watch cadence, not the 120s waiting-for-a-run one: no
-  run is coming until I resolve the conflict. `UNKNOWN` → GitHub is still computing it; re-poll
+  Run update-branch without asking (see *Update-branch*). Only a conflict handed back to me leaves
+  the PR on the 600s comment-watch cadence: no run is coming until I resolve it. `UNKNOWN` → GitHub is still computing it; re-poll
   normally and don't report anything.
 - **Staleness.** Age of the merge-base with the PR's base:
-  `git log -1 --format=%ct $(git merge-base origin/main HEAD)`. Older than **3 days** → report
-  "N days behind `main` — consider `update-branch`". Report only; babysit never merges. Read the
-  base branch first (`gh pr view <n> --json baseRefName`) — on a PR **stacked** on another feature
-  branch the advice is to merge **that parent**, never `main` (`git-merge.md`), and the merge-base
-  to measure is against the parent. **Skip it for a project-drive slice** (base is
+  `git log -1 --format=%ct $(git merge-base origin/main HEAD)`. Older than **3 days** →
+  run update-branch (see *Update-branch*) and say so in the report. Read the base branch first
+  (`gh pr view <n> --json baseRefName`) — on a PR **stacked** on another feature branch,
+  update-branch merges **that parent**, never `main` (`git-merge.md`), and the merge-base to
+  measure is against the parent. **Skip it for a project-drive slice** (base is
   `mohammad/<project>-base` or another slice): the stack is never synced, and `main` is reconciled
   once in the project PR (`workflow` § Final PR).
 - **PR threads — ALL of them, incl. outdated.** Query every thread and read `isResolved`
@@ -91,6 +91,14 @@ Not conflicted → `ScheduleWakeup(120s)` and return (skip in `--watch-only`).
       nodes { isResolved isOutdated path line comments(first:1){nodes{body}} } } } } }'
   ```
   Any `isResolved:false` = unresolved.
+
+**Update-branch — run it, never ask.** In the PR's worktree (`git -C <wt>/<repo>`), per
+`git-merge.md` (stacked PRs included): fetch, merge the base, resolve the conflicts, commit the
+merge, push, and treat the new run as fresh (the *< 20 min* cadence row). A generated file —
+`openapi.json`, `schema.sql` — is regenerated, never resolved by taking a side. Stop and hand back
+only when a conflict needs a judgment between two intents (both sides changed the same logic):
+`git merge --abort`, list the files, and keep watching on the 600s row. Babysit never merges the
+PR itself.
 
 **On a failed CI job** — surface just the failure, not the whole log:
 `gh run view <run-id> --log-failed` (already only the failed steps); if still long, `grep`/`tail`
@@ -129,7 +137,7 @@ those can land at any moment, and they're the reason we don't simply sleep for 2
 | Where things stand | Next wakeup |
 |---|---|
 | PR exists, no CI run registered yet | **120s** — only waiting for the run to appear |
-| PR is `CONFLICTING` — no run will ever be scheduled | **600s** — only comments to watch until I resolve it |
+| PR is `CONFLICTING` and the conflict is handed to me — no run will ever be scheduled | **600s** — only comments to watch until I resolve it |
 | CI in flight, run age **< 20 min** | **600s** — CI won't be done; this poll is for new review comments |
 | CI in flight, run age **≥ 20 min** | **300s** — inside the expected finish window, tighten up to catch the result |
 | CI finished; only unresolved threads left | **600s** — nothing but comments to watch |
@@ -207,7 +215,8 @@ past (~40 min+), and even then as an observation, not a failure.
   polling something that needs me.
 - **Report, don't fix — that rule is about CI.** Surface a failing check and let me decide the
   fix; never dispatch a fix agent, never close out. Review threads are the single exception:
-  they go to `address-comments`, which gates them itself.
+  they go to `address-comments`, which gates them itself. Update-branch is the other: babysit
+  runs it itself (see *Update-branch*).
 - **A `validate-description` failure is still report-only.** It looks like the one CI failure you
   could just fix, but the body usually fails because it is waiting on verification media I attach
   by hand — and rewriting it risks destroying what I already attached (`github.md`). Report it
