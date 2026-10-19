@@ -44,7 +44,9 @@ containing the cwd is used. Everything after `--` passes through to the underlyi
 - **Every `up` re-writes only the frontend's session token** for its slot's org (`--org-token-only`)
   — seconds, not the minutes a full org setup takes. After a reset a session may come back on a
   different slot; that's fine, the pool orgs are seeded alike. An `up` on an unseeded pool org
-  fails and names `seed-pool`.
+  fails and names `seed-pool`. A `seed-pool` slot failing on `user_email_idx` means stale seed users
+  from an older run of that slot's org: `uv run python -m scripts.seed_dev_data --org-id <org>
+  --reset` in salestech-be, then re-run `seed-pool`.
 - **A salestech-be branch that predates the pool** runs as before: a hashed slot (1–15) and its
   own per-slot org, seeded on first `up`. `stack.sh` prints a note when that happens.
 

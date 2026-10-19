@@ -185,7 +185,7 @@ fi
 if [ "$MODE" = "seed-pool" ]; then
   [ "$POOL" -eq 1 ] || { echo "error: seed-pool needs a salestech-be with the org pool (run it from main)" >&2; exit 1; }
   for slot in $(seq 1 "$POOL_SIZE"); do
-    echo "seeding pool org for slot $slot…"
+    echo "seeding pool org for slot ${slot}…"
     ( cd "$BE_DIR" && uv run python -m scripts.local_dev.cli org-setup --slot "$slot" )
   done
   echo "pool seeded: slots 1-$POOL_SIZE. Add per-org integrations (e.g. Outreach) by hand, once."
@@ -219,6 +219,14 @@ if record is None:
 print(record.index)
 PY
 )"
+
+# The registry keeps an instance's slot until `down`, so a stack first brought up before
+# the pool still holds its old hashed slot, whose org is not a seeded pool org.
+if [ "$POOL" -eq 1 ] && [ "$INDEX" -gt "$POOL_SIZE" ]; then
+  echo "error: '$INSTANCE' still holds pre-pool slot $INDEX (pool is 1-$POOL_SIZE)." >&2
+  echo "       Release it once, then re-run:  stack.sh down --name $(basename "$WT")" >&2
+  exit 1
+fi
 
 BE_PORT=$((8000 + INDEX))
 FE_PORT=$((3000 + INDEX))
