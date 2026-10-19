@@ -99,7 +99,7 @@ that phase.
 
 ### 2. Run phases, respecting the gates & stops
 Invoke each phase skill and let it run to completion — each handles its own internal pauses
-(scope agrees the direction, plan approves the plan, verify is user-directed). Then:
+(scope agrees the direction, plan approves the plan). Then:
 
 - **scope → plan — no gate; the scoping discussion is the checkpoint.** Scope is the
   deep-context phase: a full, in-depth look at the work, with every question that needs my call
@@ -119,9 +119,9 @@ Invoke each phase skill and let it run to completion — each handles its own in
   (plan creates + enters the worktree at its start.)
 - **implement → verify — no gate.** implement ends at a pushed, reviewed, green branch (no PR).
   **Go straight into verify — don't ask, don't wait for me.** Once running, verify opens the PR
-  and then proves whatever it can prove unattended. Verification that needs me at a keyboard is
-  written into the PR body as a pending check list — my touchpoint is when I pick the PR up to
-  review it, not a pause anywhere inside the drive.
+  and then runs the verification itself, in-app checks included, before babysit starts. Only a
+  check that genuinely needs me (a human login the agent doesn't have) is left pending in the PR body —
+  my touchpoint is when I pick the PR up to review it, not a pause anywhere inside the drive.
 - **verify → babysit — no gate, with an explanation in between.** Once verify opens the PR,
   report the PR link, then run `pr-explanation` on it — the PR is the first thing I read, and the
   moment it opens is when I want orienting. Then **go straight into babysit** — don't ask, don't
@@ -130,8 +130,8 @@ Invoke each phase skill and let it run to completion — each handles its own in
   skill and let it run its poll loop. The explanation is orientation, not a gate: it never waits
   for a reply before babysit starts.
 
-  **This hop keys off the PR being open, not off verification having passed.** Manual testing is
-  mine to schedule, so verification I couldn't run unattended rides along as an outstanding
+  **This hop keys off the PR being open, not off verification having passed.** A check verify
+  couldn't run because it needs me rides along as an outstanding
   reminder — it never holds the drive. Only a *structural* problem stops here (kickback to plan);
   an expired credential or my being away from the keyboard does not.
 - **babysit → STOP.** babysit paces itself to a ~25-minute CI run (≈10-minute polls, so review
@@ -269,7 +269,7 @@ exactly once, in step 8.
   finishing its job. `/done` is the one transition that stays mine — the workflow never runs or
   surfaces it.
 - **Outstanding manual testing is never a gate.** The drive runs to a watched PR whether or not
-  I've tested it yet; pending verification is reported as a reminder, not a reason to stop one
+  every check could run; pending verification is reported as a reminder, not a reason to stop one
   step short of done.
 - **No new state.** Detect from spec files + git/PR every time; never cache the phase or invent a
   tracking file (Wave 1: files are the contract, I drive). A project drive's index is the one

@@ -17,7 +17,7 @@ scope → plan → implement → verify → babysit → done   (conducted by wor
   Stops for my explicit go-ahead before implement.
 - **implement** — conduct the build via one subagent per task, finalize with the `reviewer`
   trio, then commit + push a reviewed green branch.
-- **verify** — prove it works (user-directed), then open the PR.
+- **verify** — open the PR, then prove it works (in-app checks included).
 - **babysit** — watch CI + PR review threads; unresolved threads hand off to `address-comments`.
 - **done** — gate the PR (CI green + threads resolved), then tear down the worktree.
 
