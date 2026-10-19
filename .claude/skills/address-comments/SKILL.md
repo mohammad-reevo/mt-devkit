@@ -82,7 +82,8 @@ Per comment, three lines at most:
 
 - **#N — `path:line` — <source>** — one line on what it asks.
 - **Holds / doesn't hold / can't tell** — what you checked to decide. A claim you couldn't verify
-  says so; never launder it into certainty. **A question is not a claim** — there is nothing to
+  says so; never launder it into certainty. *Can't tell* is reached only after a targeted
+  read-only check of what the call turns on — never "unless you want me to check X". **A question is not a claim** — there is nothing to
   verify in "why the service layer here?", so don't force it into a verdict; it tiers as *Answer*.
 - **Call** — one or two sentences: what you'd do and why.
 
