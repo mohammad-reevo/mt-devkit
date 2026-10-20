@@ -103,7 +103,7 @@ holding `salestech-be/` and `frontend-monorepo/` as siblings), so they agree on 
 port-agnostic — `kill-be` is `pkill -f salestech_be`, `kill-rt` is `pkill -f "pnpm.*dev"` — so
 either one kills **every** stack on the machine, which is precisely what this skill exists to
 prevent. `stack.sh down` is scoped: a PID file plus a process-tree walk, then `reevo-local down`
-frees the slot and deletes that instance's Kafka topics. `env-manager`'s `kill stacks` row is the
+frees the slot and deletes that instance's Kafka topics and Temporal namespace. `env-manager`'s `kill stacks` row is the
 exception that proves it: it delegates to `down-all` here rather than killing anything itself.
 
 Conversely, `env-manager`'s `run backend` starts an un-namespaced backend on :8000. That is fine
