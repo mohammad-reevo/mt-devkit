@@ -19,7 +19,7 @@ backend 8000+index    frontend 3000+index    realtime 8787+index
 bash .claude/skills/local-stack/stack.sh up
 bash .claude/skills/local-stack/stack.sh up --name planner-inline-first -- --askreevo --skip-org-setup
 bash .claude/skills/local-stack/stack.sh down --name planner-inline-first
-bash .claude/skills/local-stack/stack.sh list         # every stack, and which of its ports are listening
+bash .claude/skills/local-stack/stack.sh list         # every stack that exists, and whether it is running
 bash .claude/skills/local-stack/stack.sh down-all     # every stack (env-manager's `kill stacks`)
 bash .claude/skills/local-stack/stack.sh seed-pool    # once, from main: seed the pool orgs
 ```
@@ -51,7 +51,10 @@ containing the cwd is used. Everything after `--` passes through to the underlyi
   own per-slot org, seeded on first `up`. `stack.sh` prints a note when that happens.
 
 Which slots are claimed lives in one host-global registry (`~/.config/reevo/instances.json`,
-`fcntl`-locked), so two sessions never take the same slot. `list` reads it and probes each port.
+`fcntl`-locked), so two sessions never take the same slot. `list` reads it and probes each port,
+and also shows a stack that was never torn down after the registry dropped its record (its stack
+dir under `~/.config/reevo/stacks/` still names it), and any worktree process holding a stack port
+that nothing tracks at all (`untracked` — `kill` its process group by hand).
 
 ## What this owns, and what it delegates
 
@@ -100,7 +103,7 @@ holding `salestech-be/` and `frontend-monorepo/` as siblings), so they agree on 
 port-agnostic — `kill-be` is `pkill -f salestech_be`, `kill-rt` is `pkill -f "pnpm.*dev"` — so
 either one kills **every** stack on the machine, which is precisely what this skill exists to
 prevent. `stack.sh down` is scoped: a PID file plus a process-tree walk, then `reevo-local down`
-frees the slot and deletes that instance's Kafka topics. `env-manager`'s `kill stacks` row is the
+frees the slot and deletes that instance's Kafka topics and Temporal namespace. `env-manager`'s `kill stacks` row is the
 exception that proves it: it delegates to `down-all` here rather than killing anything itself.
 
 Conversely, `env-manager`'s `run backend` starts an un-namespaced backend on :8000. That is fine
