@@ -1,6 +1,6 @@
 ---
 name: backend-request
-description: Make authenticated HTTP requests to the Reevo backend from my personal harness — LOCAL (localhost:8000) by default, or the deployed DEV backend with `--dev`. Self-contained (no devkit) — reads user/org id from identity.json / identity.dev.json, mints + caches a short-lived JWT via `reevo token generate`, and sends Bearer + x-reevo-* headers. Local and dev only; prod is structurally unreachable. Use to call/verify a backend endpoint, replay a captured request, or benchmark endpoint latency. Triggers on "call the local API", "hit the backend endpoint", "call the dev API", "make a backend request", "replay this API request", "check this endpoint locally", "/backend-request".
+description: Make authenticated HTTP requests to the Reevo backend from my personal harness — LOCAL (localhost:8000) by default, a numbered `local-stack` backend as its pool-org admin with `--stack`, or the deployed DEV backend with `--dev`. Self-contained (no devkit) — reads user/org id from identity.json / identity.dev.json, mints + caches a short-lived JWT via `reevo token generate`, and sends Bearer + x-reevo-* headers. Local and dev only; prod is structurally unreachable. Use to call/verify a backend endpoint, replay a captured request, or benchmark endpoint latency. Triggers on "call the local API", "hit the backend endpoint", "call the dev API", "make a backend request", "replay this API request", "check this endpoint locally", "/backend-request".
 allowed-tools: Bash, Read
 ---
 
@@ -14,6 +14,9 @@ python <this-skill-dir>/rcall.py POST /api/v1/some/endpoint --body '{"k": "v"}'
 python <this-skill-dir>/rcall.py POST /api/v1/some/endpoint --body-file req.json --repeat 5
 python <this-skill-dir>/rcall.py GET  /api/v1/items --query status=active --query limit=10
 
+python <this-skill-dir>/rcall.py --stack GET /api/v1/integration_connections/_list
+python <this-skill-dir>/rcall.py --stack --worktree <name> POST /api/v1/some/endpoint --body '{"k": "v"}'
+
 python <this-skill-dir>/rcall.py --dev GET /api/v1/flow/user_flow/list
 python <this-skill-dir>/rcall.py --dev --write DELETE /api/v1/flow/user_flow/<id>
 ```
@@ -26,13 +29,19 @@ Response JSON → **stdout**; HTTP status + per-call timing + diagnostics → **
 
 ## Targets
 
-| | local (default) | dev (`--dev`) |
-|---|---|---|
-| base URL | `http://localhost:8000` | `https://api-ng-private-dev.reevo.ai` |
-| identity | `identity.json` | `identity.dev.json` |
-| signing key | local dev default | `secrets-reevo-be-dev` chamber, `AWS_PROFILE=dev-v2` |
-| token cache | `~/.claude/tmp/backend-request/token.json` | `…/token.dev.json` |
-| prereqs | backend running locally | **Tailscale** + **chamber** + AWS SSO |
+| | local (default) | stack (`--stack`) | dev (`--dev`) |
+|---|---|---|---|
+| base URL | `http://localhost:8000` | `http://localhost:8000+slot` | `https://api-ng-private-dev.reevo.ai` |
+| identity | `identity.json` | the stack's pool-org admin | `identity.dev.json` |
+| signing key | local dev default | local dev default | `secrets-reevo-be-dev` chamber, `AWS_PROFILE=dev-v2` |
+| token cache | `~/.claude/tmp/backend-request/token.json` | `…/token.stack.json` | `…/token.dev.json` |
+| prereqs | backend running locally | `local-stack up` in that worktree | **Tailscale** + **chamber** + AWS SSO |
+
+**`--stack`** calls the stack of the worktree cwd sits in, or `--worktree <name>`'s. Its port and
+pool org come from salestech-be's own instance registry (`InstanceRegistry`, `org_id_for`), and
+its token from `seed_dev_data --org-id <org> --token` — the same admin and token `local-stack up`
+signs the stack's frontend in with. No identity file to edit, and it follows the stack to a new
+slot after a reset.
 
 **The dev API host is the *private* one.** `api-ng-dev.reevo.ai` is a different ALB group (public webhook intake) and 404s every `/api` route; the API ingress is `api-ng-private-dev.reevo.ai`, restricted by security group to Tailscale / office / Vercel IPs.
 
@@ -54,7 +63,7 @@ Dev uses the **same symmetric HS256 scheme** as local — Auth0 is only the upst
 Edit the relevant identity file (change `user_id` **and** `org_id` together — the user must belong to the org). The cache re-mints automatically when the identity no longer matches.
 
 ## Guardrails
-- **Host allowlist.** Local target accepts only `localhost` / `127.0.0.1` / `::1`; dev target accepts only `api-ng-private-dev.reevo.ai`. Any other host is refused, so **prod is structurally unreachable** — there is no flag that reaches it.
+- **Host allowlist.** Local and stack targets accept only `localhost` / `127.0.0.1` / `::1`; dev target accepts only `api-ng-private-dev.reevo.ai`. Any other host is refused, so **prod is structurally unreachable** — there is no flag that reaches it.
 - **Writes on dev require `--write`.** Any non-GET method with `--dev` is refused without it. Dev is shared, real data that other people depend on — the flag is the deliberate pause.
 - If the backend isn't up locally, the health check says so — start it via the `env-manager` skill (`run backend`). On dev, a failed health check usually means Tailscale is disconnected.
 - If a chamber read fails with an SSO/credentials error, run `aws sso login --profile dev-v2` and retry.

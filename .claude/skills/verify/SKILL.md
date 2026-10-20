@@ -86,7 +86,7 @@ Report the PR link right away, so I can start reading it while you run the verif
     session), signed in as the stack's pool org.
 
   Drive the UI with the browser MCP; read and set up data with **`backend-request`** (`--dev` for
-  dev data). Dev writes (`--dev --write`) stay on clearly-test records or a dedicated test flow —
+  dev data, `--stack` for the worktree's local stack as its pool org). Dev writes (`--dev --write`) stay on clearly-test records or a dedicated test flow —
   never someone else's. A workflow check, for example: find test records
   (`POST /api/v1/contacts/_search_by_display_name_or_email_v2`), configure the test flow's draft
   (`PATCH /api/v1/flow/flow_definition/{id}`), validate it (`POST …/validate_graph`), promote it

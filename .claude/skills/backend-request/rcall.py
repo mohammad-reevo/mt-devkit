@@ -4,8 +4,12 @@ Reads the identity from identity.json (or identity.dev.json with --dev), mints a
 short-lived JWT via `uv run reevo --user-id .. --org-id .. token generate`, caches
 it until near expiry, and sends it as `Bearer` + `x-reevo-*` headers.
 
-Two targets, allowlisted by host — prod is structurally unreachable:
+Three targets, allowlisted by host — prod is structurally unreachable:
   * local (default): localhost/127.0.0.1, signed with the local dev key.
+  * stack (--stack [--worktree <name>]): a numbered `local-stack` backend on localhost:8000+slot,
+    as that stack's pool-org admin. Port and org come from salestech-be's instance
+    registry; the token from `seed_dev_data --token`, the same one `local-stack up`
+    writes for the stack's frontend. No identity file.
   * dev (--dev): https://api-ng-private-dev.reevo.ai, signed with the dev key read via
     chamber from the dev-v2 AWS account. Requires Tailscale + AWS SSO, because
     minting reads the user's current `jwt_version` from the dev database.
@@ -17,6 +21,8 @@ Usage:
     python rcall.py POST /api/v1/some/endpoint --body '{"k": "v"}'
     python rcall.py POST /api/v1/some/endpoint --body-file req.json --repeat 5
     python rcall.py GET  /api/v1/items --query status=active --query limit=10
+    python rcall.py --stack GET /api/v1/monitoring/health
+    python rcall.py --stack --worktree my-worktree POST /api/v1/some/endpoint --body '{"k": "v"}'
     python rcall.py --dev GET /api/v1/flow/user_flow
     python rcall.py --dev --write DELETE /api/v1/flow/user_flow/<id>
 
@@ -191,14 +197,14 @@ def _mint(user_id: str, org_id: str, dev: bool) -> str:
     sys.exit("could not parse a JWT from `reevo token generate` output")
 
 
-def cache_path(dev: bool) -> Path:
+def cache_path(target: str) -> Path:
     """Separate cache per target — a local-signed token must never reach dev."""
-    return _CACHE_DIR / ("token.dev.json" if dev else "token.json")
+    return _CACHE_DIR / {"local": "token.json", "dev": "token.dev.json", "stack": "token.stack.json"}[target]
 
 
 def get_token(user_id: str, org_id: str, dev: bool) -> str:
     """Cached JWT: reuse until ~30s before expiry; re-mint on expiry or identity change."""
-    cache = cache_path(dev)
+    cache = cache_path("dev" if dev else "local")
     if cache.exists():
         try:
             cached = json.loads(cache.read_text())
@@ -217,6 +223,85 @@ def get_token(user_id: str, org_id: str, dev: bool) -> str:
     return token
 
 
+def stack_worktree(name: str) -> Path:
+    """The worktree a stack runs from: <main>/worktrees/<name>, else the one cwd sits in."""
+    if name:
+        return _PRIMARY_BE.parent / "worktrees" / name
+    for cand in (Path.cwd(), *Path.cwd().parents):
+        if (cand / "salestech-be").is_dir() and (cand / "frontend-monorepo").is_dir():
+            return cand
+    sys.exit("not inside a worktree — pass --stack <worktree>")
+
+
+# Run inside the stack's own salestech-be, so slot -> port and slot -> org are read from the
+# backend's instance-isolation contract rather than re-derived here.
+_STACK_LOOKUP = """
+import sys
+from pathlib import Path
+from scripts.local_dev.instance_isolation import InstanceRegistry, org_id_for
+
+workspace = str(Path(sys.argv[1]).resolve())
+for record in InstanceRegistry().list_all():
+    if record.workspace_path == workspace:
+        print(record.app_port, org_id_for(record.index))
+        break
+else:
+    raise SystemExit(f"no local stack registered for {workspace} — run `local-stack up` first")
+"""
+
+
+def _run_in(be_dir: Path, cmd: list[str], *, what: str) -> str:
+    result = subprocess.run(
+        cmd, cwd=be_dir, capture_output=True, text=True, timeout=180, check=False
+    )
+    if result.returncode != 0:
+        sys.exit(f"{what} failed (exit {result.returncode}):\n{result.stderr.strip()}")
+    return result.stdout
+
+
+def stack_target(name: str) -> tuple[str, str, str, str]:
+    """(base_url, user_id, org_id, token) for a numbered local stack, token cached per org."""
+    be_dir = stack_worktree(name) / "salestech-be"
+    if not (be_dir / "pyproject.toml").exists():
+        sys.exit(f"no salestech-be at {be_dir}")
+    port, org_id = _run_in(
+        be_dir,
+        ["uv", "run", "python", "-c", _STACK_LOOKUP, str(be_dir)],
+        what="stack lookup",
+    ).split()
+    base = f"http://localhost:{port}"
+    cache = cache_path("stack")
+    if cache.exists():
+        try:
+            cached = json.loads(cache.read_text())
+            if (
+                cached.get("org_id") == org_id
+                and cached.get("user_id")
+                and cached.get("token")
+                and not _expired(cached["token"])
+            ):
+                return base, cached["user_id"], org_id, cached["token"]
+        except Exception:
+            pass  # Legit business flow: a corrupt/absent cache just means we mint fresh.
+    print(f"minting stack token for pool org {org_id}", file=sys.stderr)
+    out = _run_in(
+        be_dir,
+        ["uv", "run", "python", "-m", "scripts.seed_dev_data", "--org-id", org_id, "--token"],
+        what="`seed_dev_data --token` (is the pool org seeded? see local-stack seed-pool)",
+    )
+    found = dict(
+        line.split("=", 1) for line in out.splitlines() if line.startswith("LOCAL_SESSION_OVERRIDE_")
+    )
+    # The block is .env-formatted, so every value arrives double-quoted.
+    user_id = found.get("LOCAL_SESSION_OVERRIDE_USER_ID", "").strip().strip('"')
+    token = found.get("LOCAL_SESSION_OVERRIDE_ACCESS_TOKEN", "").strip().strip('"')
+    if not user_id or not _JWT.match(token):
+        sys.exit("could not parse the admin user id and token from `seed_dev_data --token`")
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps({"user_id": user_id, "org_id": org_id, "token": token}))
+    return base, user_id, org_id, token
+
+
 def health(base: str) -> bool:
     try:
         with urllib.request.urlopen(f"{base}/api/v1/monitoring/health", timeout=10) as resp:
@@ -229,7 +314,18 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Authenticated Reevo backend caller")
     ap.add_argument("method", choices=["GET", "POST", "PUT", "PATCH", "DELETE"])
     ap.add_argument("path", help="API path, e.g. /api/v1/users")
-    ap.add_argument("--dev", action="store_true", help="target the deployed dev backend")
+    target_group = ap.add_mutually_exclusive_group()
+    target_group.add_argument("--dev", action="store_true", help="target the deployed dev backend")
+    target_group.add_argument(
+        "--stack",
+        action="store_true",
+        help="target a numbered local-stack backend as its pool-org admin",
+    )
+    ap.add_argument(
+        "--worktree",
+        default="",
+        help="with --stack: the worktree whose stack to call (default: the one cwd sits in)",
+    )
     ap.add_argument(
         "--write",
         action="store_true",
@@ -245,12 +341,18 @@ def main() -> None:
     if not args.path.startswith("/api/"):
         sys.exit(f"path should start with /api/ (got '{args.path}')")
 
-    cfg = load_identity(args.dev)
-    base = cfg["base_url"].rstrip("/")
+    if args.worktree and not args.stack:
+        sys.exit("--worktree only applies with --stack")
+    target = "dev" if args.dev else "stack" if args.stack else "local"
+    if target == "stack":
+        base, user_id, org_id, token = stack_target(args.worktree)
+    else:
+        cfg = load_identity(args.dev)
+        base = cfg["base_url"].rstrip("/")
+        user_id, org_id = cfg["user_id"], cfg["org_id"]
     host = urllib.parse.urlparse(base).hostname or ""
     allowed = _DEV_HOSTS if args.dev else _LOCAL_HOSTS
     if host not in allowed:
-        target = "dev" if args.dev else "local"
         sys.exit(
             f"refusing base_url '{base}' — {target} target allows only "
             f"{sorted(allowed)}. This skill reaches local and dev only, never prod."
@@ -262,20 +364,21 @@ def main() -> None:
             "Re-run with --write once you're sure."
         )
 
-    token = get_token(cfg["user_id"], cfg["org_id"], args.dev)
+    if target != "stack":
+        token = get_token(user_id, org_id, args.dev)
     headers = {
         "Authorization": f"Bearer {token}",
-        "x-reevo-user-id": cfg["user_id"],
-        "x-reevo-org-id": cfg["org_id"],
+        "x-reevo-user-id": user_id,
+        "x-reevo-org-id": org_id,
         "Content-Type": "application/json",
     }
 
     if not args.skip_health_check and not health(base):
-        hint = (
-            "check Tailscale / the dev deployment"
-            if args.dev
-            else "is it running? (start it via env-manager)"
-        )
+        hint = {
+            "dev": "check Tailscale / the dev deployment",
+            "stack": "is the stack up? (`local-stack list`)",
+            "local": "is it running? (start it via env-manager)",
+        }[target]
         sys.exit(f"backend not reachable at {base} — {hint}")
 
     url = f"{base}{args.path}"
@@ -321,7 +424,7 @@ def main() -> None:
         )
     if status == 401:
         print("HTTP 401 — token rejected; clearing cache so the next call re-mints.", file=sys.stderr)
-        cache_path(args.dev).unlink(missing_ok=True)
+        cache_path(target).unlink(missing_ok=True)
 
     try:
         print(json.dumps(json.loads(body), indent=2))
