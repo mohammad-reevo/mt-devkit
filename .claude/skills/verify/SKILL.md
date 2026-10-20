@@ -83,7 +83,8 @@ Report the PR link right away, so I can start reading it while you run the verif
   - **FE-only** → the PR's Vercel preview (URL in the PR's `<!-- vercel-deploy-previews -->`
     comment) against dev data — no local env.
   - **BE, or BE+FE** → a local stack for this worktree via the **`local-stack`** skill (one per
-    session), signed in as the stack's pool org.
+    session), signed in as the stack's pool org. Bring it up yourself (`local-stack up`, unless
+    `local-stack list` already shows it live) and leave it running; `/done` tears it down.
 
   Drive the UI with the browser MCP; read and set up data with **`backend-request`** (`--dev` for
   dev data, `--stack` for the worktree's local stack as its pool org). Dev writes (`--dev --write`) stay on clearly-test records or a dedicated test flow —
@@ -123,8 +124,7 @@ so on the PR rather than papering over it.
 Once the PR is open and you've run everything you can unattended, return to `/workflow` to
 continue — it owns what comes next. Name the screenshot paths next to the PR link in the
 hand-back. Name any verification still outstanding in the hand-back, as
-a **reminder** rather than a question: I decide when manual testing happens, and the drive
-doesn't wait on that decision.
+a **reminder** rather than a question: the drive doesn't wait on it.
 
 ## Guardrails
 
