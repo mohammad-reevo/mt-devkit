@@ -187,7 +187,8 @@ Two things the report must not leave out:
   default stack, or Docker: `env-manager`'s kills are port- and process-name-based
   (`pkill -9 -f salestech_be`, free tcp:3000) and therefore worktree-agnostic, so they would take
   down a stack deliberately started from a different worktree. Closing out one idea must not break
-  another idea's stack.
+  another idea's stack. `worktree remove` then stops whatever still runs out of that worktree's own
+  path (a vite server on a 517x port, for one) — scoped by path, so the same holds.
 - **All threads, not a filtered list.** Query every thread's `isResolved`; outdated counts as
   open (per `github.md`).
 - **Local branches only.** Never delete or push a remote branch.
