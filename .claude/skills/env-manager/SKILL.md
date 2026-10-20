@@ -123,7 +123,7 @@ that the shortcut is "just a reset".
 | merge `<branch_name>` `<env_name>` | `cd <worktree_root> && cd <env_subdir> && git pull && git merge origin/<branch_name>` |
 | pull `<env_name>` | `cd <worktree_root> && cd <env_subdir> && git pull` and report pull output. |
 | checkout `<branch_name>` `<env_name>` | `cd <worktree_root> && cd <env_subdir> && git checkout <branch_name>`. Report checkout output. Then execute **pull `<env_name>`** (this section) — that handles the upstream fast-forward, so checkout doesn't have to duplicate it. |
-| check branch `<env_name>` | `git -C <worktree_root>/<env_subdir> branch --show-current`. Report a single line: `<env_name>: <branch_name>`. If the sub-repo directory doesn't exist, report `<env_name>: —`. If branch lookup returns empty, use `unknown`. |
+| check branch `<env_name>` | `git -C <worktree_root>/<env_subdir> branch --show-current` for the branch, then `git -C <worktree_root>/<env_subdir> fetch origin main --quiet` and `git -C <worktree_root>/<env_subdir> rev-list --count HEAD..origin/main` for how far it is behind. The fetch is what makes the count current — without it the count is measured against whatever `origin/main` was at the last fetch. Report a single line: `<env_name>: <branch_name>, <N> behind main`. If the sub-repo directory doesn't exist, report `<env_name>: —`. If branch lookup returns empty, use `unknown`. If the fetch fails, report `<env_name>: <branch_name>, behind count unavailable (fetch failed)` — never a count against a stale `origin/main`. |
 
 ### Backend
 
