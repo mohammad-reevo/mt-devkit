@@ -22,7 +22,7 @@ Usage: stack.sh up|down|list|down-all|seed-pool [--name <worktree>] [-- <passthr
 
   up         take the lowest free pool slot (1-5), preflight its ports, bring the stack up
   down       tear this worktree's stack down and free its slot
-  list       show every allocated instance, its ports, and which ports are listening
+  list       show every stack that exists — allocated, left behind, or untracked — and whether it runs
   down-all   tear down every allocated instance (env-manager's `kill stacks`)
   seed-pool  seed + bootstrap the pool orgs (slots 1-5) once; re-running is safe
 
@@ -142,20 +142,127 @@ PY
   )
 }
 
-port_state() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1 && echo "up" || echo "down"; }
-
 # --- list ---------------------------------------------------------------------
-# The registry says which slots are claimed, not whether anything still runs on
-# them, so each port is probed the way env-manager's `check` rows do.
+# Every stack that exists, running or not. The registry alone misses two kinds:
+# a stack whose record `allocate` dropped (its worktree was deleted) but whose stack
+# dir — kept until `down` — still names it, and a stack nothing tracks any more,
+# found only by a worktree process holding a stack port. Registry ports are probed
+# the way env-manager's `check` rows do; stack dirs' recorded process groups are
+# checked for live members.
 if [ "$MODE" = "list" ]; then
-  records="$(registry_records)"
-  [ -n "$records" ] || { echo "no stacks allocated"; exit 0; }
-  printf '%s\n' "$records" | while read -r index id path; do
-    be=$((8000 + index)); fe=$((3000 + index)); rt=$((8787 + index))
-    printf '  [%2s] %-24s backend :%s %s · frontend :%s %s · realtime :%s %s   %s\n' \
-      "$index" "$id" "$be" "$(port_state "$be")" "$fe" "$(port_state "$fe")" \
-      "$rt" "$(port_state "$rt")" "$(dirname "$path")"
-  done
+  MAIN="$(git -C "$MAIN_DEFAULT" worktree list 2>/dev/null | head -1 | awk '{print $1}')"
+  ( cd "$BE_DIR" && uv run python - "${MAIN:-$MAIN_DEFAULT}" <<'PY'
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+from scripts.local_dev.instance_isolation import InstanceRegistry
+
+main = Path(sys.argv[1])
+MAX_SLOT = 15  # pool slots are 1-5; a pre-pool branch hashes into 1-15
+PORT_BASES = {"backend": 8000, "frontend": 3000, "realtime": 8787}
+
+
+def run(*args: str) -> str:
+    return subprocess.run(args, capture_output=True, text=True, check=False).stdout
+
+
+def worktree_of(path: str) -> str:
+    """'<name>' for a path under <main>/worktrees/<name>/, else the path itself."""
+    match = re.search(re.escape(str(main / "worktrees")) + r"/([^/\s]+)", path)
+    return match.group(1) if match else path
+
+
+def worktree_label(name: str) -> str:
+    gone = "" if (main / "worktrees" / name).is_dir() else "  (worktree deleted)"
+    return f"{name}{gone}"
+
+
+listeners: dict[int, int] = {}  # port -> pid
+for line in run("lsof", "-nP", "-iTCP", "-sTCP:LISTEN", "-Fpn").splitlines():
+    if line.startswith("p"):
+        pid = int(line[1:])
+    elif line.startswith("n"):
+        listeners.setdefault(int(line.rsplit(":", 1)[-1]), pid)
+
+live_groups = set()
+for line in run("ps", "-A", "-o", "pgid=,stat=").splitlines():
+    pgid, _, stat = line.strip().partition(" ")
+    if pgid.isdigit() and not stat.strip().startswith("Z"):
+        live_groups.add(int(pgid))
+
+registry = InstanceRegistry()
+records = {record.instance_id: record for record in registry.list_all()}
+stacks_root = registry.path.parent / "stacks"
+stack_dirs = {
+    d.name: d for d in (sorted(stacks_root.iterdir()) if stacks_root.is_dir() else [])
+}
+
+rows = []
+tracked_ports = set()
+for instance_id in sorted(set(records) | set(stack_dirs)):
+    record = records.get(instance_id)
+    stack_dir = stack_dirs.get(instance_id)
+    if record is not None:
+        workspace = record.workspace_path
+        ports = {label: base + record.index for label, base in PORT_BASES.items()}
+        tracked_ports.update(ports.values())
+        slot = f"{record.index:>2}"
+        detail = " · ".join(
+            f"{label} :{port} {'up' if port in listeners else 'down'}"
+            for label, port in ports.items()
+        )
+        running = any(port in listeners for port in ports.values())
+    else:
+        marker = stack_dir / "workspace"
+        workspace = marker.read_text(encoding="utf-8").strip() if marker.is_file() else "?"
+        slot = " -"
+        detail = "no slot (registry record dropped)"
+        running = False
+    pids = stack_dir / "pids" if stack_dir is not None else None
+    if pids is not None and pids.is_file():
+        groups = [
+            int(fields[1])
+            for fields in (line.split() for line in pids.read_text().splitlines())
+            if len(fields) > 1 and fields[1].isdigit()
+        ]
+        alive = sum(1 for pgid in groups if pgid in live_groups)
+        detail += f" · {alive}/{len(groups)} process groups live"
+        running = running or alive > 0
+    rows.append(
+        f"  [{slot}] {instance_id:<30} {'running' if running else 'stopped':<8}"
+        f" {detail}   {worktree_label(worktree_of(str(Path(workspace).parent)))}"
+    )
+
+# A stack port held by a worktree process that no registry record or stack dir names.
+untracked: dict[str, list[str]] = {}
+for port, pid in sorted(listeners.items()):
+    in_range = any(base < port <= base + MAX_SLOT for base in PORT_BASES.values())
+    if not in_range or port in tracked_ports:
+        continue
+    command = run("ps", "-o", "command=", "-p", str(pid))
+    cwd = next(
+        (entry[1:] for entry in run("lsof", "-a", "-p", str(pid), "-d", "cwd", "-Fn").splitlines()
+         if entry.startswith("n")),
+        "",
+    )
+    name = worktree_of(command)
+    if name == command:
+        name = worktree_of(cwd)
+    if name == cwd:
+        # Legit business flow: a stack port held by something outside every mt-devkit
+        # worktree (e.g. FalkorDB's browser UI on 3010) is not a stack.
+        continue
+    untracked.setdefault(name, []).append(f":{port} (pid {pid})")
+for name, held in sorted(untracked.items()):
+    rows.append(
+        f"  [ ?] {'untracked':<30} {'running':<8} holds {', '.join(held)}   {worktree_label(name)}"
+    )
+
+print("\n".join(rows) if rows else "no stacks")
+PY
+  )
   exit 0
 fi
 
