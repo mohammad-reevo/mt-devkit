@@ -35,7 +35,7 @@ containing the cwd is used. Everything after `--` passes through to the underlyi
   finished. `/done` runs `down` for every worktree it tears down. The default stack
   (:8000/:3000/:8787, `env-manager`) is reserved for the orchestrator session on `main`.
 - **The orchestrator owns the shared layer**: Docker, migrations, and resets (`env-manager`'s
-  `reset envs` runs `down-all` first). Migrations happen once, from `main`; a stack that needs an
+  `reset everything`, which leaves numbered stacks to their own `down` / `/done`). Migrations happen once, from `main`; a stack that needs an
   unmerged migration is answered by merging it first.
 - **Slots and orgs come from a pool of 5.** `up` takes the lowest free slot, and the org is derived
   from the slot, so the first concurrent stack runs on pool org 1, the second on org 2. `seed-pool`
