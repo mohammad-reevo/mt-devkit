@@ -1,6 +1,6 @@
 ---
 name: env-manager
-description: Manage local Reevo dev environment (backend, frontend, realtime, docker) via envctl.sh, the script the user's ~/.zshrc aliases also wrap. Triggers on "run backend", "kill backend", "re-run backend", "check backend", "generate backend openapi spec", "run frontend", "run frontend with dev", "kill frontend", "re-run frontend", "check frontend", "generate frontend openapi spec", "run realtime", "kill realtime", "re-run realtime", "check realtime", "run all-envs", "kill all-envs", "re-run all-envs", "check all-envs", "kill stacks", "run docker", "kill docker", "re-run docker", "restart docker", "check docker", "reset envs", "reload aliases", "pull <env_name>", "checkout <branch_name> <env_name>", "merge <branch_name> <env_name>", "check branch <env_name>".
+description: Manage local Reevo dev environment (backend, frontend, realtime, docker) via envctl.sh, the script the user's ~/.zshrc aliases also wrap. Triggers on "run backend", "kill backend", "re-run backend", "check backend", "generate backend openapi spec", "run frontend", "run frontend with dev", "kill frontend", "re-run frontend", "check frontend", "generate frontend openapi spec", "run realtime", "kill realtime", "re-run realtime", "check realtime", "run all-envs", "kill all-envs", "re-run all-envs", "check all-envs", "kill stacks", "run docker", "kill docker", "re-run docker", "restart docker", "check docker", "reset envs", "check everything", "reload aliases", "pull <env_name>", "checkout <branch_name> <env_name>", "merge <branch_name> <env_name>", "check branch <env_name>".
 ---
 
 # env-manager
@@ -104,6 +104,7 @@ that the shortcut is "just a reset".
 | You say | I run |
 |---|---|
 | reset envs | **kill stacks** (All-Envs section) → **kill backend** / **kill realtime** / **kill frontend** (their sections) — each only if its default port (8000 / 8787 / 3000) is listening → **kill docker** (Docker section) → **run docker** (Docker section), in that order. The morning reset: tear every stack down, then bring the shared Docker infra back up against fresh `main`. Stacks go first so the process-name-based default-stack kills find nothing of theirs to hit, and so each one's slot and Kafka topics are released cleanly; a worktree session just runs `local-stack up` again afterwards (pool orgs live in Postgres, which survives). Both rows run start-to-finish — including `run docker`'s `main` refresh (step 0) and its FalkorDB reap (step 4), which is where a night's accumulated test-org graphs get reclaimed. Leaves backend / frontend / realtime **stopped**: `run docker` starts the compose deps only. |
+| check everything | **check all-envs** (All-Envs section) → **check branch all-envs** (Git section) → the `worktree` skill's **list** mode → the `local-stack` skill's **list** mode (`bash <worktree_root>/.claude/skills/local-stack/stack.sh list`), in that order. A read-only status sweep — services, branches, worktrees, numbered stacks. Report each part in its own row's shape under a short heading per part, and don't stop on a NOT LISTENING / NOT RUNNING result. |
 
 ### All-Envs
 
