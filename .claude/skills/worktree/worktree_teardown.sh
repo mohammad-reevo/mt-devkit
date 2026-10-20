@@ -23,6 +23,32 @@ delete_local_branch() {
     git -C "$repo" branch -D "$br" 2>/dev/null || true
 }
 
+# Stop every process still running out of the worktree — typically a vite dev server that fell
+# back to a 517x port. Nothing else stops these: env-manager's kills are port-scoped and
+# local-stack only knows its own PIDs, so they used to outlive the deleted directory for weeks,
+# ~2 GB each. This script's own ancestors are spared, since the command that invoked it can
+# mention the worktree path.
+stop_worktree_processes() {
+    local spare=" " p=$$ pid
+    while [[ -n "$p" && "$p" != 0 && "$p" != 1 ]]; do
+        spare+="$p "
+        p="$(ps -o ppid= -p "$p" | tr -d ' ')"
+    done
+    local pids=()
+    while read -r pid; do
+        [[ "$spare" == *" $pid "* ]] || pids+=("$pid")
+    done < <(pgrep -f "${wt}/" || true)
+    ((${#pids[@]})) || return 0
+    kill "${pids[@]}" 2>/dev/null || true
+    sleep 3
+    for pid in "${pids[@]}"; do
+        kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
+    done
+    echo "stopped ${#pids[@]} process(es) still running from ${wt}" >&2
+}
+
+stop_worktree_processes
+
 # Sub-repo worktrees + local branches
 for subrepo in salestech-be frontend-monorepo reevo-realtime; do
     src="${main}/${subrepo}"
