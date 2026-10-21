@@ -84,7 +84,9 @@ Report the PR link right away, so I can start reading it while you run the verif
     comment) against dev data — no local env.
   - **BE, or BE+FE** → a local stack for this worktree via the **`local-stack`** skill (one per
     session), signed in as the stack's pool org. Bring it up yourself (`local-stack up`, unless
-    `local-stack list` already shows it live) and leave it running; `/done` tears it down.
+    `local-stack list` already shows it live). Once its checks and screenshots are captured, take
+    it down in the same pass (`local-stack down`) — never leave it up for review or `/done`; a
+    later re-check brings it back up.
 
   Drive the UI with the browser MCP; read and set up data with **`backend-request`** (`--dev` for
   dev data, `--stack` for the worktree's local stack as its pool org). Dev writes (`--dev --write`) stay on clearly-test records or a dedicated test flow —
