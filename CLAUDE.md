@@ -33,7 +33,7 @@ Postgres), `snowflake` (reporting warehouse),
 `merged-prs-digest` (post my PRs merged in the last 24h to my Slack channel),
 `keep-mergeable` (hold an approved PR merge-ready — conflict-only update-branch, never merges),
 `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
-leave behind).
+leave behind), `investigate-memory-usage` (where memory went — by consumer, or per session).
 
 ## Principles
 
