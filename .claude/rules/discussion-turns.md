@@ -12,6 +12,9 @@ walking through review comments, or any design discussion.
   they bear on, never as their own block. A finding that bears on no open question waits.
 - **Ask only what blocks the next step.** Questions that only arise from my answers come in the
   next turn.
+- **Decide, don't ask, when one option clearly dominates** — no real tradeoff I'd weigh. State it
+  as one line, `Decided: <x> — <why>`, record it where an Assumption goes, and continue. Ask only
+  genuine calls: a real tradeoff, intent or scope, an outward-facing action.
 - **Research before you ask, never offer to.** When a question turns on a fact the code or a
   read-only tool can settle, settle it first — a subagent keeps it out of context. Never end a
   turn with "want me to check?". Writes, outward-facing actions and long investigations still
