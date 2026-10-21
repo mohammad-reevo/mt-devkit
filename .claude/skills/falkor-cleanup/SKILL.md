@@ -36,8 +36,11 @@ So the cost is entirely in the graphs. The org rows in Postgres are kilobytes.
 bash $HOME/Desktop/code/mt-devkit/.claude/skills/falkor-cleanup/falkor_reap.sh [--dry-run] [--keep <org-uuid>]...
 ```
 
-- Default keep-list is the local dev-seed org `00000000-0000-4000-a000-000000000001`.
-  Passing `--keep` **replaces** that default; repeat the flag for several orgs.
+- The keep-list always holds the local dev-seed org `00000000-0000-4000-a000-000000000001`
+  and the five `local-stack` pool orgs (`10000000-0000-4000-a000-000000000001` …
+  `50000000-0000-4000-a000-000000000005`). `--keep` **adds** to it; repeat the flag for
+  several orgs. The pool orgs are seeded once and never re-created, so a reaped one leaves
+  every later `local-stack up` on it without a graph (contact pages redirect to `/contacts`).
 - `--dry-run` lists what would go and deletes nothing. Use it whenever the keep-list
   isn't the default.
 - Allowlist by **org id only**. Test orgs carry faker names (`Williams Group`) and
