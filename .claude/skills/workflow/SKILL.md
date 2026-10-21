@@ -48,6 +48,11 @@ decision rule; the rule lives here and nowhere else.
   line → assistant. A dispatched agent (scoper, planner) takes the mode its dispatcher read this way.
 - **Where an Assumption lands.** In the phase's spec file — scope's `## Assumptions`, plan's
   `## Decisions` — and verify carries them into the PR body, which outlives both files.
+- **An obvious answer is decided in every mode.** A question whose recommended option clearly
+  dominates — no real tradeoff I'd weigh — is not a gate: take it, write one line
+  `Decided: <x> — <why>` where an Assumption lands, and continue, even in assistant mode
+  (`discussion-turns.md`). Investigate mode records it in the findings the same way. Only a
+  genuine call — a real tradeoff, intent, scope, an outward-facing action — gets the table above.
 - **No recommended option, no Assumption.** A gate with nothing to recommend stops in every mode.
 - **Agentic never skips a real failure** — these stop in every mode: implement's escalation after
   ~2 failed fix attempts or reviewer cycles, implement's structural drift kicking back to plan,
