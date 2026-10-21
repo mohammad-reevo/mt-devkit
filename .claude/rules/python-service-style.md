@@ -80,6 +80,8 @@ is out of scope for this design — already shipped by Sa in PR #22305."""
 ```
 
 Do not embed developer names, PR numbers, ticket IDs, "out of scope" notes, or counts of sibling implementations.
+That includes flag-cleanup TODOs (`# TODO: remove flag X after GA (TICKET-123)`): salestech-be's
+`feature-flags.md` asks for one on every flag-gated branch — don't write them; this rule wins.
 
 Minimal is not absent. A function or class whose name and types don't convey its contract gets a
 docstring of one line, two at most: what it returns (including on a miss), what it raises and when —
