@@ -34,6 +34,13 @@ containing the cwd is used. Everything after `--` passes through to the underlyi
 - **Each worktree session owns its own stack**: `up` when it needs the app, `down` when it's
   finished. `/done` runs `down` for every worktree it tears down. The default stack
   (:8000/:3000/:8787, `env-manager`) is reserved for the orchestrator session on `main`.
+- **Stopping another session's stack means telling that session.** Whenever a session takes down
+  a stack it didn't start — a cleanup, `down-all`, `env-manager`'s `kill stacks` or `reset
+  everything` — it finds the owner (the session working in that worktree, via `ListAgents`) and
+  sends it one `SendMessage`: what was stopped and why, and the exact `stack.sh up --name <worktree>`
+  (with the stack's original `--workers` / `--no-fe`) to bring it back. Add that a re-`up` can land
+  on a different slot, so its ports and pool org come from the new output, not memory. A session
+  that has exited needs no message; name it in the report instead.
 - **The orchestrator owns the shared layer**: Docker, migrations, and resets (`env-manager`'s
   `reset everything`, which leaves numbered stacks to their own `down` / `/done`). Migrations happen once, from `main`; a stack that needs an
   unmerged migration is answered by merging it first.
