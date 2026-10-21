@@ -153,8 +153,9 @@ not parked in the file for a later gate that no longer exists: resolve what you 
 targeted read, reasoning from what you already found), then ask the rest as direct, answerable
 questions with your recommendation — **AskUserQuestion** when they're discrete choices, so I can
 just pick. A real choice between approaches is one of those questions; one my kickoff already
-settled is not. In agentic mode, take the recommended option as an Assumption; in investigate,
-leave it as an open question (per `workflow` § Modes).
+settled is not, and neither is one whose recommendation clearly dominates — decide that one
+(`Decided:` under Assumptions). In agentic mode, take the recommended option as an Assumption; in
+investigate, leave it as an open question (per `workflow` § Modes).
 
 **The phase ends when nothing needs my call** — every question answered, or there were none. Then
 update the scope file with what I decided straight away — Chosen direction, Open questions,
