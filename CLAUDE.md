@@ -83,9 +83,9 @@ you're working on as a signal to open that entry — you won't otherwise know it
 find yourself investigating something an entry already covers, the index line was written badly;
 report the line as a bug — that is a fix to the line, not a cue to file anything new.
 
-Reading an entry is free. **Writing goes through the `author-knowledge-base` skill**, which says what it's about to
-write and shows the diff in one message, then waits for a yes (a `projects/` write is written
-first and shown after) — never hand-edit the store. **Writes happen
+Reading an entry is free. **Writing goes through the `author-knowledge-base` skill**, which writes a change I instructed (or any
+`projects/` change) straight away and shows the diff after, and shows a change it proposes on its
+own before waiting for a yes — never hand-edit the store. **Writes happen
 at `/done` or when I explicitly ask, and nowhere else** — don't offer to file things mid-session,
 however KB-worthy they feel at the time, and don't read "I might save this" as an instruction.
 
