@@ -1,6 +1,6 @@
 ---
 name: linear-tickets
-description: Create and edit Linear issues via the Linear MCP — single issues or a full parent/sub-issue tree with blocking relations, assignees, cycles, and milestones. Two modes (create / edit) sharing one machinery. Resolves team, active cycle, and project milestones LIVE from Linear (no hardcoded IDs); edits with targeted patches so content added in the UI survives. Every created issue starts from a fixed baseline — assigned to me, status Todo, in the current cycle — so it lands where I'll actually see it; anything I name overrides that field and only that field. Never advances issue status past Todo. The "plan → Linear" bridge builds on this. Triggers on "create Linear tickets", "add a Linear issue", "edit/update a Linear ticket", "set up Linear issues for X", "/linear-tickets".
+description: Create and edit Linear issues via the Linear MCP — single issues or a full parent/sub-issue tree with blocking relations, assignees, cycles, and milestones. Two modes (create / edit) sharing one machinery. Resolves team, active cycle, and project milestones LIVE from Linear (no hardcoded IDs); edits with targeted patches so content added in the UI survives. Every created issue starts from a fixed baseline — assigned to me, status Todo, in the current cycle — so it lands where I'll actually see it; anything I name overrides that field and only that field. A sub-issue of an existing ticket instead inherits that parent's project, milestone, cycle and status. Otherwise never advances issue status past Todo. The "plan → Linear" bridge builds on this. Triggers on "create Linear tickets", "add a Linear issue", "edit/update a Linear ticket", "set up Linear issues for X", "/linear-tickets".
 ---
 
 # Create & Edit Linear Tickets
@@ -28,7 +28,7 @@ Never assume IDs. Before creating or editing, resolve from Linear:
 
 - **Project → team.** `get_project` returns the project's team(s); use that rather than guessing. (Default team is the user's — **CRM Workflow / `CRMF`** — but confirm from the project, or ask.)
 - **Active cycle.** Read the team's current cycle (`list_cycles`, the active one) and assign by its number/id live — don't hardcode a cycle number.
-- **Milestones.** `get_project includeMilestones` — milestones differ per project; read them, don't assume a set, and leave the *choice* to the user unless they've named one.
+- **Milestones.** `get_project includeMilestones` — milestones differ per project; read them, don't assume a set, and leave the *choice* to the user unless they've named one — or the issue is a sub-issue of an existing ticket, which takes its parent's (Reevo defaults).
 
 ## 3. Create mode
 
@@ -69,6 +69,18 @@ plan changes.
 
 ## Reevo defaults
 
+### A sub-issue of an existing ticket inherits from its parent
+
+Read the parent with `get_issue` and copy its **project, milestone, cycle and status** onto the
+sub-issue. A sub-issue that doesn't match its parent drops off the parent's project and milestone
+views, and the user has to fix each one by hand.
+
+- **This beats the baseline for those four fields.** Assignee still comes from the baseline.
+- **Overrides stay per-field.** A value the user names wins for that field; the rest still
+  inherit.
+- **A field the parent doesn't have** falls back to the baseline — no cycle → the current
+  active cycle, no project / milestone → left unset as for any other issue.
+
 ### The baseline — applied to every created issue, unasked
 
 | Field | Default | `save_issue` |
@@ -92,11 +104,11 @@ sea of them. Assigned + Todo + in-cycle puts it on the user's own board the mome
 ### The rest
 
 - **Team:** default to the user's team — **CRM Workflow (`CRMF`)** — but resolve it from the project when one is given.
-- **Milestone:** read the project's milestones and leave the choice to the user; don't assume a fixed set (they vary per project).
+- **Milestone:** read the project's milestones and leave the choice to the user; don't assume a fixed set (they vary per project). A sub-issue of an existing ticket takes its parent's instead.
 
 ## Guardrails
 
-- **Status boundary — Todo is both the default and the ceiling.** Set `state: "Todo"` explicitly rather than relying on create-lands-in-Backlog or on the cycle assignment moving it. **Never advance past Todo** to In Progress / In Review / Done / Canceled — Reevo automation owns those transitions.
+- **Status boundary — Todo is both the default and the ceiling.** Set `state: "Todo"` explicitly rather than relying on create-lands-in-Backlog or on the cycle assignment moving it. **Never advance past Todo** to In Progress / In Review / Done / Canceled — Reevo automation owns those transitions. The one exception is a sub-issue of an existing ticket, which takes its parent's status as it stands, past Todo included.
 - **No destructive changes without asking** — don't delete, cancel, or archive issues, or detach relations, unless the user asked.
 - **Rely on Linear, not memory** — resolve team / cycle / milestone / project live; don't hardcode IDs or carry stale assumptions between runs.
 - **Load tools first** — Linear MCP tools are deferred (`ToolSearch`).
