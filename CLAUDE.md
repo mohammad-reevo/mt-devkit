@@ -31,6 +31,7 @@ Postgres), `snowflake` (reporting warehouse),
 `langfuse-traces` (analyze LLM traces — latency, throughput, tokens),
 `session-deferral` (park a session to a handoff file and resume it later),
 `merged-prs-digest` (post my PRs merged in the last 24h to my Slack channel),
+`estimate-timeline` (aggressive + likely dates per release stage, from measured velocity),
 `keep-mergeable` (hold an approved PR merge-ready — conflict-only update-branch, never merges),
 `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
 leave behind), `investigate-memory-usage` (where memory went — by consumer, or per session).
