@@ -40,7 +40,8 @@ containing the cwd is used. Everything after `--` passes through to the underlyi
 - **Slots and orgs come from a pool of 5.** `up` takes the lowest free slot, and the org is derived
   from the slot, so the first concurrent stack runs on pool org 1, the second on org 2. `seed-pool`
   seeds all five once; integrations a fresh org lacks (Outreach OAuth) are added to each by hand,
-  once. Nothing creates or removes a pool org, so `down` has nothing to clean up there.
+  once. Nothing creates or removes a pool org, so `down` has nothing to clean up there, and
+  `falkor-cleanup` always keeps their FalkorDB graphs.
 - **Every `up` re-writes only the frontend's session token** for its slot's org (`--org-token-only`)
   — seconds, not the minutes a full org setup takes. After a reset a session may come back on a
   different slot; that's fine, the pool orgs are seeded alike. An `up` on an unseeded pool org

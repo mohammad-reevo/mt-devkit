@@ -8,19 +8,30 @@
 set -uo pipefail
 
 CONTAINER="${FALKOR_CONTAINER:-salestech-be-salestech_be-falkordb-1}"
-DEFAULT_KEEP="00000000-0000-4000-a000-000000000001"
+# Always kept: the dev-seed org, and the five `local-stack` pool orgs (slot N ⇒
+# org `N0000000-0000-4000-a000-00000000000N`). Pool orgs are seeded once and never
+# re-created, so reaping one leaves every later `local-stack up` on it graphless.
+DEFAULT_KEEP=(
+  "00000000-0000-4000-a000-000000000001"
+  "10000000-0000-4000-a000-000000000001"
+  "20000000-0000-4000-a000-000000000002"
+  "30000000-0000-4000-a000-000000000003"
+  "40000000-0000-4000-a000-000000000004"
+  "50000000-0000-4000-a000-000000000005"
+)
 
 DRY_RUN=0
-KEEP_UUIDS=()
+KEEP_UUIDS=("${DEFAULT_KEEP[@]}")
 
 usage() {
   cat <<'USAGE'
 Usage: falkor_reap.sh [--dry-run] [--keep <org-uuid>]...
 
   --dry-run        List what would be deleted; delete nothing.
-  --keep <uuid>    Keep this org's graph. Repeatable. Defaults to the local
-                   dev-seed org 00000000-0000-4000-a000-000000000001 when no
-                   --keep is given; passing --keep replaces that default.
+  --keep <uuid>    Also keep this org's graph. Repeatable. Adds to the
+                   always-kept set: the dev-seed org
+                   00000000-0000-4000-a000-000000000001 and the five
+                   local-stack pool orgs.
 
 Env:
   FALKOR_CONTAINER  Override the container name.
@@ -35,8 +46,6 @@ while [[ $# -gt 0 ]]; do
     *) echo "unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
-
-[[ ${#KEEP_UUIDS[@]} -eq 0 ]] && KEEP_UUIDS=("$DEFAULT_KEEP")
 
 # Skip quietly rather than fail: this runs as a step of `run docker`, and a
 # stopped daemon/container simply means there is nothing to reap yet.
