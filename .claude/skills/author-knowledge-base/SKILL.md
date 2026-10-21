@@ -1,6 +1,6 @@
 ---
 name: author-knowledge-base
-description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. Every write is explained and shown as a diff in one message, then approved once before anything touches the store — except a write under `projects/` (and that project's index lines), which is written straight away and shown after. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Writing happens at `/done` close-out or on an explicit ask — never offered mid-session, however KB-worthy a deep dive or a deferred task feels at the time. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/author-knowledge-base".
+description: Read, search, and write the cross-session knowledge base in `knowledge-base/` — `projects/` for where a project stands and what its tickets actually cover, `concepts/` for durable things worth not explaining twice. Owns the index-line discipline that makes the store findable at all, the one-page cap, and the guarantee that `INDEX.md` exists. A write Mohammad instructed, and any write under `projects/` (with that project's index lines), is written straight away and shown after — what was written, why, and the diff; a `concepts/` write the agent proposes on its own (the `/done` sweep, `graduate`) is explained and shown as a diff first, then approved once. Use to look something up that the index hinted at, to search when no index line fired, to add or revise an entry, or to graduate a finished project's durable residue into concepts. Writing happens at `/done` close-out or on an explicit ask — never offered mid-session, however KB-worthy a deep dive or a deferred task feels at the time. Triggers on "add this to the knowledge base", "put this in the kb", "what do we know about X", "search the kb", "update the project doc", "/author-knowledge-base".
 argument-hint: '[search <query> | add | update <entry> | graduate <project>]'
 ---
 
@@ -12,9 +12,10 @@ argument-hint: '[search <query> | add | update <entry> | graduate <project>]'
 You own `knowledge-base/`: the store that carries context across sessions, so a project doesn't
 have to be re-explained every time and a settled concept doesn't get re-derived.
 
-Where author-knowledge-base ends: **an entry read, or a proposed change shown as a diff.** You never write without
-first saying what you intend to write and showing what changes — together, then one yes. The one
-exception is a write under `projects/` (§ Project writes skip the yes).
+Where author-knowledge-base ends: **an entry read, or a change shown as a diff.** Every write is
+seen: a `concepts/` write you propose is shown and gets one yes before it lands; a write Mohammad
+instructed, or one under `projects/`, lands first and is shown straight after (§ Instructed and
+project writes skip the yes).
 
 ## When to offer a write
 
@@ -58,8 +59,8 @@ is therefore fixed:
 1. **Say what's changing and show the draft, in one message.** One to three sentences in plain
    language — which file, `projects/` vs `concepts/`, what the entry covers and why — followed
    by the change as a fenced ```diff block, `-` old, `+` new.
-2. **Get an explicit yes.** Not implied consent from the original request — the yes is for the
-   words on screen.
+2. **Get an explicit yes.** The yes is for the words on screen. (An instructed write skips this
+   step and the one above it, and shows the same thing after — see below.)
 3. **Then write**, with the marker:
 
 ```
@@ -68,10 +69,10 @@ MT_KB_WRITE=1 cat > knowledge-base/<path>.md <<'KB_EOF'
 KB_EOF
 ```
 
-**The gate applies to every `concepts/` write** — a new entry, an `update`, a one-line index-line
-fix, an `updated:` bump. No write is small enough to skip it: "which writes are small enough?" is
-exactly the judgment call that erodes a gate. The exception is defined by *which file and what
-kind of change*, never by size — see below.
+**The gate applies to every `concepts/` write you propose** — a new entry, an `update`, a one-line
+index-line fix, an `updated:` bump. No write is small enough to skip it: "which writes are small
+enough?" is exactly the judgment call that erodes a gate. The exceptions are defined by *who asked
+for it and which file*, never by size — see below.
 
 **Lead with the intent, not the diff.** The sentence on what and why is what makes "actually,
 don't" easy to say; a bare diff invites approving the words without questioning the entry.
@@ -79,27 +80,34 @@ Nothing is written before the yes, so a rejected draft costs only the message it
 
 `MT_KB_WRITE=1` is the one sanctioned escape. It is not a lock — you are the one adding it — but
 it makes an *incidental* write impossible: nothing reaches the store without a deliberate token
-sitting in plain sight in the command. **Never add the marker before step 2 has actually
-happened.** Doing so converts the one real safeguard on this store into decoration.
+sitting in plain sight in the command. **Never add the marker to a proposed `concepts/` write
+before step 2 has actually happened.** Doing so converts the one real safeguard on this store into
+decoration.
 
 Keep to that shape. A write in some other form may slip past the matcher, which defeats the
 point of having a gate at all.
 
-### Project writes skip the yes
+### Instructed and project writes skip the yes
 
-`projects/` is working state: it churns every session a ticket moves and is deleted when the
-project ships, so a wrong line costs little and is easy to correct. Writes there go through
-without waiting. **Write first, then show** the same one-to-three sentences and the ```diff in
-your reply, so the change is still seen as it lands. The `MT_KB_WRITE=1` marker stays on the
-command.
+Two kinds of write go through without waiting. **Write first, then show** the same one-to-three
+sentences and the ```diff in your reply, so the change is still seen as it lands and Mohammad can
+review it whenever. The `MT_KB_WRITE=1` marker stays on the command.
 
-What qualifies: any write under `knowledge-base/projects/` — a new project entry, an `update`,
-restructuring one, deleting one after `graduate` — plus that project's lines in the `## Projects`
-section of `INDEX.md`.
+- **An instructed write, anywhere in the store.** Mohammad named the change — "update the KB to
+  say X", "add an entry on Y", "fix that index line". He already asked for it; a second yes on the
+  diff is a round trip for nothing. The write covers what he named and nothing more: an extra
+  entry, line, or rewrite you'd like to add alongside it is a proposal, and is gated.
+- **Any write under `knowledge-base/projects/`** — a new project entry, an `update`, restructuring
+  one, deleting one after `graduate` — plus that project's lines in the `## Projects` section of
+  `INDEX.md`. It is working state: it churns every session a ticket moves and is deleted when the
+  project ships, so a wrong line costs little and is easy to correct.
 
-`concepts/` still waits for a yes — its entries are maintained indefinitely, and so are their index
-lines. A write that mixes the two is gated as a whole; split it if you want the project half to go
-through on its own.
+Everything else still waits for a yes: a `concepts/` write you propose on your own — the `/done`
+sweep's candidates, `graduate`'s survivors, a fix you noticed. A proposal isn't an instruction,
+and `concepts/` entries are maintained indefinitely. A write that mixes a gated half with an
+ungated one is gated as a whole; split it if you want the ungated half to go through on its own.
+
+This changes *how* a write lands, not *when* one starts — § When to offer a write still holds.
 
 ## The store
 
@@ -154,12 +162,12 @@ index gets good; without it, a silently-missed entry looks identical to a missin
 4. **Write the index line** — see below. This is the part that decides whether the entry is ever
    found, so spend real thought here, not on the prose.
 5. **Say what it is and show the diff, then wait** — § Writing's single gate. The entry and the
-   new index line, both. A `projects/` entry writes first and shows after (§ Project writes skip
-   the yes).
+   new index line, both. An instructed or `projects/` entry writes first and shows after
+   (§ Instructed and project writes skip the yes).
 
 ### `update <entry>`
-Same gate — what's changing and why, with the diff, in one message; then wait. A `projects/`
-update writes first and shows after (§ Project writes skip the yes).
+Same gate — what's changing and why, with the diff, in one message; then wait. An instructed or
+`projects/` update writes first and shows after (§ Instructed and project writes skip the yes).
 Two things to get right: bump `updated`, and **re-read the index line** — an entry that has grown
 or changed direction usually needs a different trigger than the one it was filed under.
 
@@ -213,10 +221,11 @@ it, and do not turn this into a debate.
 
 ## Guardrails
 
-- **One gate on every `concepts/` write, and no write is too small for it.** Say what's changing
-  and why, show the diff in the same message, and get a yes before anything is written. This
-  holds for a new entry, a one-line index fix, and an `updated:` bump alike. The sole exception is
-  a `projects/` write, which is still shown — just after the write instead of before.
+- **One gate on every `concepts/` write you propose, and no write is too small for it.** Say
+  what's changing and why, show the diff in the same message, and get a yes before anything is
+  written. This holds for a new entry, a one-line index fix, and an `updated:` bump alike. The
+  exceptions are an instructed write and a `projects/` write, which are still shown — just after
+  the write instead of before.
 - **An ambivalent mention is not an instruction.** "I might save this" opens a conversation, not
   a write.
 - **Never edit an entry as a side effect** of reading or searching it.
