@@ -191,7 +191,10 @@ to talk, a scope expansion, a contradicting pair — they get no reply and stay 
 ## Step 4 — execute
 
 1. **Dispatch an `implementer`** per action item — product-repo code is never edited from here
-   (`delegate-product-code.md`).
+   (`delegate-product-code.md`). An item that splits part of the PR out for another team's review
+   takes the shape in `plan` § Resolve and break down (the extra-reviewing-team bullet): the owner
+   PR off `main`, green alone, and this PR re-based onto it — merge the owner branch in, then
+   `gh pr edit --base` — never the owner PR stacked on this one.
 2. **The testing call gets re-derived**, and this is the case it exists for: a revision made after
    the PR is open is by definition not covered by the plan, so the implementer works out what the
    change now needs from `mt-devkit/.claude/references/testing-call.md`. A comment that moves code
