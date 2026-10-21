@@ -11,7 +11,10 @@ truth — re-fetch and trust it over these notes.
 - **Canonical Eng-Design template (READ-ONLY — never edit):**
   `2b87019cb5b180a895a4e359e54a6d0c` — the section skeleton + per-section guidance
   blockquotes. A near-duplicate copy exists in the DB; standardize on this one.
-- **Exemplar eng docs** (fetch for depth / house-style calibration):
+- **Golden example** (read before drafting; what it shows is in `house-style.md`):
+  "Sequences Integration" eng doc — `3df7019cb5b180adb612c0e461e2f999`. Live, so read it for
+  patterns, not content.
+- **Other exemplar eng docs** (optional, for depth calibration):
   - "[Eng Design] - Workflows Platformization" — `3347019cb5b180a9bce0fd303ea6e8b4`
   - "Technical Design: AI Workflow Debugging" — `3957019cb5b180138995ee4f540fef77`
 

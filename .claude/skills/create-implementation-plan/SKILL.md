@@ -31,6 +31,9 @@ Collect (or infer from context) the source of work and the ground it touches:
 - **The source of work** — an eng-design doc, a PRD, a scope doc, a described change, or an existing large diff to dissect. Read the design authority in full; there may be more than one.
 - **The repos / subsystems** the work touches.
 - **A slug** — a short kebab name for the work (reuse the idea's existing name if it has one).
+- **`~/.claude/tmp/<slug>/implementation-details.md`, if it exists** — the detail
+  `create-eng-doc` cut from the eng doc. A head start for §2, not a source of truth: check
+  each claim against the code before the plan relies on it.
 
 **Most-recent source wins** on conflicts between documents — note the conflict rather than
 silently picking one. Don't over-ask: for a small change, infer the essentials and proceed.
