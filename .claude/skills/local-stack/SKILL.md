@@ -31,8 +31,10 @@ containing the cwd is used. Everything after `--` passes through to the underlyi
 
 ## Framework — who owns what
 
-- **Each worktree session owns its own stack**: `up` when it needs the app, `down` when it's
-  finished. `/done` runs `down` for every worktree it tears down. The default stack
+- **Each worktree session owns its own stack**: `up` when it needs the app, `down` the moment its
+  testing is done — in the same turn, never left up while the PR waits on review. A stack costs
+  ~10 GB (its backend processes plus vite), and review gaps run for hours, so a few idle stacks
+  exhaust the machine. `/done` runs `down` for every worktree it tears down, as the backstop. The default stack
   (:8000/:3000/:8787, `env-manager`) is reserved for the orchestrator session on `main`.
 - **The orchestrator owns the shared layer**: Docker, migrations, and resets (`env-manager`'s
   `reset everything`, which leaves numbered stacks to their own `down` / `/done`). Migrations happen once, from `main`; a stack that needs an
