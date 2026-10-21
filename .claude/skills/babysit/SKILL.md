@@ -105,10 +105,22 @@ PR itself.
 around the `##[error]` marker.
 
 **Flaky rerun — at most once, only when it's not ours:** compare the failing test's file paths
-against `git diff main...HEAD --name-only`. If **no overlap** (the failure doesn't touch anything
+against `git diff origin/<base>...HEAD --name-only` (`<base>` = the PR's `baseRefName`). If **no overlap** (the failure doesn't touch anything
 you changed) **and** this `headSha` hasn't been rerun yet → `gh run rerun <run-id> --failed`
 **once**. If it fails again, or the failing paths overlap your diff → report it as actionable.
 Track rerun state per `headSha` (a new push resets it).
+
+**Base-inherited red — not this PR's to fix.** On a PR whose base is not `main` (a project base,
+a slice, a long-lived split base), a failing required check is **base-inherited** when its failing
+paths don't overlap the PR's diff (`git diff origin/<base>...HEAD --name-only`) **and** its cause
+or fix is on `main` but not yet in the base: `git log origin/<base>..origin/main -- <failing paths>`
+shows it, or — for `Frontend Breaking Changes Check` and similar contract checks — it fails on
+routes or types `main` added that the base lacks. It clears once the base takes `main`, after this
+PR merges into the base (`workflow` § Final PR, for a project) — and that merge is mine. So:
+report it **once** as "base-inherited — clears when the base takes `main`", naming the `main`
+commit behind it; no rerun; it never counts toward the go-loud rule below and never holds the
+ready announcement. Never merge `main` into the PR or the base to clear it. A red you can't place
+on `main` this way is not base-inherited — handle it as usual.
 
 **Same check failing across two pushes → go loud and stop.** Track failing check names per
 `headSha`. Once the same check has failed on **two distinct head SHAs** — a fix was pushed and it
@@ -154,7 +166,8 @@ past (~40 min+), and even then as an observation, not a failure.
 ## Finish the iteration
 
 - **`--watch-only`** → print the status table + unresolved threads, then exit. No wakeup, no loop.
-- **Loop mode (default)** → every PR's `--required` checks passed **and** zero unresolved threads
+- **Loop mode (default)** → every PR's `--required` checks passed (a base-inherited red counts
+  as passed) **and** zero unresolved threads
   → **ready for your review**: announce it and exit (do **not** invoke or suggest done — `/done` ends the
   whole session, not one PR — and do **not** write any state beyond marking the PR ready for
   review in the session's todo list, per `todo-list`). The announcement:
@@ -166,6 +179,8 @@ past (~40 min+), and even then as an observation, not a failure.
     that section per `pr-description` § Overrides). It doesn't hold the announcement back;
   - lists any other non-required check that failed or is still running, one line each, marked
     non-blocking. These never hold the announcement back;
+  - lists each base-inherited red, one line each with the `main` commit that clears it, marked
+    non-blocking;
   - is also sent as a `PushNotification` (load it via `ToolSearch` if deferred) — "PR ready for
     your review" + the link — since this is the moment I'm most likely away from the session.
 
@@ -212,7 +227,8 @@ past (~40 min+), and even then as an observation, not a failure.
 - **A missing CI run is a symptom, not a state.** Check `mergeStateStatus` before calling it
   "too early" — a conflicted PR never gets a run, so the 120s wait would loop forever.
 - **Two failed pushes on the same check ends the loop.** Go loud and hand back; don't keep
-  polling something that needs me.
+  polling something that needs me. A base-inherited red is exempt — it is the base's, not a
+  failed attempt.
 - **Report, don't fix — that rule is about CI.** Surface a failing check and let me decide the
   fix; never dispatch a fix agent, never close out. Review threads are the single exception:
   they go to `address-comments`, which gates them itself. Update-branch is the other: babysit
