@@ -249,7 +249,9 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
 **Never update-branch across the stack.** No slice is ever synced with `main`, and a parent's
 later fixes aren't merged down into its children — not for a conflict, not for red CI inherited
 from the base. Each slice lands into the one below as it is (step 7), and `main` meets the stack
-exactly once, in step 8.
+exactly once, in step 8. A red inherited from the base is expected, never a reason to stop, ask,
+or rerun: babysit reports it as non-blocking and announces the slice ready on its own merits
+(`babysit` § Base-inherited red).
 
 ## Guardrails
 
