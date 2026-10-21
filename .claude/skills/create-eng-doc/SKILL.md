@@ -1,6 +1,6 @@
 ---
 name: create-eng-doc
-description: Create a house-format engineering design doc in Notion from a converged design + its companion PRD. Structure is pulled live from the team's Eng-Design template; substance is grounded in real code via research subagents; the doc is drafted in one pass after outline approval, then published to the Eng Docs database on the user's go. Standalone (not part of the scope→plan→implement funnel). Triggers on "create the eng doc", "write the eng design", "/create-eng-doc".
+description: Create a house-format engineering design doc in Notion from a converged design + its companion PRD. Structure is pulled live from the team's Eng-Design template; substance is grounded in real code via research subagents; the doc is drafted in one pass after outline approval, shaped like a golden example, then the user rewrites it while Claude only reviews, and it is published to the Eng Docs database on the user's go. Standalone (not part of the scope→plan→implement funnel). Triggers on "create the eng doc", "write the eng design", "/create-eng-doc".
 ---
 
 # Create an Engineering Design Doc
@@ -11,8 +11,10 @@ and the quality bar* — the section structure comes **live from the team's Noti
 template** (never hard-coded here), and the substance is **grounded in real code**,
 never paraphrased from a spec.
 
-**Shape of the run:** one approval gate up front (the outline), a full draft written
-in one pass, then the user drives edits, and one publish gate at the end. Keep the
+**Shape of the run:** open scope decisions settled first, one approval gate on the
+outline, a full draft written in one pass, then a review-only loop while the user rewrites
+it, and one publish gate at the end. The finished doc is one the user has read and revised
+section by section — that is the point, not a polished first pass. Keep the
 main thread lean — delegate wide reads and code research to subagents; think in the
 main thread.
 
@@ -25,6 +27,9 @@ Collect (or infer from context) whatever isn't provided:
 - **A target Notion draft page** — a personal page to write into (created if needed; see §5).
   The doc is **not** created in Eng Docs until publish.
 - **Feature name** and the repos / subsystems the design touches.
+- **Open scope decisions** — anything the design leaves undecided that the doc would have to
+  hedge on. Ask them (AskUserQuestion) before the outline, so the doc states one design rather
+  than options.
 
 Hold one rule above the rest: **most-recent source wins.** These docs are written
 iteratively; when the PRD and an older design doc disagree, the newest (usually the
@@ -39,8 +44,11 @@ whatever the team changes. Exact IDs in `references/notion-workspace.md`.
 
 - Read the canonical **Eng-Design template** (read-only — never modify it) for the
   current section list + per-section guidance blockquotes.
-- Optionally fetch 1–2 recent **exemplar eng docs** from the Eng Docs database to
-  calibrate depth and house style.
+- Read the **golden example** before writing anything — the live Sequences Integration eng
+  doc (ID in `references/notion-workspace.md`). It is the reference for layout, per-section
+  content, altitude and wording: make the draft look like it. What it shows, pattern by
+  pattern, is in `references/house-style.md` § The golden example. It is a live doc, so read
+  it for patterns, never copy its project content.
 - When you create the draft page you may `apply_template` the template onto it, so the
   skeleton is instantiated from the team's own template.
 
@@ -68,9 +76,13 @@ prose.** This is the one up-front gate.
 ## 5. Write the whole doc in one pass
 
 On approval, write the **full doc** into the draft page — one pass, not
-section-by-section. Then hand it over: the user reviews, edits directly in Notion, and
-drops comments. Address their feedback when they ask; **re-fetch the page first** so
-you build on their edits, not your last version.
+section-by-section, shaped like the golden example. Then hand it over (§6).
+
+**Cut detail goes to a file, not the bin.** Research turns up more than the doc's altitude
+holds — `file:line` references, per-field mappings, edge-case handling. Write what you cut to
+`~/.claude/tmp/<slug>/implementation-details.md` (the idea's scratch dir) rather than dropping
+it; `create-implementation-plan` reads it as a starting point and still checks it against the
+code. Say in the hand-over that the file exists.
 
 Draft mechanics: write with the `notion` MCP `notion-update-page` tool
 (`insert_content` / `replace_content` for a fresh page). The house-style rules —
@@ -78,7 +90,26 @@ numbered `## N.` headings, `---` dividers, masthead, answered `<details>` toggle
 one-physical-line paragraphs, honest N/A, the New/Changed/Reuses appendix — live in
 `references/house-style.md`. Follow it.
 
-## 6. Publish on the user's go
+## 6. Review only, while the user rewrites
+
+After the draft, the user owns the doc. They rewrite it section by section; Claude reviews.
+
+- **Review on request, one section at a time** — "review §N", "re-review". **Re-fetch the
+  page first** so the review reads their latest text, not your draft.
+- **Rubric, in this order:** *must fix* (wrong, contradicts the code or another section, or a
+  cross-reference to another section — see house-style); *dropped facts a later section
+  depends on* (something the rewrite removed that a later section still assumes); *nits*.
+  Say "nothing to fix" when that's true.
+- **Suggestions are old → new lines, never applied.** Quote the user's line, give the
+  replacement as a fenced `diff` block (the format in `.claude/rules/doc-edit-diff-first.md`).
+  The user makes the edit.
+- **Edit only a section handed over by name** ("you update §13"). Even then, report the change
+  line by line afterwards. A blanket "do them all" never covers edits across several sections
+  — show each one and wait.
+- **Comments from other reviewers** go through the same loop: the user rewrites, Claude
+  reviews and hands over wording.
+
+## 7. Publish on the user's go
 
 Only when the user says go:
 
@@ -98,5 +129,8 @@ Only when the user says go:
 - **Response altitude** when synthesizing multi-agent research — lead with the
   load-bearing findings; don't dump transcripts into the doc or the chat.
 - **Never assign reviewers; never merge/publish outward** without the user's explicit go.
+- **Review, don't rewrite** — after the draft, edit only a section handed over by name (§6).
+- **One Notion edit per call** — never batch many replacements into one `update_content`
+  (house-style § Enhanced-markdown quirks).
 - **Scratch files** go under `~/.claude/tmp/` (namespaced by the idea slug), never `/tmp`.
 - **Standalone** — invoked directly, independent of the scope→plan→implement funnel.
