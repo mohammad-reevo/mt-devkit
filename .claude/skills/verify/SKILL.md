@@ -76,17 +76,22 @@ Report the PR link right away, so I can start reading it while you run the verif
 
 ## 3. Verify per the strategy
 
-- **Scripts-only** → run the script/flow (directly or via a subagent), capture pass/fail + the
-  key output.
+**Scripts-only and in-app run in a `tester` subagent** (`subagent_type: tester`), never in this
+thread. Snapshots, payloads and stack logs are the heaviest context a drive produces, and the
+tester keeps them out. Brief it with the worktree + repo, the PR, the surface, each check with
+what passing looks like, the slug, and whether it's a UI change. The agent already holds the
+contract: it owns the stack for the pass, never fixes, never fakes a pass, and reports lean. In a
+project drive, dispatch one tester per slice in a single message.
+
+- **Scripts-only** → the tester runs the script/flow, reports pass/fail + the key output.
 - **N/A** → note "no manual verification needed: `<reason>`".
-- **In-app** → run it yourself. Pick the surface from the diff:
+- **In-app** → the tester runs it. Pick the surface from the diff for its brief:
   - **FE-only** → the PR's Vercel preview (URL in the PR's `<!-- vercel-deploy-previews -->`
     comment) against dev data — no local env.
   - **BE, or BE+FE** → a local stack for this worktree via the **`local-stack`** skill (one per
-    session), signed in as the stack's pool org. Bring it up yourself (`local-stack up`, unless
-    `local-stack list` already shows it live). Once its checks and screenshots are captured, take
-    it down in the same pass (`local-stack down`) — never leave it up for review or `/done`; a
-    later re-check brings it back up.
+    session), signed in as the stack's pool org. The tester brings it up and takes it down in the
+    same pass — never left up for review or `/done`; a later re-check brings it back up. Name any
+    `--workers` / `--no-fe` / `--askreevo` the change needs in its brief.
 
   Drive the UI with the browser MCP; read and set up data with **`backend-request`** (`--dev` for
   dev data, `--stack` for the worktree's local stack as its pool org). Dev writes (`--dev --write`) stay on clearly-test records or a dedicated test flow —
@@ -96,10 +101,11 @@ Report the PR link right away, so I can start reading it while you run the verif
   (`POST /api/v1/flow/user_flow/{id}/promote` — deploys and activates), fire the trigger by
   patching a contact (`PATCH /api/v1/contacts/{id}`), poll
   `POST /api/v1/flow/user_flow/{id}/flow_runs/_list`, and read `GET /api/v1/flow/flow_run/{id}`.
+  The tester doesn't read this skill — put the recipe in its brief when the check needs it.
 
   For UI changes, capture and attach screenshots with the **`pr-screenshots`** skill — it signs in
   as the agent's own dev user, saves to `~/Downloads/images/<slug>/`, and embeds the images in the
-  PR body itself. Give any verifier subagent the same skill.
+  PR body itself. The tester does both halves; you update the verification prose from its report.
 
   Still mine: anything needing a real human login the agent doesn't have.
 
@@ -117,8 +123,8 @@ them halts the drive:
 - **The change itself** — it can't work without a hack, or verification surfaces a structural
   problem. That still stops, and still kicks back to plan.
 
-If verification surfaces a bug → fix it, re-run the check, then commit + push to the
-**already-open PR**. These after-the-fact changes do **not** re-run implement's code review (it
+If verification surfaces a bug → fix it via an `implementer`, re-run the failed checks via a
+fresh `tester`, then commit + push to the **already-open PR**. These after-the-fact changes do **not** re-run implement's code review (it
 was a one-shot post-implementation gate). If verification instead surfaces a **structural**
 problem (the change is fundamentally wrong, not a fixable bug), that's a kickback to plan — say
 so on the PR rather than papering over it.
