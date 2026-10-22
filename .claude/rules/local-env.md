@@ -11,12 +11,10 @@ Working with my local backend or frontend.
   webapp — uses the **dev** PostHog project's key, so flags already resolve
   from dev (118909) automatically — there is nothing to set up. Just name the
   flag and stop.
-- **`.ff_overrides.local.json` is inert here — don't reach for it.**
-  `_local_flag_override()` is gated on `is_local_env()`
-  (`settings.environment == "local"`), which is `False` in this setup, so the
-  file is never read. Writing `true` *or* `false` into it changes nothing, with
-  no warning and no log, and forcing a flag **off** locally is not possible. A
-  flag you believe you forced is still whatever PostHog says — never report a
-  verification run as if the override took.
+- **Don't use `salestech-be/.ff_overrides.local.json`.** The backend runs with
+  `SALESTECH_BE_ENVIRONMENT="local"`, so `_local_flag_override()` does read it
+  and it beats PostHog — for that backend only, not the webapp. Leave it absent
+  so local runs always match dev PostHog; if one exists, say so before
+  reporting any local verification.
 
 This applies across all sessions working in this workspace.
