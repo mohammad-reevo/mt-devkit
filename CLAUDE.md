@@ -25,12 +25,14 @@ Standalone tools: `pr-review` (review a diff or a teammate’s PR), `pr-explanat
 a PR/branch/diff — files in reading order, no findings), `address-comments` (triage the
 review comments on my PR, then act on the agreed ones), `pr-description` (write a PR body —
 routes to the target repo’s convention and preflights it), `pr-screenshots` (capture app
-screenshots as the agent's dev user and embed them in a PR body via the `pr-media` branch), `progress-report` (a lead-facing project progress report in Notion), `todo-list` (the session's per-PR todo list, kept in a file), `make-diagram` (ASCII diagram
+screenshots as the agent's dev user and embed them in a PR body via the `pr-media` branch), `progress-report` (a lead-facing project progress report in Notion), `project-discovery`
+(understand a multi-ticket project step by step before executing it), `todo-list` (the session's per-PR todo list, kept in a file), `make-diagram` (ASCII diagram
 of a design or flow), `author-knowledge-base` (the cross-session knowledge base), `worktree`, `db` (local/dev
 Postgres), `snowflake` (reporting warehouse),
 `langfuse-traces` (analyze LLM traces — latency, throughput, tokens),
 `session-deferral` (park a session to a handoff file and resume it later),
 `merged-prs-digest` (post my PRs merged in the last 24h to my Slack channel),
+`estimate-timeline` (aggressive + likely dates per release stage, from measured velocity),
 `keep-mergeable` (hold an approved PR merge-ready — conflict-only update-branch, never merges),
 `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
 leave behind), `investigate-memory-usage` (where memory went — by consumer, or per session).
