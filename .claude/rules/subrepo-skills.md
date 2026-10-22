@@ -5,10 +5,9 @@ Scoping, planning, or implementing salestech-be or frontend-monorepo work. Sessi
 mt-devkit root, so Claude Code never loads the sub-repos' skills on its own. When one below fits the
 work, read its `<repo>/.claude/skills/<name>/SKILL.md` and follow it; a plan task names it in `Follows:`.
 
-## salestech-be (last updated 2026-10-21)
+## salestech-be (last updated 2026-10-22)
 - `flow-trigger-create` — new workflow trigger, full lifecycle: definition, emission, filters, form, dry run, data-model rules; ends in a review checklist.
-- `flow-node-create` — new customer-facing workflow node: config + UI rendering, executor, wiring.
-- `flow-verify-node` — checks a node has all its files, config, registrations, and tests.
+- `flow-node-create` — new customer-facing workflow node, full lifecycle: config + render fields, executor + errors, registration, validation, dry run, results/run history, contract changes, availability + AI builder; ends in a review checklist.
 - `flow-node-agent-create` — new Flow Builder node agent: signature, examples, registration, training.
 - `flow-node-agent-ship` — build, train, audit, and ship a node agent end to end.
 - `flow-template-create` — new workflow template, from a flow saved in dev or from scratch.
@@ -26,8 +25,8 @@ work, read its `<repo>/.claude/skills/<name>/SKILL.md` and follow it; a plan tas
 - `investigate-prod` — starting point for a prod issue spanning Sentry, Langfuse, Temporal, Datadog, Postgres.
 - `linearize-migrations` — fixes Alembic migration-chain conflicts on merge.
 
-## frontend-monorepo (last updated 2026-10-21)
-- `flow-verify-node` — checks a workflow node is complete on the FE: registration, fields, run details, rendering.
+## frontend-monorepo (last updated 2026-10-22)
+- `flow-node-create` — how-to for adding a workflow node on the FE: entry + flag, flowTransforms, renderers, labels, run history; ends in a review checklist.
 - `flow-trigger-create` — how-to for adding a workflow trigger on the FE: entry and flag, labels, renderers, dry-run form, run history; ends in a review checklist.
 - `using-ui-new` — building or changing CRM UI with `@reevoai/ui-new`: package access, design opinions, gap escalation.
 - `using-design-system` — tokens, typography, components, and icons; the positive side of `frontend-no-hardcoded-colors.md`.
