@@ -25,12 +25,20 @@ on PROD and on DEV. Reading a flag in the wrong one gives a confident wrong answ
 
 | Project | id | Read by |
 |---|---|---|
-| `app-ng-dev.reevo.ai (DEV)` | **118909** | deployed dev (app-ng-dev), and localhost — the local backend resolves flags from dev PostHog (`local-env.md`) |
+| `app-ng-dev.reevo.ai (DEV)` | **118909** | deployed dev (app-ng-dev), and **all local testing** — see below |
 | `app.reevo.ai (PROD)` | **68803** | app.reevo.ai; the prod webapp build's key `phc_wowp…` is this project's token |
 
 The other projects in the org (marketing site, mobile, desktop, ops-central dev/prod, cal-dev,
 builder-agent) are not the webapp. Don't map the dev webapp's `.build-env.public.dev-start` key
 to a project by token — on 2026-10-21 it matched no project's current token; go by the table.
+
+### Local testing reads DEV flags — automatically
+
+Anything run on this laptop — the default stack, a `local-stack`, a test browser on localhost —
+evaluates flags against **DEV (118909)** with nothing to set up: the local backend's `.env` key is
+118909's token, and the local webapp uses the dev build's key. So "is X on for my local run" is
+a read on 118909 with the pool / seed org as the group. Never flip a flag for local testing on
+PROD, and don't ask which environment a local run uses.
 
 ## Read a flag
 
@@ -61,7 +69,9 @@ to a project by token — on 2026-10-21 it matched no project's current token; g
   a normal desktop Chrome UA; the server still evaluates flags normally.
 - **FE gate, not the flag.** A node or trigger can be hidden by the FE constants regardless of
   PostHog — see the `node-and-trigger-availability` knowledge-base entry.
-- **Local flag overrides don't work in this setup** — `local-env.md`.
+- **A local backend override.** The backend runs with `SALESTECH_BE_ENVIRONMENT="local"`, so a
+  gitignored `salestech-be/.ff_overrides.local.json` (if present) beats PostHog for that backend
+  only — check for the file before trusting a DEV read for a local run.
 
 ## Writes
 
