@@ -182,6 +182,7 @@ todo list: `todo-list` renders from it rather than keeping a second file.
 > Mode: <assistant | agentic | investigate>
 > Repo(s): <every repo a slice touches>
 > Base: mohammad/<project>-base
+> Hackathon: <idea page URL>        ← only for a hackathon drive (§ Hackathon projects)
 
 | Slice | Ticket | Status | Depends on | Base | Worktree | PR | Files |
 |---|---|---|---|---|---|---|---|
@@ -257,6 +258,19 @@ from the base. Each slice lands into the one below as it is (step 7), and `main`
 exactly once, in step 8. A red inherited from the base is expected, never a reason to stop, ask,
 or rerun: babysit reports it as non-blocking and announces the slice ready on its own merits
 (`babysit` § Base-inherited red).
+
+### Hackathon projects
+
+An index carrying `> Hackathon: <idea page URL>` is a `hackathon` execute drive — a throwaway MVP
+that never reaches `main`. It is always agentic, and differs from the steps above in four places:
+
+- **Every scoper and planner brief carries the MVP bar** (`hackathon` § Drive it): aim at the
+  demo, tests only where they prove it, and the evidence the demo must show.
+- **Step 2:** every slice bases on the project base or a dependency's branch, never `main` —
+  migrations and other teams' paths included; skip the code-owners carve-out.
+- **Steps 6–8 don't run.** No babysit, no final PR, no `main` merge. CI is not a gate. Once every
+  slice's PR is open and verified, hand back to `hackathon` § Prove it.
+- **Merging stays mine**, into the hackathon base too.
 
 ## Guardrails
 
