@@ -35,7 +35,8 @@ Postgres), `snowflake` (reporting warehouse),
 `merged-prs-digest` (post my PRs merged in the last 24h to my Slack channel),
 `estimate-timeline` (aggressive + likely dates per release stage, from measured velocity),
 `hackathon` (ideate innovative ideas into the Notion Hackathon Ideas db, or execute one as a
-throwaway agentic MVP that never reaches main),
+throwaway agentic MVP that never reaches main), `session-orchestrator` (one session holds a
+project's context while each slice runs in its own background sub-session),
 `keep-mergeable` (hold an approved PR merge-ready — conflict-only update-branch, never merges),
 `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
 leave behind), `investigate-memory-usage` (where memory went — by consumer, or per session).
