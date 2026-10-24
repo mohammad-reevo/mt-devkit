@@ -70,8 +70,9 @@ principles behind both. Don't re-pitch anything it lists as dropped.
 
 ## Mode: execute `<idea>`
 
-Take one idea to a demoable MVP, conducted by `workflow` as an **agentic project drive**
-(`workflow` § Modes, § Project drive). You are the conductor; the funnel phases do the work.
+Take one idea to a demoable MVP. This session becomes the **orchestrator**
+(`session-orchestrator`): it holds the idea and the index, and each slice runs in its own
+sub-session as an agentic `workflow` drive (`workflow` § Modes). The funnel phases do the work.
 
 ### 1. Frame the MVP
 
@@ -81,32 +82,36 @@ Take one idea to a demoable MVP, conducted by `workflow` as an **agentic project
   the demo will show before anything is built. Research the code first (a subagent) so the slice
   rests on what exists.
 - Name the project `hackathon-<idea-slug>` and split the slice into the few pieces that can build
-  in parallel (BE / FE / one per sub-idea). Write the MVP framing — what's in, what the demo
-  shows, the slices — into the idea page's Deep dive.
+  in parallel (BE / FE / one per sub-idea), with the contract between them (the endpoint or types
+  the FE consumes). Write the MVP framing — what's in, what the demo shows, the slices — into the
+  idea page's Deep dive.
 
 ### 2. Drive it
 
-Invoke `workflow agentic project hackathon-<idea-slug> <slice> <slice> …`. The index it writes
-carries `> Hackathon: <idea page URL>`, which switches on the hackathon rules below for every
-phase (`workflow` § Hackathon projects):
+Run `session-orchestrator` for project `hackathon-<idea-slug>`, with the framing as its project
+brief. The brief and index carry `> Hackathon: <idea page URL>`, which switches on
+`session-orchestrator` § Hackathon (orchestrator-owned bases, merging, the openapi bridge, the
+demo stack) and, in every sub-session, `workflow` § Hackathon projects:
 
 - **MVP bar, not house bar.** Scope and plan aim at the demo; tests only where they help prove
   it; reviewer findings that are polish or house-rule conformance are declined, correctness ones
   that would break the demo are fixed.
 - **The base branch is `mohammad/hackathon-<idea-slug>-base`** in each repo touched, cut once from
-  fresh `main`. Slice PRs target it (ready, never draft); a dependent slice stacks on its
-  dependency's branch. **It never merges to main** — no final PR, no update-branch from `main`,
-  ever. Main moving on is irrelevant.
+  fresh `main`. Slice PRs target it (ready, never draft). **It never merges to main** — no final
+  PR, no update-branch from `main`, ever. Main moving on is irrelevant.
 - **CI is not a gate.** No babysit; a red check is ignored unless it points at a real bug in the
   demo path.
-- **Merging stays mine**, even into the hackathon base (`github.md`).
+- **The orchestrator merges** each verified slice into the hackathon base, and only there;
+  sub-sessions never merge.
 - Agentic stops still stop (`workflow` § Modes): a repeated failure or structural drift ends that
   slice, and the rest carry on.
 
 ### 3. Prove it, then write it up
 
-verify proves each slice on a local stack (`tester`), capturing the evidence the frame promised.
-Then write the result onto the idea's Notion page, under a `## MVP result` heading:
+verify proves each slice on its own local stack (`tester`). Once every slice is merged into the
+bases, the orchestrator runs the end-to-end demo on one stack across them
+(`session-orchestrator` § Hackathon), capturing the evidence the frame promised. Then write the
+result onto the idea's Notion page, under a `## MVP result` heading:
 
 - what was built, and what it demonstrates — with the evidence (numbers, screenshots)
 - how to run the demo: the branches, the stack, the exact steps

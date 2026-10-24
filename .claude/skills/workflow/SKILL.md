@@ -262,15 +262,19 @@ or rerun: babysit reports it as non-blocking and announces the slice ready on it
 ### Hackathon projects
 
 An index carrying `> Hackathon: <idea page URL>` is a `hackathon` execute drive — a throwaway MVP
-that never reaches `main`. It is always agentic, and differs from the steps above in four places:
+that never reaches `main`; a single-idea drive whose scope or plan header carries the same line
+is one hackathon slice, run by a `session-orchestrator` sub-session. It is always agentic, and
+differs from the steps above in four places:
 
 - **Every scoper and planner brief carries the MVP bar** (`hackathon` § Drive it): aim at the
   demo, tests only where they prove it, and the evidence the demo must show.
 - **Step 2:** every slice bases on the project base or a dependency's branch, never `main` —
   migrations and other teams' paths included; skip the code-owners carve-out.
-- **Steps 6–8 don't run.** No babysit, no final PR, no `main` merge. CI is not a gate. Once every
-  slice's PR is open and verified, hand back to `hackathon` § Prove it.
-- **Merging stays mine**, into the hackathon base too.
+- **Steps 6–8 don't run** (nor a single drive's verify → babysit hop). No babysit, no final PR, no
+  `main` merge. CI is not a gate. Once every slice's PR is open and verified, hand back to
+  `hackathon` § Prove it — a sub-session instead reports `verified` to its orchestrator.
+- **The drive never merges.** Only the hackathon's orchestrator merges, and only into the
+  hackathon base (`session-orchestrator` § Hackathon).
 
 ## Guardrails
 

@@ -76,6 +76,9 @@ and breaks the API contract for unrelated frontend PRs that merge first.
 - **Rare exception:** pushing a regen in fast succession *after* a backend
   change has already merged and deployed. Surface it in conversation first and
   wait for explicit approval — never push generated openapi files silently.
+- **Hackathon FE base:** a hackathon orchestrator pushes the regen onto its
+  `mohammad/hackathon-*-base` branch unasked — that base never merges
+  (`session-orchestrator` § Hackathon).
 
 The backend spec (`salestech-be/openapi.json`) is out of scope for this
 restriction — that file is regenerated and committed as part of the normal
