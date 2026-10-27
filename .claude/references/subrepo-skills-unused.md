@@ -28,7 +28,6 @@ neither list is new since the last triage.
 - create-lance-migration
 - cross-repo-investigate
 - datadog-debug
-- db-migration
 - db-model-repo
 - dev-db
 - e2e-module-generator
@@ -43,6 +42,7 @@ neither list is new since the last triage.
 - get-branch-context
 - index-falkor
 - langfuse-debug
+- linearize-migrations
 - local-db
 - local-db-inspect
 - local-falkor-inspect

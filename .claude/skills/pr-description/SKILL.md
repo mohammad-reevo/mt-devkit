@@ -154,8 +154,9 @@ workflow or activity changed`. Two shapes the deterministic validator rejects, s
 write them on a runtime diff:
 
 - an `N/A` whose reason says docs-only / tests-only / metadata-only / documentation;
-- any `N/A` when the diff touches an Alembic migration or a route `views.py` — emit those
-  metrics instead.
+- any `N/A` when the diff touches a route `views.py` — emit those metrics instead. (The
+  validator also flags `salestech_be/db/migrations/versions/`, which is frozen; it doesn't
+  check Liquibase changesets under `salestech_be/db/changelog/changes/`.)
 
 > supersedes: an earlier version of this override banned every runtime-diff `N/A`, on the
 > belief that the validator rejects them all. It rejects only the two shapes above, and the

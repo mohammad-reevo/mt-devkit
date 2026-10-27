@@ -10,9 +10,8 @@ context or line numbers, so main moving underneath leaves it unchanged. `check` 
 when the file set and every file's lines match the snapshot, and 1 listing each
 difference otherwise -- the push is refused on 1.
 
-Two kinds of change are allowed through, because re-chaining onto main makes them:
-  - a migration's `down_revision` / `Revises:` lines;
-  - regenerated files (GENERATED): only their presence in the file set is compared.
+Regenerated files (GENERATED) are allowed through: only their presence in the file set is
+compared.
 
 Stdlib only; keep it 3.9-compatible.
 """
@@ -20,12 +19,10 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
 import sys
 
-GENERATED = ("latest_revision.txt", "schema.sql", "openapi.json")
-RECHAIN_LINE = re.compile(r"^[+-]\W*(down_revision\b|Revises:)")
+GENERATED = ("schema.sql", "openapi.json")
 
 
 def _git(*args):
@@ -45,7 +42,7 @@ def _own_change(base):
                                                  "old mode", "new mode", "\\ No newline")):
             continue
         elif line.startswith(("+", "-")):
-            if os.path.basename(current) in GENERATED or RECHAIN_LINE.match(line):
+            if os.path.basename(current) in GENERATED:
                 continue
             files[current].append(line)
     return files

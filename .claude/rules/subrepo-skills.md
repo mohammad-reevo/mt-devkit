@@ -23,7 +23,7 @@ work, read its `<repo>/.claude/skills/<name>/SKILL.md` and follow it; a plan tas
 - `cleanup-flow-db` — finds and fixes corrupt flow definitions in dev or prod.
 - `temporal-debug` — read-only investigation of Temporal workflow failures and timeouts.
 - `investigate-prod` — starting point for a prod issue spanning Sentry, Langfuse, Temporal, Datadog, Postgres.
-- `linearize-migrations` — fixes Alembic migration-chain conflicts on merge.
+- `db-migration` — any schema change: a Liquibase changeset (Alembic is frozen), CDC safety, backfills.
 
 ## frontend-monorepo (last updated 2026-10-22)
 - `flow-node-create` — how-to for adding a workflow node on the FE: entry + flag, flowTransforms, renderers, labels, run history; ends in a review checklist.

@@ -87,8 +87,8 @@ must name real files and real seams, not guesses.
 - **Break the work into ordered tasks.** Each task: one coherent change with a clear
   done-signal. Small enough to verify independently, big enough to be worth a checkbox.
 - **A salestech-be migration is always its own PR.** When the work adds or alters a table,
-  split the Tasks into `### PR 1 — migration` (the migration file, `latest_revision.txt`,
-  regenerated `schema.sql`, nothing else) and `### PR 2 — code, stacked on PR 1` (model,
+  split the Tasks into `### PR 1 — migration` (the Liquibase changeset under
+  `salestech_be/db/changelog/changes/`, regenerated `schema.sql`, nothing else) and `### PR 2 — code, stacked on PR 1` (model,
   repository, `TableName`, CDC/Debezium exclusion, tests, feature logic). CI's migration-only
   check fails a PR that mixes the two. The mechanics are salestech-be's own and are read, not
   restated: `.claude/skills/db-migration/SKILL.md` (+ its `reference/cdc-awareness.md`) for PR 1,

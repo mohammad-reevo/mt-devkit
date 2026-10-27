@@ -1,6 +1,6 @@
 ---
 name: keep-mergeable
-description: Keep an approved PR mergeable until I merge it — poll it, and when `main` moves (BEHIND / DIRTY, or a queue entry ahead about to collide) merge the base in and resolve ONLY mechanical conflicts — an alembic re-chain onto main's new head, a regenerated `schema.sql` or `openapi.json` — proving with a diff guard that the PR's own change is byte-identical before pushing. Any other conflict stops it. Never merges, never enqueues, never enables auto-merge — after a push it tells me to re-enqueue. Built for busy-main salestech-be PRs (migration PRs above all) that go stale every time another migration lands. Manual only. Triggers on "keep this PR mergeable", "keep it up to date until I merge", "auto update-branch this", "/keep-mergeable".
+description: Keep an approved PR mergeable until I merge it — poll it, and when `main` moves (BEHIND / DIRTY) merge the base in and resolve ONLY mechanical conflicts — a regenerated `schema.sql` or `openapi.json` — proving with a diff guard that the PR's own change is byte-identical before pushing. Any other conflict stops it. Never merges, never enqueues, never enables auto-merge — after a push it tells me to re-enqueue. Built for busy-main salestech-be PRs that go stale every time `main` moves. Manual only. Triggers on "keep this PR mergeable", "keep it up to date until I merge", "auto update-branch this", "/keep-mergeable".
 argument-hint: <pr-url> [<pr-url>...]
 allowed-tools:
   - Bash
@@ -24,8 +24,6 @@ poll iteration**: check, act if needed, schedule the next.
   auto-merge; that is expected — tell me, and I re-enqueue.
 - **Never adds a change beyond a merge-conflict fix.** No review fixes, no "while I'm here", no
   lint touch-ups. The diff guard below enforces this; a failure is a stop, not something to fix.
-- **Dequeuing is the one queue action allowed**, and only for a guaranteed conflict (below) — it
-  lands nothing and saves a queue run that would end UNMERGEABLE. Always tell me when it happens.
 
 ## Resolve the PR (first iteration)
 
@@ -44,25 +42,11 @@ gh api graphql -f query='query { repository(owner:"<o>",name:"<r>") { pullReques
 - `MERGED` / `CLOSED` → done for that PR; say so. All done → stop the loop.
 - Not `APPROVED` → this isn't the stage for me — say so and stop; `babysit` owns pre-approval.
 
-**2. Look ahead — will `main` or the queue break it?** Run while the PR is queued or ready to be.
-- *Main:* `git fetch origin` then `git merge-tree --write-tree --name-only origin/<base> HEAD`;
-  exit 1 means a conflict today (the files are listed).
-- *Queue (salestech-be migrations):* only when the PR adds a migration. List the entries ahead
-  (all of them if the PR isn't queued):
-  ```bash
-  gh api graphql -f query='query { repository(owner:"<o>",name:"<r>") { mergeQueue(branch:"<base>") {
-    entries(first:100) { nodes { position state headCommit { oid }
-      pullRequest { number files(first:100) { nodes { path } } } } } } } }'
-  ```
-  For each entry ahead that changes `salestech_be/db/migrations/versions/*`, read its
-  migration's `down_revision` at its head:
-  `gh api 'repos/<o>/<r>/contents/<path>?ref=<oid>' --jq .content | base64 -d | grep '^down_revision'`.
-  Same parent as ours ⇒ alembic two heads the moment it lands — a guaranteed conflict.
-- **A guaranteed conflict while queued** → dequeue
-  (`gh api graphql -f query='mutation { dequeuePullRequest(input:{id:"<pr id>"}) { clientMutationId } }'`),
-  tell me which PR blocks it, and **wait**: poll the blocker every ~5 min until it merges, then
-  update-branch below. **Never pre-chain onto an unmerged migration** — if the blocker is ejected,
-  ours breaks the other way.
+**2. Look ahead — will `main` break it?** Run while the PR is queued or ready to be:
+`git fetch origin` then `git merge-tree --write-tree --name-only origin/<base> HEAD`; exit 1 means
+a conflict today (the files are listed). salestech-be migrations are Liquibase changesets — one
+timestamped file each, picked up by `includeAll` — so two migration PRs never conflict with each
+other; Alembic is frozen and CI rejects new revisions.
 
 **3. Behind or conflicted → update-branch.** `mergeStateStatus` `BEHIND` or `DIRTY` (and the PR is
 not in the queue — the queue rebases what it holds) runs the procedure below. Otherwise nothing to
@@ -79,12 +63,6 @@ In the PR's repo checkout, with a clean tree (`git status --porcelain` empty —
    "Your local changes … would be overwritten", follow the skip-worktree workaround in
    `knowledge-base/concepts/harness/assimilation-harness.md`, then re-apply the overlay.
 3. **Resolve — only these, mechanically:**
-   - `salestech_be/db/migrations/latest_revision.txt` + the PR's migration → **re-chain**: set the
-     PR's first migration's `down_revision = "<main head>"` and its `Revises: <main head>` line,
-     where `<main head>` is the revision in `git show origin/<base>:salestech_be/db/migrations/latest_revision.txt`;
-     `latest_revision.txt` takes the PR's own last migration filename. Re-chain even after a
-     **clean** merge whenever main's head moved past our `down_revision` — two heads don't
-     conflict textually.
    - `salestech_be/db/schema.sql` → regenerate, never pick a side:
      `uv run python -m scripts.db.generate_db_schema` (needs Docker).
    - `openapi.json` → regenerate, never pick a side: `uv run generate_openapi.py`.
@@ -93,13 +71,13 @@ In the PR's repo checkout, with a clean tree (`git status --porcelain` empty —
 4. **Guard** — `python3 <this-skill-dir>/pr_diff_guard.py check origin/<base> <snapshot>`. Exit 1
    means the PR's own change moved: **don't push**, show its output, leave the merge commit local,
    and stop.
-5. **Commit and push** — `Merge origin/<base>; re-chain <rev> onto <main head>` (salestech-be: no
+5. **Commit and push** — `Merge origin/<base>` (salestech-be: no
    Claude co-author line, per its prohibitions). Push. Then tell me, also via `PushNotification`:
-   "<PR link> updated to main — re-enqueue it". The local DB isn't touched; re-chaining it is mine.
+   "<PR link> updated to main — re-enqueue it". The local DB isn't touched.
 
 ## Poll cadence and close
 
-`ScheduleWakeup(600s)` by default; **300s** while waiting on a blocking queue entry to merge.
+`ScheduleWakeup(600s)`.
 Prompt: "Continue keep-mergeable — one more poll iteration for <PR links>." Quiet when nothing
 changed: one line ("#38770 approved, mergeable, queue position 4 — nothing to do").
 
