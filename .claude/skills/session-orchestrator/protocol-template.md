@@ -35,16 +35,14 @@ project.
   (`babysit`): report it once, don't rerun or fix it in your PR.
 
 ## Status reports to the orchestrator
-Send each to `<orchestrator name>` with `SendMessage` (load it via ToolSearch
-`select:SendMessage`), the first line being the status:
+The orchestrator reads your state itself every turn — your scope / plan / handoff files, your PR,
+whether you're busy or waiting on Mohammad — so don't report phases (scoped, planned, go,
+verified, ready). Send only what it must act on, to `<orchestrator name>` with `SendMessage`
+(load it via ToolSearch `select:SendMessage`), the first line being the status:
 
-- `scoped <slug>` — the scope path and its open questions, each with your recommendation; then
-  Mohammad's answers once given. None → say so and carry on to plan.
-- `planned <slug>` — the plan path plus a ≤10-line summary (the PR's shape, tasks, tests, any
-  Decided / Assumption lines). `go <slug>` once Mohammad gives it.
-- `PR open <slug> <url>` — then run verify, and report `verified <slug>` with one line on what
-  was proven and anything left pending.
-- `ready <slug> <url>` — babysit announced the PR ready for review. <Hackathon: stop at `verified`.>
+- `PR open <slug> <url>` — once, so the PR lands in the index.
+- `merged <slug>` / `queued <slug>` — your PR merged, or entered main's merge queue.
+  <Hackathon: `verified <slug>` instead — the orchestrator merges on it; then stop.>
 - `decided <slug>` — any decision Mohammad makes that touches another slice, a contract, or the
   brief.
 - `blocked <slug> <why>` — a cross-slice question or a brief decision you'd have to break. Wait
