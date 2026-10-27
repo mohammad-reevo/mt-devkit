@@ -29,7 +29,7 @@ All verified on Claude Code 2.1.310.
 | Talk to it | `SendMessage({to: "<name>"})`. It arrives at the receiver's next tool round, and an **idle session wakes on it** — no polling. It replies the same way, to the orchestrator's name. |
 | Hear when it stops | `SendMessage(... notify_when_idle: true)` — one notice, one-shot; re-subscribe after each |
 | Read its screen | `claude logs <id>` — a raw terminal render; last resort, never the main channel |
-| Stop / resume | `claude stop <id>` keeps the conversation; `claude --bg --resume <id>` continues it |
+| Stop / resume | `claude stop <id>` keeps the conversation. `(cd <its cwd> && claude --bg --resume <full uuid> "<prompt>")` continues it — as a **new** background session carrying the old conversation; uuid from `~/.claude/projects/<cwd-slug>/<uuid>.jsonl`. A short id or another cwd opens an interactive picker ("No sessions match") and silently does nothing — check `claude logs <new id>` shows it working. |
 
 Can't: **compact another session** (a message is read as text, never as `/compact`), approve its
 permission prompts, or answer its `AskUserQuestion`. What follows from that:
@@ -44,6 +44,9 @@ permission prompts, or answer its `AskUserQuestion`. What follows from that:
   the orchestrator's own cwd.
 - **Stop before you spawn under a reused name.** A name resolves to the latest session, so the old
   one must be stopped first or messages go astray.
+- **Resume is a last resort, and asked first.** Every resume shows up as another session in my
+  agents view. If a stopped session must continue, ask me, then resume exactly once (row above).
+  Never spawn extra sessions to recover one.
 - **Never `claude rm`.** It deletes the session's worktree too. Tearing down is `/done`'s.
 
 ## 1. Frame
@@ -86,8 +89,10 @@ into the base after the migration lands.
 
 - **Base branch per repo** a slice touches, cut from fresh main (`workflow` § Project drive
   step 2). **The orchestrator owns the base**: it creates it, syncs main into it (after a
-  migration lands, or when slices need something from main), and then tells every sub-session
-  with an open PR to update-branch onto it. Sub-sessions never push to or merge into the base.
+  migration lands, or when slices need something from main), and tells sessions with an open PR
+  that it moved. Sub-sessions never push to or merge into the base — but each **update-branches
+  its own PR from the base** whenever it is CONFLICTING or BEHIND (`git-merge.md`, never ask),
+  without waiting to be told.
 - **Index** `~/.claude/spec/<project>-project.md` in `workflow`'s format, with the columns
   `Session` (`<letter> · <id>`) and `Depends on (hard / soft)`, the status `blocked`, and a
   `> Orchestrator:` header line (name, id, brief).
@@ -146,8 +151,9 @@ scoped / planned / go / verified / ready messages. On each:
 
 - **`PR open <url>`** → record the PR in the index (it's how the pull finds it).
 - **`merged` / `queued`** (its PR merged, or entered main's merge queue) → base sync if it was
-  a main PR, then Replace (below).
+  a main PR, then Replace / Wrap up (below).
 - **`handoff`** → Replace (below).
+- **`done`** → the wrap-up's idle wait (below).
 - **`decided`** — I decided something in that session that touches another slice, a contract, or
   the brief → record it in the brief (Decisions or the contracts) and tell any affected session.
 - **`blocked`** — a cross-slice question, or a brief decision the session would have to break →
@@ -157,18 +163,31 @@ scoped / planned / go / verified / ready messages. On each:
 - **A session `not running` in the pull** with work left → it stopped mid-flight. Read
   `claude logs`; resend its brief's resume line, or replace it.
 
-**Idle notices only while waiting on a swap** — after asking a session to hand off, subscribe once
-(`SendMessage({to: "<name>", message: "", notify_when_idle: true})`) so its stop is clean. No
-standing subscriptions: every notice is a turn of noise.
+**Idle notices only while waiting on a swap or a wrap-up** — after asking a session to hand off or
+to `/done`, subscribe once (`SendMessage({to: "<name>", message: "", notify_when_idle: true})`)
+so its stop is clean. No standing subscriptions: every notice is a turn of noise.
 
 **Replace — one PR per session.** Once a session's PR no longer needs its context — **merged**
 for a PR into the project base (no merge queue there), **in the merge queue** for a PR into main —
 tell it to hand off. It writes `~/.claude/tmp/<project>/<letter>-handoff.md` (what shipped, the
 contracts it settled, what's left for the next PR) and reports `handoff`. If its letter has a next
-PR: `claude stop` it (the conversation is kept), then spawn a fresh session under the **same
-name** with the brief and the handoff. A slice split mid-flight (e.g. a code-owners carve-out)
-gets a new letter, never a second PR in the current session. Until a PR merges, review comments
-and CI on it are its session's — the orchestrator tells it when to address them.
+PR: wrap it up (below), then spawn a fresh session under the **same name** with the brief and the
+handoff. A slice split mid-flight (e.g. a code-owners carve-out) gets a new letter, never a second
+PR in the current session. Until a PR merges, review comments and CI on it are its session's.
+
+**Wrap up — once a session's PR is merged** (into the base, or into main):
+
+1. Message it to run `/done` on **its own worktrees only**, citing the protocol's standing
+   authorization (`done` § One exception), and to report `done <letter>` with what was torn down.
+2. **Wait for its idle notice** after that report — never stop it on the `done` message itself,
+   which can arrive while teardown is still running (stopping it then leaves a half-deleted
+   worktree). Check read-only that its worktrees are gone, then `claude stop <id>` and mark it
+   `done` in the index.
+3. **The session finishes its own teardown.** The orchestrator never removes a sub-session's
+   worktree. If teardown was interrupted, ask me, then resume it once (§ What a session can do).
+
+A PR into main hands off at the merge queue but wraps up at merge, so its successor spawns then —
+which a dependent usually needs anyway, after the main → base sync.
 
 **Relayed gates** — for a small project, at my ask: sub-sessions never ask me; they report each
 gate to the orchestrator and wait, and the orchestrator brings me **one session's gate at a time**
@@ -176,8 +195,8 @@ gate to the orchestrator and wait, and the orchestrator brings me **one session'
 only their gates are serialised. Record it in the index's `> Mode:` line and the protocol.
 
 The orchestrator **never** writes slice code, reads slice diffs, or runs a slice's checks — that
-context belongs in the sub-session. It reads only the reports, the brief, the index, and PR
-metadata.
+context belongs in the sub-session. It reads only the messages, the brief, the index, and the
+`session_status.py` pull.
 
 ## 6. Summary
 
@@ -199,8 +218,8 @@ I answer each session in its own session.
 
 Once every PR is merged into the base, show the index table and run `pr-explanation` on the
 base → main diff. From there `workflow` § Project drive steps 7–8 apply — merging slices into the
-base, and the final base → main PR, are mine. Leave live sessions running so a late review comment
-lands in a session that knows the slice; `/done` tears down the worktrees.
+base, and the final base → main PR, are mine. Every session has been wrapped up as its PR merged
+(§ 5), so nothing is left running; the orchestrator's own `/done` is mine to call.
 
 ## Hackathon
 
@@ -231,7 +250,10 @@ replaced:
 
 - **The orchestrator holds context, not work.** If it is about to read code, it should be asking a
   sub-session instead.
-- **The orchestrator owns the base; sub-sessions own their worktrees.** Neither touches the other's.
+- **The orchestrator owns the base; sub-sessions own their worktrees** — creating them and tearing
+  them down. Neither touches the other's.
+- **A base PR doesn't fix CI it didn't cause.** A red whose cause is already in the base, or on
+  main but not yet in it, is base-inherited (`babysit`): reported once, fixed on the base.
 - **Sub-sessions never merge, never message anyone but the orchestrator, never touch another
   session's worktree.**
 - **Merging into main or the project base, and requesting reviews, stay mine** in every mode —

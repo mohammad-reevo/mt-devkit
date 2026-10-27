@@ -100,6 +100,12 @@ only when a conflict needs a judgment between two intents (both sides changed th
 `git merge --abort`, list the files, and keep watching on the 600s row. Babysit never merges the
 PR itself.
 
+**Don't wait on the re-run after a base merge.** On a PR whose base is not `main`, when the PR was
+green and update-branch's merge is its only new commit: run the tests covering the conflicted
+files locally (`local-test-scope.md`), push, and announce ready on the prior green run, noting the
+re-run as non-blocking. A red that then appears and touches the PR's own diff is still the PR's to
+fix.
+
 **On a failed CI job** — surface just the failure, not the whole log:
 `gh run view <run-id> --log-failed` (already only the failed steps); if still long, `grep`/`tail`
 around the `##[error]` marker.
@@ -113,14 +119,19 @@ Track rerun state per `headSha` (a new push resets it).
 **Base-inherited red — not this PR's to fix.** On a PR whose base is not `main` (a project base,
 a slice, a long-lived split base), a failing required check is **base-inherited** when its failing
 paths don't overlap the PR's diff (`git diff origin/<base>...HEAD --name-only`) **and** its cause
-or fix is on `main` but not yet in the base: `git log origin/<base>..origin/main -- <failing paths>`
-shows it, or — for `Frontend Breaking Changes Check` and similar contract checks — it fails on
-routes or types `main` added that the base lacks. It clears once the base takes `main`, after this
-PR merges into the base (`workflow` § Final PR, for a project) — and that merge is mine. So:
-report it **once** as "base-inherited — clears when the base takes `main`", naming the `main`
-commit behind it; no rerun; it never counts toward the go-loud rule below and never holds the
-ready announcement. Never merge `main` into the PR or the base to clear it. A red you can't place
-on `main` this way is not base-inherited — handle it as usual.
+is outside this PR, either:
+- **on `main` but not yet in the base** — `git log origin/<base>..origin/main -- <failing paths>`
+  shows it, or (for `Frontend Breaking Changes Check` and similar contract checks) it fails on
+  routes or types `main` added that the base lacks. It clears once the base takes `main`; or
+- **already in the base** — another slice merged into it first, or the base's own state:
+  `git log origin/main..origin/<base> -- <failing paths>` names the commit. It is fixed on the base
+  itself (by the project orchestrator or a dedicated slice), or clears at the final base → `main` PR.
+
+Either way the fix isn't this PR's, and the merges that clear it are mine. So: report it **once**
+as "base-inherited", naming the commit behind it and which of the two it is; no rerun; never fix
+it in this PR; it never counts toward the go-loud rule below and never holds the ready
+announcement. Never merge `main` into the PR or the base to clear it. A red you can't place on a
+commit this way is not base-inherited — handle it as usual.
 
 **Same check failing across two pushes → go loud and stop.** Track failing check names per
 `headSha`. Once the same check has failed on **two distinct head SHAs** — a fix was pushed and it
@@ -167,7 +178,8 @@ past (~40 min+), and even then as an observation, not a failure.
 
 - **`--watch-only`** → print the status table + unresolved threads, then exit. No wakeup, no loop.
 - **Loop mode (default)** → every PR's `--required` checks passed (a base-inherited red counts
-  as passed) **and** zero unresolved threads
+  as passed, and so does the prior green run while a base merge's re-run is still going)
+  **and** zero unresolved threads
   → **ready for your review**: announce it and exit (do **not** invoke or suggest done — `/done` ends the
   whole session, not one PR — and do **not** write any state beyond marking the PR ready for
   review in the session's todo list, per `todo-list`). The announcement:
@@ -179,8 +191,8 @@ past (~40 min+), and even then as an observation, not a failure.
     that section per `pr-description` § Overrides). It doesn't hold the announcement back;
   - lists any other non-required check that failed or is still running, one line each, marked
     non-blocking. These never hold the announcement back;
-  - lists each base-inherited red, one line each with the `main` commit that clears it, marked
-    non-blocking;
+  - lists each base-inherited red, one line each with the commit behind it, marked
+    non-blocking — and, after a base merge on a green PR, the CI re-run still going;
   - is also sent as a `PushNotification` (load it via `ToolSearch` if deferred) — "PR ready for
     your review" + the link — since this is the moment I'm most likely away from the session.
 
