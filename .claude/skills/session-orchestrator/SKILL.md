@@ -1,6 +1,6 @@
 ---
 name: session-orchestrator
-description: Run a multi-part project from one top-level session that holds only the project's context, while each part — a slice — runs in its own background Claude Code sub-session that I never have to open. The orchestrator frames the project, splits it into slices, sets up a base branch per repo and a worktree per slice, spawns one sub-session per slice running `workflow <mode>` (which itself works through subagents), then tracks them through messages instead of reading their work. More slices run concurrently, and no session carries the whole project in its context. Generic — real projects use it as-is; a hackathon (§ Hackathon) adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "/session-orchestrator".
+description: Run a multi-PR project from one top-level session that holds only the project's context, while each PR runs in its own background Claude Code sub-session. The orchestrator frames the project, settles the design with me one decision at a time, presents a PR breakdown (hard/soft dependencies, which session builds which PRs) for approval, owns the project base branch, spawns one sub-session per PR running `workflow`, and tracks them through status messages instead of reading their work. I answer each sub-session's gates in that session; the orchestrator owns everything cross-slice and tells me which session needs me and why. More PRs run concurrently, and no session carries the whole project in its context. A `summary` mode renders where every session stands. A hackathon (§ Hackathon) skips the planning phase and adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "session-orchestrator summary", "/session-orchestrator", "/session-orchestrator summary".
 ---
 
 # session-orchestrator — one session holds the project, sub-sessions do the work
@@ -8,14 +8,15 @@ description: Run a multi-part project from one top-level session that holds only
 Three layers, each with a narrower context than the one above:
 
 ```
-orchestrator session   project framing + the index; spawns, routes, merges (hackathon only)
-  └─ sub-session ×N    one slice each: `workflow <mode> <slice>` scope → plan → implement → verify
+orchestrator session   project brief, PR breakdown, index, base branch; spawns, routes, syncs
+  └─ sub-session ×N    one PR each: `workflow assistant <slice>` scope → plan → implement → verify
        └─ subagents    the funnel's scoper / planner / implementer / reviewer / tester
 ```
 
-This is `workflow` § Project drive with the slices moved out of the conductor's context: the
-index, branches and worktrees work the same, but each slice runs its own single-idea drive in its
-own session instead of being interleaved in this one. Everything in `workflow` holds per slice.
+This is `workflow` § Project drive with the slices moved out of the conductor's context: each PR
+runs its own single-idea drive in its own session. Everything in `workflow` holds per slice.
+
+Two modes: **run** (§ 1–7, the default) and **summary** (§ Summary).
 
 ## What a session can and can't do to another session
 
@@ -31,7 +32,7 @@ All verified on Claude Code 2.1.310.
 | Stop / resume | `claude stop <id>` keeps the conversation; `claude --bg --resume <id>` continues it |
 
 Can't: **compact another session** (a message is read as text, never as `/compact`), approve its
-permission prompts, or answer its `AskUserQuestion`. Two consequences shape this skill:
+permission prompts, or answer its `AskUserQuestion`. What follows from that:
 
 - **A bloated sub-session is replaced, not compacted.** Spawn it with `--autocompact` so it
   compacts itself; if it still degrades, `claude stop` it and spawn a fresh one with the same
@@ -39,82 +40,156 @@ permission prompts, or answer its `AskUserQuestion`. Two consequences shape this
 - **Same permission mode as the orchestrator.** A sub-session in a different mode holds
   cross-session messages for my approval, which silently stalls the protocol. Pass this session's
   own mode in `--permission-mode`.
+- **Spawn in a subshell** — `(cd <dir> && claude --bg …)`. A bare `cd … && claude --bg …` moves
+  the orchestrator's own cwd.
+- **Stop before you spawn under a reused name.** A name resolves to the latest session, so the old
+  one must be stopped first or messages go astray.
 - **Never `claude rm`.** It deletes the session's worktree too. Tearing down is `/done`'s.
 
-## 1. Frame and split
+## 1. Frame
 
-- **Frame the project** in the project brief `~/.claude/spec/<project>-brief.md`: the goal, what
-  done looks like, the slices, and the contract between them — the API, schema or types one slice
-  produces for another. This file is what the orchestrator carries and every sub-session reads.
-- **Slices.** One per independently buildable piece, each its own PR. Name them per scope's
-  naming rule. A slice that needs another's code depends on it; across repos, a frontend slice
-  that consumes a new backend endpoint depends on that backend slice.
-- **Concurrency.** At most **3 sub-sessions building** at once: each one can bring up a local
-  stack (`local-stack` has a fixed pool of 5 orgs) and the machine holds only so many, and
-  `local-test-scope.md` allows one pytest run at a time machine-wide — a sub-session denied by it
-  retries rather than stopping. Queue the rest and spawn as building ones finish.
+Write the project brief `~/.claude/spec/<project>-brief.md` from `project-brief-template.md` (this
+directory): the goal, what done looks like, **Decisions (settled — don't re-litigate)**, **Open**,
+the orchestration choices, and the contracts between slices. It is what the orchestrator carries
+and every sub-session reads — a decision recorded there is one no sub-session re-opens in its own
+scope.
 
-## 2. Set up
+## 2. Plan
 
-Write the index `~/.claude/spec/<project>-project.md` in `workflow`'s format, plus a `Session`
-column (`<name> · <id>`) and the status `blocked`. Then, as in `workflow` § Project drive:
+Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hackathon).
 
-1. **Base branch per repo** a slice touches, cut from fresh main (§ Project drive step 2).
-2. **Worktree per slice**, `worktree create <slug> --no-enter`, one after another, each repo
-   switched onto the slice's base (step 3). plan reuses an existing worktree, so the sub-session
-   never creates a second one.
+1. **Settle the design with me**, one question at a time (`discussion-turns.md`). Each answer
+   lands in the brief's Decisions as it is given; a question that stays open goes to Open, and the
+   sub-session whose slice it belongs to asks it in its own scope.
+2. **PR breakdown.** Slices are PRs: one independently buildable, reviewable piece each, named per
+   scope's naming rule. Present two tables:
+   - **PRs** — slice · ticket · base · hard deps · soft deps. **Hard** = can't build without the
+     other PR's code; its session waits until that PR has pushed, then branches from it.
+     **Soft** = both edit the same file; the later one `git merge`s the earlier branch once pushed
+     to avoid conflicts, but doesn't wait for it.
+   - **Sessions** — letter · the PRs it builds, in order · why they're grouped. A session builds
+     **one PR at a time**: independent PRs get separate letters; a dependency chain keeps one
+     letter, each PR on a fresh session (§ 5 Replace). At most **3 sessions building** at once —
+     each may bring up a local stack (`local-stack`'s pool holds 5 orgs) and
+     `local-test-scope.md` allows one pytest run machine-wide; a later session takes a finished
+     one's slot.
+3. **Wait for my approval** of the breakdown. Nothing is set up before it.
 
-The orchestrator itself stays at the mt-devkit root and reaches every tree by path.
+**Base per PR.** Every slice targets the project base — standalone tickets and bug fixes bundled
+into the project included — so CI and the merge queue run once, on the final base → main PR. One
+exception, forced by CI: salestech-be fails any PR that mixes `db/changelog/changes/*.sql` with
+code, so a **migration** is its own slice with base `main` (`workflow` § Project drive step 2).
+Code that needs the table depends on it hard, and starts once the orchestrator has synced main
+into the base after the migration lands.
 
-## 3. Spawn
+## 3. Set up
 
-Per slice whose dependencies are met (a dependency is met once it has **pushed** — merged only in a
-hackathon):
+- **Base branch per repo** a slice touches, cut from fresh main (`workflow` § Project drive
+  step 2). **The orchestrator owns the base**: it creates it, syncs main into it (after a
+  migration lands, or when slices need something from main), and then tells every sub-session
+  with an open PR to update-branch onto it. Sub-sessions never push to or merge into the base.
+- **Index** `~/.claude/spec/<project>-project.md` in `workflow`'s format, with the columns
+  `Session` (`<letter> · <id>`) and `Depends on (hard / soft)`, the status `blocked`, and a
+  `> Orchestrator:` header line (name, id, brief).
+- **Protocol** `~/.claude/tmp/<project>/protocol.md` from `protocol-template.md` — the gates,
+  reports, handoff and boundaries every sub-session shares.
+- **Session brief** `~/.claude/tmp/<project>/<letter>-brief.md` from `session-brief-template.md`
+  per session — the PRs it builds, in order, each with its contract and dependencies.
 
-1. Write its brief from `brief-template.md` (this directory) to
-   `~/.claude/tmp/<project>/<slug>-brief.md`.
-2. Spawn it from the slice's worktree:
-   ```bash
-   cd <MAIN>/worktrees/<slug> && claude --bg -n "<project> · <slug>" \
-     --permission-mode <this session's mode> --autocompact 400000 \
-     "You are a sub-session of the <project> project. Read ~/.claude/tmp/<project>/<slug>-brief.md and follow it."
-   ```
-3. Record the session in the index, set the slice to `scoping`, and subscribe:
-   `SendMessage({to: "<project> · <slug>", message: "", notify_when_idle: true})`.
+The orchestrator creates **no worktrees**: each sub-session creates its own worktree and local
+stack per PR, including a separate worktree for a PR on a different base (a migration to main).
+The orchestrator stays at the mt-devkit root and reaches PRs through `gh`.
 
-## 4. Conduct
+## 4. Spawn
 
-The orchestrator now waits: end the turn, and messages wake it. Each sub-session reports at every
-transition (the brief's § Report). On each message:
+Per session whose first PR's hard dependencies have pushed (merged only in a hackathon), up to
+the cap:
 
-- **Status** (`scoped`, `planned`, `PR open <url>`, `verified`, `ready <url>`, `blocked <why>`) → update the index
-  row, re-subscribe to that session's idle notice.
-- **A pushed dependency** → spawn the slices waiting on it, and tell any running dependent to
-  `git merge origin/<dependency branch>`.
-- **A question** → answer it from the project brief when the brief settles it. Otherwise it is a
-  gate, and `workflow` § Modes decides: assistant — batch every pending sub-session question into
-  one ask to me and relay the answers; agentic — the sub-session already took its recommendation,
-  so just check the Assumption against the brief and correct it if it contradicts.
-- **The plan gate** (assistant mode): collect every slice's plan, present them to me together,
-  and send each sub-session my go — the same single gate as § Project drive step 4.
-- **An idle notice with no final report** → the session stopped mid-flight. Read its last report
-  and `claude logs`; resend the brief's resume line, or replace the session (above).
+```bash
+(cd <MAIN> && claude --bg -n "<orchestrator title> - <letter>" \
+  --permission-mode <this session's mode> --autocompact 400000 \
+  "You are session <letter> of the <project> project. Read ~/.claude/tmp/<project>/<letter>-brief.md and follow it.")
+```
+
+Spawn from the mt-devkit root — the sub-session's first act is its own worktree, and a session
+that enters a sub-repo is blocked from Bash. Record the session in the index, set its PR to
+`scoping`, and subscribe: `SendMessage({to: "<name>", message: "", notify_when_idle: true})`.
+Then tell me the session is up, with its pointer (§ 5).
+
+## 5. Conduct
+
+The orchestrator waits: end the turn, and messages wake it.
+
+**Gates are mine, in the sub-session.** Each sub-session runs `workflow`'s assistant mode and
+asks me its own gates — scope's open questions, the plan go, implement escalations — in its own
+session. The orchestrator settles only what the brief already settles or what has one dominant
+answer, and passes those answers along so the session doesn't ask me again.
+
+**Every pointer to a session carries its context.** I don't hold each slice's context, so whenever
+the orchestrator sends me to a session it says, in a line or two, what that session is building,
+where it is (scoping / planning / building / PR), and what it is waiting on me for — the
+§ Summary block.
+
+On each message from a sub-session:
+
+- **Status** (`scoped`, `planned`, `go`, `PR open <url>`, `verified`, `ready <url>`,
+  `handoff`) → update the index row, re-subscribe to its idle notice. When it now needs me, tell
+  me with its pointer.
+- **`decided`** — I decided something in that session that touches another slice, a contract, or
+  the brief → record it in the brief (Decisions or the contracts) and tell any affected session.
+- **`blocked`** — a cross-slice question, or a brief decision the session would have to break →
+  answer it from the brief, or bring it to me here; then relay the answer.
+- **A pushed dependency** → spawn sessions whose hard deps are now met, and tell sessions with a
+  soft dep on it to `git merge origin/<its branch>`.
+- **An idle notice with no report** → the session stopped mid-flight. Read its last report and
+  `claude logs`; resend its brief's resume line, or replace it.
+
+**Replace — one PR per session.** Once a session's PR no longer needs its context — **merged**
+for a PR into the project base (no merge queue there), **in the merge queue** for a PR into main —
+tell it to hand off. It writes `~/.claude/tmp/<project>/<letter>-handoff.md` (what shipped, the
+contracts it settled, what's left for the next PR) and reports `handoff`. If its letter has a next
+PR: `claude stop` it (the conversation is kept), then spawn a fresh session under the **same
+name** with the brief and the handoff. A slice split mid-flight (e.g. a code-owners carve-out)
+gets a new letter, never a second PR in the current session. Until a PR merges, review comments
+and CI on it are its session's — the orchestrator tells it when to address them.
+
+**Relayed gates** — for a small project, at my ask: sub-sessions never ask me; they report each
+gate to the orchestrator and wait, and the orchestrator brings me **one session's gate at a time**
+(that slice's context, then its questions) and relays my answers. Sessions still run concurrently;
+only their gates are serialised. Record it in the index's `> Mode:` line and the protocol.
 
 The orchestrator **never** writes slice code, reads slice diffs, or runs a slice's checks — that
-context belongs in the sub-session. It reads only the reports, the index, and PR metadata.
+context belongs in the sub-session. It reads only the reports, the brief, the index, and PR
+metadata.
 
-## 5. Finish
+## 6. Summary
 
-Each sub-session's drive carries on into babysit for its own PR — it holds the slice's context,
-so review threads are addressed there, not here. Once every slice reports `ready <url>`: show the
-index table and run `pr-explanation` per PR. From there `workflow` § Project drive steps 7–8
-apply — merging and the final PR to main are mine. Leave the sub-sessions running so a later
-review comment lands in a session that knows the slice; `/done` tears down the worktrees.
+`session-orchestrator summary` — and unasked whenever the orchestrator needs my input on a
+session. Re-read the index and each session's last report, plus `claude agents --json` (busy /
+idle) and `gh pr view` for open PRs. Then two tiers:
+
+**Needs your input** — one block per session waiting on me:
+
+1. **Needs your input?** yes — what for, in one line.
+2. **Current PR:** the slice, one line on what it does, and its phase.
+3. **Owns:** every PR the session's letter is responsible for.
+
+**No input needed** — one line per remaining session: letter · current PR · phase.
+
+I answer each session in its own session.
+
+## 7. Finish
+
+Once every PR is merged into the base, show the index table and run `pr-explanation` on the
+base → main diff. From there `workflow` § Project drive steps 7–8 apply — merging slices into the
+base, and the final base → main PR, are mine. Leave live sessions running so a late review comment
+lands in a session that knows the slice; `/done` tears down the worktrees.
 
 ## Hackathon
 
 When the project brief and the index carry `> Hackathon: <idea page URL>` (set by `hackathon`
-execute), the orchestrator also owns the base branches, and § 5 is replaced:
+execute), § 2 is skipped, the orchestrator also merges into the base branches, and § 7 is
+replaced:
 
 - **Mode is agentic**, for every sub-session; hackathon rules apply per `workflow` § Hackathon
   projects (MVP bar, no CI gate, nothing reaches main).
@@ -122,7 +197,7 @@ execute), the orchestrator also owns the base branches, and § 5 is replaced:
   frontend-monorepo typically both).
 - **The orchestrator merges.** It merges a slice's PR into its hackathon base once the slice
   reports `verified` (`gh pr merge <url> --merge`), then messages every running slice on that base
-  to `git merge origin/<base>`, and spawns the slices that were waiting on it. **Only the
+  to `git merge origin/<base>`, and spawns the sessions that were waiting on it. **Only the
   orchestrator merges, only into a hackathon base** — sub-sessions never merge anything, and
   nothing ever merges into main.
 - **Backend → frontend contract.** After a backend slice merges, the orchestrator regenerates the
@@ -130,7 +205,6 @@ execute), the orchestrator also owns the base branches, and § 5 is replaced:
   backend branch that isn't deployed yet), commits the regenerated client **onto the FE hackathon
   base** and pushes it, then tells the FE slices to merge it in. Pushing the generated client is
   allowed here and only here: the FE base never merges, so nothing leaks into FE history.
-- **Sub-sessions run their own stacks** to verify their slice (`local-stack`).
 - **The demo.** Once every slice is merged into the bases, the orchestrator checks out the bases
   in its own worktree (`worktree create hackathon-<idea-slug> --no-enter`, each repo switched to
   its base), brings up one local stack across BE and FE, runs the end-to-end demo, and hands back
@@ -140,6 +214,8 @@ execute), the orchestrator also owns the base branches, and § 5 is replaced:
 
 - **The orchestrator holds context, not work.** If it is about to read code, it should be asking a
   sub-session instead.
+- **The orchestrator owns the base; sub-sessions own their worktrees.** Neither touches the other's.
 - **Sub-sessions never merge, never message anyone but the orchestrator, never touch another
-  slice's worktree.**
-- **Merging into main and requesting reviews stay mine** in every mode, hackathon included.
+  session's worktree.**
+- **Merging into main or the project base, and requesting reviews, stay mine** in every mode —
+  a hackathon base is the one thing the orchestrator merges into.
