@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with one hard gate (after plan, needing my explicit go-ahead — scope hands off on its own once no question needs my call) and kickback routing, then stops at explicit done. Runs in one of three modes — assistant (default), agentic (takes the recommended option at every gate), investigate (scope only). Detects phase from the spec files + git/PR state. Several tickets at once run as a project drive — one slice per ticket, scoped, planned, and built in parallel, each to its own PR on a shared project base. Also a status view across every in-flight idea and project. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
+description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with one hard gate (after plan, needing my explicit go-ahead — scope hands off on its own once no question needs my call) and kickback routing, then stops at explicit done. Runs in one of three modes — assistant (default), agentic (takes the recommended option at every gate), investigate (scope only). Detects phase from the spec files + git/PR state. Several tickets at once run as a project drive — one slice per ticket, scoped, planned, and built in parallel, each to its own PR — into main, or onto a shared project base for a chain of dependent slices. Also a status view across every in-flight idea and project. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -204,11 +204,13 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
    per § Modes — and record the answers into each slice's scope file (re-dispatching a scoper only
    where an answer needs new research). A premise-changed report stops that slice alone.
    Investigate → stop here, every slice `scoped`.
-2. **Branches.** In each affected repo, create the project base off fresh main — once, and never
-   push to main: `git -C <primary repo> fetch origin`, then
-   `git -C <primary repo> push origin origin/main:refs/heads/mohammad/<project>-base`.
-   A slice's base is the project base — or, only when it would otherwise conflict or needs another
-   slice's code, the slice it depends on (stack only when needed). **Migrations and paths another
+2. **Branches.** A slice's base is `main`, unless it is part of a chain — a slice that needs
+   another slice's code. Only then, in each repo the chain touches, create the project base off
+   fresh main — once, and never push to main: `git -C <primary repo> fetch origin`, then
+   `git -C <primary repo> push origin origin/main:refs/heads/mohammad/<project>-base`. The
+   chain's slices base on the project base, or on the slice they depend on (stack only when
+   needed). Slices that merely edit the same file are not a chain: they base on main and resolve
+   the conflict when it comes. No chain, no project base — the index's `> Base:` reads `main`. **Migrations and paths another
    team owns** become their own slices with base `main`: feed the paths a scope names to
    `python3 .claude/harness/code_owners.py owners` (from primary salestech-be, paths on stdin); a
    row, `required` or `requested`, for a team that only part of the slice needs is such a path
@@ -245,14 +247,14 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
    time; a slice based on `main` (migration, another team's paths) goes through `main`'s normal
    flow. This order is mine to apply — never write it into a PR body
    (`pr-description-no-merge-order.md`). babysit marks a row `merged` once its PR merges.
-8. **Final PR.** Once every slice based on the project base (directly or through a chain) reads
+8. **Final PR** — only when a project base exists. Once every slice based on the project base (directly or through a chain) reads
    `merged`, open the project PR `mohammad/<project>-base` → `main` via `verify` (ready, never
    draft), its body linking every slice PR, and add it to the index as the last row. This PR is
    where `main` is reconciled: merge `origin/main` into the project base **once** and resolve every
    conflict and cascading CI failure there. babysit it like any PR; `done <project>` after it
    merges stays mine.
 
-**Never update-branch across the stack.** No slice is ever synced with `main`, and a parent's
+**Never update-branch across the stack.** No slice on the project base is ever synced with `main` (a slice based on `main` update-branches as any PR does), and a parent's
 later fixes aren't merged down into its children — not for a conflict, not for red CI inherited
 from the base. Each slice lands into the one below as it is (step 7), and `main` meets the stack
 exactly once, in step 8. A red inherited from the base is expected, never a reason to stop, ask,
@@ -263,7 +265,7 @@ or rerun: babysit reports it as non-blocking and announces the slice ready on it
 
 An index carrying `> Hackathon: <idea page URL>` is a `hackathon` execute drive — a throwaway MVP
 that never reaches `main`; a single-idea drive whose scope or plan header carries the same line
-is one hackathon slice, run by a `session-orchestrator` sub-session. It is always agentic, and
+is one hackathon slice, run by a `orchestrate-session` sub-session. It is always agentic, and
 differs from the steps above in four places:
 
 - **Every scoper and planner brief carries the MVP bar** (`hackathon` § Drive it): aim at the
@@ -274,7 +276,7 @@ differs from the steps above in four places:
   `main` merge. CI is not a gate. Once every slice's PR is open and verified, hand back to
   `hackathon` § Prove it — a sub-session instead reports `verified` to its orchestrator.
 - **The drive never merges.** Only the hackathon's orchestrator merges, and only into the
-  hackathon base (`session-orchestrator` § Hackathon).
+  hackathon base (`orchestrate-session` § Hackathon).
 
 ## Guardrails
 

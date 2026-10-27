@@ -71,7 +71,7 @@ principles behind both. Don't re-pitch anything it lists as dropped.
 ## Mode: execute `<idea>`
 
 Take one idea to a demoable MVP. This session becomes the **orchestrator**
-(`session-orchestrator`): it holds the idea and the index, and each slice runs in its own
+(`orchestrate-session`): it holds the idea and the index, and each slice runs in its own
 sub-session as an agentic `workflow` drive (`workflow` § Modes). The funnel phases do the work.
 
 ### 1. Frame the MVP
@@ -88,9 +88,9 @@ sub-session as an agentic `workflow` drive (`workflow` § Modes). The funnel pha
 
 ### 2. Drive it
 
-Run `session-orchestrator` for project `hackathon-<idea-slug>`, with the framing as its project
+Run `orchestrate-session` for project `hackathon-<idea-slug>`, with the framing as its project
 brief. The brief and index carry `> Hackathon: <idea page URL>`, which switches on
-`session-orchestrator` § Hackathon (orchestrator-owned bases, merging, the openapi bridge, the
+`orchestrate-session` § Hackathon (orchestrator-owned bases, merging, the openapi bridge, the
 demo stack) and, in every sub-session, `workflow` § Hackathon projects:
 
 - **MVP bar, not house bar.** Scope and plan aim at the demo; tests only where they help prove
@@ -110,7 +110,7 @@ demo stack) and, in every sub-session, `workflow` § Hackathon projects:
 
 verify proves each slice on its own local stack (`tester`). Once every slice is merged into the
 bases, the orchestrator runs the end-to-end demo on one stack across them
-(`session-orchestrator` § Hackathon), capturing the evidence the frame promised. Then write the
+(`orchestrate-session` § Hackathon), capturing the evidence the frame promised. Then write the
 result onto the idea's Notion page, under a `## MVP result` heading:
 
 - what was built, and what it demonstrates — with the evidence (numbers, screenshots)

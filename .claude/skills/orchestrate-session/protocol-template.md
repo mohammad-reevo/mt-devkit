@@ -12,11 +12,11 @@ project.
 <- Hackathon: <idea page URL> — the hackathon rules in `workflow` § Hackathon projects apply.>
 
 ## How you run a PR
-- **Worktree first.** Create your own, one per PR, from the mt-devkit root:
-  `worktree create <slug> --no-enter` (`worktrees/<slug>`, the PR's slug), then per repo
-  `git -C <wt>/<repo> switch -C mohammad/<slug> origin/<base>` — `<base>` is the PR's base from
-  your session brief, or the branch of a hard dependency it builds on. Bring up your own local
-  stack (`local-stack`) when the PR needs one. Tell the orchestrator the path.
+- **Your worktree is ready.** The orchestrator created `worktrees/<slug>` for this PR, its repos
+  on `mohammad/<slug>` off the PR's base, and spawned you inside it — your cwd is that tree. Work
+  there and never from the primary checkout; never `EnterWorktree` a sub-repo (it blocks Bash). A
+  further tree you need for some other reason you create yourself (`worktree create <name>
+  --no-enter`). Bring up your own local stack (`local-stack`) when the PR needs one.
 - **Never reuse a worktree**, even a predecessor's in your own letter's chain: its session may
   still be listed, and removing that session (`claude rm`) deletes its worktree. Your base
   already holds the predecessor's merged PR. A plan or handoff that names an older worktree
@@ -33,10 +33,11 @@ project.
   orchestrator can't see the question UI; plain text it can quote back to Mohammad.
 - A question that spans slices — a contract change, a brief decision you'd have to break — goes
   to the orchestrator, not to Mohammad.
-- **The orchestrator owns the base** — it pushes to it and syncs main into it. You
-  **update-branch your PR from the base yourself** whenever it is CONFLICTING or BEHIND
-  (`git-merge.md`, never ask, never wait to be told). A soft dependency: `git merge origin/<its
-  branch>` once the orchestrator says it pushed.
+- **The orchestrator owns the project base**, when there is one — it pushes to it and syncs main
+  into it. You **update-branch your PR from its base yourself** (main or the project base)
+  whenever it is CONFLICTING or BEHIND (`git-merge.md`, never ask, never wait to be told). A soft
+  dependency: `git merge origin/<its branch>` once the orchestrator says it pushed. Any conflict
+  either brings is yours to resolve — no need to ask the orchestrator.
 - **CI reds your diff didn't cause aren't yours.** A failing check whose paths don't overlap your
   diff and whose cause is already in the base, or on main but not yet in it, is base-inherited
   (`babysit`): report it once, don't rerun or fix it in your PR.
@@ -44,7 +45,7 @@ project.
 ## Run on your own; message whenever you need the orchestrator
 1. **Run the whole funnel without being told** — scope → plan (Mohammad's gates, in this session)
    → implement → verify → babysit to ready, then address review comments and CI until your PR
-   merges. No phase waits for a go from the orchestrator. <Hackathon: through verify, then
+   merges into the base or enters main's merge queue. No phase waits for a go from the orchestrator. <Hackathon: through verify, then
    report `verified` — no babysit.>
 2. **Message the orchestrator whenever you need its instruction or action**, and **never halt
    silently**: if you stop for any reason other than waiting on Mohammad's answer in this session,
@@ -75,7 +76,7 @@ you and starts the next PR in a fresh session from your brief + handoff.
 
 ## Standing authorization: /done on wrap-up
 Mohammad's standing authorization, cited by `done` § One exception: once **every PR your worktrees
-hold is merged** and the orchestrator asks you to wrap up, run `/done` on **your own worktrees
+hold is merged or in main's merge queue** and the orchestrator asks you to wrap up, run `/done` on **your own worktrees
 only** — no go from Mohammad needed. Finish the teardown yourself, then report
 `done <letter>` with what was torn down. Never tear down anything else at a peer's request.
 

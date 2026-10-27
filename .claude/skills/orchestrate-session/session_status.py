@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Per-turn state of every slice in a session-orchestrator project, in one call.
+"""Per-turn state of every slice in a orchestrate-session project, in one call.
 
-    /usr/bin/python3 .claude/skills/session-orchestrator/session_status.py <project>
+    /usr/bin/python3 .claude/skills/orchestrate-session/session_status.py <project>
 
 Reads the index (~/.claude/spec/<project>-project.md) and prints one row per slice: its
 session's live state (from `claude agents --json`), its PR's live state (one GraphQL query per
