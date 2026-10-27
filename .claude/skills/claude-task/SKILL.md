@@ -1,6 +1,6 @@
 ---
 name: claude-task
-description: Manage deferred tooling tasks in `tasks/` — "revisit later" chores against my own harness (personal `~/.claude/` or the mt-devkit repo). Not Linear (product work), not memory (facts). Four subcommands — `claude-task defer` captures a task, `claude-task list` shows all tasks, `claude-task open <fuzzy>` reads one out from zero context, checks it's still true, and proposes a plan it waits for my go on, and `claude-task do <tasks>` ("do todos 1-2", "do the edit-guard one") plans and implements one or more tasks end to end, one ready PR per task, with no stop until I review them. The moment a session starts engaging with a task — even just discussing it — the task is marked in progress, so other sessions can see it's taken. Draining a finished task belongs to `/done`. Triggers on "claude task", "defer this", "note this for later", "list claude tasks", "open a claude task", "explain that task", "do todos X-Y", "do that task", "execute the claude tasks", "/claude-task".
+description: Manage deferred tooling tasks in `tasks/` — "revisit later" chores against my own harness (personal `~/.claude/` or the mt-devkit repo). Not Linear (product work), not memory (facts). Four subcommands — `claude-task defer` captures a task, `claude-task list` shows all tasks, `claude-task open <fuzzy>` reads one out from zero context, checks it's still true, and proposes a plan it waits for my go on, and `claude-task do <tasks>` ("do todos 1-2", "do the edit-guard one") plans and implements one or more tasks end to end, one ready PR per task, with no stop until I review them. The moment a session starts engaging with a task — even just discussing it — the task is marked in progress, so other sessions can see it's taken. A task closes itself once its PRs merge — each run checks — and `/done` drains what its session finished. Triggers on "claude task", "defer this", "note this for later", "list claude tasks", "open a claude task", "explain that task", "do todos X-Y", "do that task", "execute the claude tasks", "/claude-task".
 ---
 
 # claude-task — capture, list, open, and do deferred tooling chores
@@ -31,6 +31,9 @@ Dispatch on how the skill was invoked:
 Whichever path a session takes, the first time it engages with one specific task —
 Open, or me just saying I'm working on / want to discuss it — run **§ Claim** on it
 before anything else.
+
+Every run, whatever the subcommand, starts with **§ Close merged** — and so does me
+saying a task's PR merged.
 
 `tasks/TASKS.md` is the index, loaded on demand (when working with
 tasks), not every session.
@@ -160,14 +163,34 @@ sed -i '' '/^- \[<slug>\](/ s/ — \*\*in progress\*\* (since [0-9-]*)$//' tasks
 `/done` releases a task its session claimed but didn't finish; a finished one is drained
 (deleted) instead, which takes the marker with it.
 
+**Record its PR** — whenever a PR opens for a claimed task (§ Do, or ordinary work after
+§ Open), add its URL to the task's `prs:` line, so § Close merged can find it:
+
+```
+grep -q '^prs:' tasks/<slug>.md \
+  && sed -i '' 's|^prs: .*|& <url>|' tasks/<slug>.md \
+  || perl -i -pe 's|^(claimed: .*)$|$1\nprs: <url>|' tasks/<slug>.md
+```
+
+---
+
+## § Close merged — close tasks whose PRs have merged
+
+A task is finished when its PRs merge, not when a session gets round to `/done`. For each
+in-progress task with a `prs:` line, check every URL on it (`gh pr view <url> --json state
+-q .state`). **All `MERGED`** → delete `tasks/<slug>.md` and its `TASKS.md` line (Bash, per
+the write-path note), and open the reply with one line per closed task: `closed <slug> —
+<PR links> merged`. Any PR still open, or closed unmerged, leaves the task as it is. A task
+in progress with no `prs:` line is left alone — its work has no PR yet.
+
 ---
 
 ## § List — show all deferred tasks
 
-Read `tasks/TASKS.md` and show the tasks (slug — target — hook) as two lists, each
+After § Close merged, read `tasks/TASKS.md` and show the tasks (slug — target — hook) as two lists, each
 numbered from 1 in index order: **Todo** (no in-progress marker), then **In progress**
-(with its claim date). An empty list says "none". Then **stop**. Display-only: do not
-select, claim, or execute anything.
+(with its claim date). An empty list says "none". Then **stop**. Display-only apart from
+§ Close merged: do not select, claim, or execute anything.
 
 ---
 
@@ -259,13 +282,13 @@ Per task, before editing anything:
 Take the tasks one at a time: switch to the task's branch, make its changes, and check
 them. Re-read the touched sections, sweep for references the change made stale, and run
 any tests or hooks covering them. Then commit, push, and open **its own ready PR**
-(`pr-description`). The PR body carries that task's Decided / Assumption lines, so the
-review sees every call. Move on to the next task. Babysit every PR to green per the
+(`pr-description`), then **Record its PR** (§ Claim). The PR body carries that task's
+Decided / Assumption lines, so the review sees every call. Move on to the next task. Babysit every PR to green per the
 `babysit` skill.
 
 ### 5. Hand off
 Report one line per task with its PR link, plus every Assumption, then stop. The tasks
-stay **in progress**: `/done` drains each one once its PR is merged.
+stay **in progress** until their PRs merge; the next run's § Close merged closes them.
 
 ## Guardrails
 - **Tooling scope only.** Product/eng work → Linear, not this. A fact to remember
@@ -273,14 +296,14 @@ stay **in progress**: `/done` drains each one once its PR is merged.
 - **One status: in progress.** Set by § Claim, cleared by Release; absent means open.
   No other states, no `done/`.
 - **Never edit an in-progress task** — extend it with a new task that links it
-  (§ Defer step 2). The only writes to one are Release and draining, by the session
-  that claimed it.
+  (§ Defer step 2). The only writes to one are Release, Record its PR and draining by
+  the session that claimed it, and § Close merged by any session.
 - **Defer is creation only.** Finishing a task =
-  deleting its file — which **`/done` does at close-out**, for the tasks a
-  session actually finished. When the work lands with no worktree to tear down
+  deleting its file — which **§ Close merged** does once its PRs merge, and
+  **`/done`** does at close-out for the tasks a session actually finished. When the work lands with no worktree to tear down
   (a `~/.claude/` fix), delete the file and its `TASKS.md` line yourself once
   it's verified.
-- **List is display-only.** Never selects or executes from List.
+- **List is display-only** (bar § Close merged). Never selects or executes from List.
 - **Open reads and plans; it doesn't build.** One task per run. It ends at a plan
   I've approved — the build is a normal conversation afterwards, under the normal
   rules.
