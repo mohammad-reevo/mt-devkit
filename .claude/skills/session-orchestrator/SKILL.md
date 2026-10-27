@@ -47,7 +47,9 @@ permission prompts, or answer its `AskUserQuestion`. What follows from that:
 - **Resume is a last resort, and asked first.** Every resume shows up as another session in my
   agents view. If a stopped session must continue, ask me, then resume exactly once (row above).
   Never spawn extra sessions to recover one.
-- **Never `claude rm`.** It deletes the session's worktree too. Tearing down is `/done`'s.
+- **`claude rm` only after the session's own `/done`.** It deletes the session's worktree too, so
+  it is safe only because every session's worktree is its own and already torn down (§ 5 Wrap
+  up). Tearing down is `/done`'s.
 
 ## 1. Frame
 
@@ -72,8 +74,8 @@ Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hacka
      to avoid conflicts, but doesn't wait for it.
    - **Sessions** — letter · the PRs it builds, in order · why they're grouped. A session builds
      **one PR at a time**: independent PRs get separate letters; a dependency chain keeps one
-     letter, each PR on a fresh session (§ 5 Replace). At most **3 sessions building** at once —
-     each may bring up a local stack (`local-stack`'s pool holds 5 orgs) and
+     letter, each PR on a fresh session (§ 5 Replace) in a fresh worktree. At most **3 sessions
+     building** at once — each may bring up a local stack (`local-stack`'s pool holds 5 orgs) and
      `local-test-scope.md` allows one pytest run machine-wide; a later session takes a finished
      one's slot.
 3. **Wait for my approval** of the breakdown. Nothing is set up before it.
@@ -103,6 +105,8 @@ into the base after the migration lands.
 
 The orchestrator creates **no worktrees**: each sub-session creates its own worktree and local
 stack per PR, including a separate worktree for a PR on a different base (a migration to main).
+**One worktree per PR, named after its slug (`worktrees/<slug>`), never reused** — not even by
+the next session of the same letter, whose predecessor may still be listed.
 The orchestrator stays at the mt-devkit root and reaches PRs through `gh`.
 
 ## 4. Spawn
@@ -113,12 +117,14 @@ the cap:
 ```bash
 (cd <MAIN> && claude --bg -n "<orchestrator title> - <letter>" \
   --permission-mode <this session's mode> --autocompact 400000 \
-  "You are session <letter> of the <project> project. Read ~/.claude/tmp/<project>/<letter>-brief.md and follow it.")
+  "You are session <letter> of the <project> project. Ask every question inline as text with options and a recommendation; never use the question UI. Read ~/.claude/tmp/<project>/<letter>-brief.md and follow it.")
 ```
 
 Spawn from the mt-devkit root — the sub-session's first act is its own worktree, and a session
-that enters a sub-repo is blocked from Bash. Record the session in the index (`<letter> · <id>`)
-and set its PR to `scoping`. Then tell me the session is up, with its pointer (§ 5).
+that enters a sub-repo is blocked from Bash. The inline-questions line is in the prompt, not only
+the protocol, because a session can hit a gate before it has finished reading; the orchestrator
+can't see a question asked through the question UI. Record the session in the index
+(`<letter> · <id>`) and set its PR to `scoping`. Then tell me the session is up, with its pointer (§ 5).
 
 ## 5. Conduct
 
@@ -133,8 +139,10 @@ is stale by the time it arrives. Before answering me, and before acting on any m
 
 One row per slice: its session's busy / idle and state (`blocked` = waiting on me), its PR's
 state, mergeability, checks, review, open threads and merge-queue position, and which of its scope
-/ plan / handoff files exist. Update the index from it, then act on what changed — a merge, a
-queued PR, a session now waiting on me. Never read a session's conversation to find out.
+/ plan / handoff files exist. Under the table, each `blocked` session's last message — the
+question it is asking me. Update the index from it, then act on what changed — a merge, a
+queued PR, a session now waiting on me. Never read a session's conversation beyond that quoted
+message to find out.
 
 **Gates are mine, in the sub-session.** Each sub-session runs `workflow`'s assistant mode and
 asks me its own gates — scope's open questions, the plan go, implement escalations — in its own
@@ -172,8 +180,9 @@ for a PR into the project base (no merge queue there), **in the merge queue** fo
 tell it to hand off. It writes `~/.claude/tmp/<project>/<letter>-handoff.md` (what shipped, the
 contracts it settled, what's left for the next PR) and reports `handoff`. If its letter has a next
 PR: wrap it up (below), then spawn a fresh session under the **same name** with the brief and the
-handoff. A slice split mid-flight (e.g. a code-owners carve-out) gets a new letter, never a second
-PR in the current session. Until a PR merges, review comments and CI on it are its session's.
+handoff. It creates its own worktree for the next PR — never the predecessor's. A slice split
+mid-flight (e.g. a code-owners carve-out) gets a new letter, never a second PR in the current
+session. Until a PR merges, review comments and CI on it are its session's.
 
 **Wrap up — once a session's PR is merged** (into the base, or into main):
 
@@ -181,7 +190,8 @@ PR in the current session. Until a PR merges, review comments and CI on it are i
    authorization (`done` § One exception), and to report `done <letter>` with what was torn down.
 2. **Wait for its idle notice** after that report — never stop it on the `done` message itself,
    which can arrive while teardown is still running (stopping it then leaves a half-deleted
-   worktree). Check read-only that its worktrees are gone, then `claude stop <id>` and mark it
+   worktree). Check read-only that its worktrees are gone, then `claude stop <id>` and
+   `claude rm <id>` — safe now, its worktree is gone and no other session shares it — and mark it
    `done` in the index.
 3. **The session finishes its own teardown.** The orchestrator never removes a sub-session's
    worktree. If teardown was interrupted, ask me, then resume it once (§ What a session can do).
@@ -206,7 +216,7 @@ agent state is `blocked`, or that sent `blocked`, needs me. Then two tiers:
 
 **Needs your input** — one block per session waiting on me:
 
-1. **Needs your input?** yes — what for, in one line.
+1. **Needs your input?** yes — what for, in one line, from the question the pull quotes.
 2. **Current PR:** the slice, one line on what it does, and its phase.
 3. **Owns:** every PR the session's letter is responsible for.
 

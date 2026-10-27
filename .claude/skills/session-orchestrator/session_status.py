@@ -6,19 +6,23 @@
 Reads the index (~/.claude/spec/<project>-project.md) and prints one row per slice: its
 session's live state (from `claude agents --json`), its PR's live state (one GraphQL query per
 PR: state, mergeability, review, checks rollup, unresolved threads, merge-queue position), and
-which of its scope / plan / handoff files exist. The orchestrator builds its picture from this,
-not from the messages sessions happened to send.
+which of its scope / plan / handoff files exist. Under the table, each blocked session's last
+assistant message from its transcript — the question it is asking Mohammad. The orchestrator
+builds its picture from this, not from the messages sessions happened to send.
 
 Read-only. Runs under /usr/bin/python3 (macOS system Python 3.9): keep 3.9-compatible.
 """
 import json
 import os
+import glob
 import re
 import subprocess
 import sys
 
 SPEC = os.path.expanduser("~/.claude/spec")
 TMP = os.path.expanduser("~/.claude/tmp")
+PROJECTS = os.path.expanduser("~/.claude/projects")
+QUESTION_CHARS = 1500
 
 PR_QUERY = """query($owner:String!,$repo:String!,$n:Int!){repository(owner:$owner,name:$repo){
 pullRequest(number:$n){state mergeStateStatus reviewDecision isInMergeQueue
@@ -59,12 +63,38 @@ def session_of(cell):
     return (letter.group(1) if letter else None, short_id.group(1) if short_id else None)
 
 
-def agent_state(agents, orchestrator, letter, short_id):
+def agent_of(agents, orchestrator, letter, short_id):
     for a in agents:
         if (short_id and a.get("id") == short_id) or (
                 letter and orchestrator and a.get("name") == "%s - %s" % (orchestrator, letter)):
-            return "%s/%s" % (a.get("status"), a.get("state"))
-    return "not running"
+            return a
+    return None
+
+
+def last_question(session_id):
+    """The session's last assistant text, or its AskUserQuestion questions; None without a transcript."""
+    # The transcript sits under the cwd the session started in, which a worktree switch doesn't move.
+    paths = glob.glob(os.path.join(PROJECTS, "*", session_id + ".jsonl"))
+    if not paths:
+        return None
+    with open(paths[0]) as f:
+        lines = f.read().splitlines()
+    for line in reversed(lines):
+        entry = json.loads(line)
+        if entry.get("type") != "assistant":
+            continue
+        content = entry["message"]["content"]
+        asked = [q.get("question", "") for block in content
+                 if block.get("type") == "tool_use" and block.get("name") == "AskUserQuestion"
+                 for q in block.get("input", {}).get("questions", [])]
+        if asked:
+            return "(question UI) " + " / ".join(asked)
+        texts = [block["text"] for block in content if block.get("type") == "text"]
+        if texts:
+            text = texts[-1].strip()
+            # The question closes the message, so a long one keeps its end.
+            return text if len(text) <= QUESTION_CHARS else "…" + text[-QUESTION_CHARS:]
+    return None
 
 
 def pr_state(url):
@@ -103,11 +133,15 @@ def main():
     project = sys.argv[1]
     orchestrator, rows = read_index(project)
     agents = json.loads(run(["claude", "agents", "--json"]))
+    blocked = []
     print("| Session | Slice | Index status | Agent | PR | Files |")
     print("|---|---|---|---|---|---|")
     for row in rows:
         slug = re.sub(r"\s*\(.*\)$", "", row.get("slice", "")).strip()
         letter, short_id = session_of(row.get("session", ""))
+        agent = agent_of(agents, orchestrator, letter, short_id) if letter else None
+        if agent and agent.get("state") == "blocked":
+            blocked.append((letter, agent.get("sessionId")))
         pr_url = re.search(r"\((https://github\.com/[^)]+)\)", row.get("pr", ""))
         try:
             pr = pr_state(pr_url.group(1) if pr_url else None)
@@ -117,8 +151,11 @@ def main():
             pr = "error: %s" % e
         print("| %s | %s | %s | %s | %s | %s |" % (
             letter or "—", slug, row.get("status", ""),
-            agent_state(agents, orchestrator, letter, short_id) if letter else "—",
+            "%s/%s" % (agent.get("status"), agent.get("state")) if agent
+            else ("not running" if letter else "—"),
             pr, files_of(project, slug, letter)))
+    for letter, session_id in blocked:
+        print("\n**%s asks:**\n%s" % (letter, last_question(session_id) or "— no transcript found"))
 
 
 if __name__ == "__main__":

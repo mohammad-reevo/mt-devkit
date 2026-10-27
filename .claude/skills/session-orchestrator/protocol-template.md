@@ -13,17 +13,24 @@ project.
 
 ## How you run a PR
 - **Worktree first.** Create your own, one per PR, from the mt-devkit root:
-  `worktree create <slug> --no-enter`, then per repo
+  `worktree create <slug> --no-enter` (`worktrees/<slug>`, the PR's slug), then per repo
   `git -C <wt>/<repo> switch -C mohammad/<slug> origin/<base>` — `<base>` is the PR's base from
   your session brief, or the branch of a hard dependency it builds on. Bring up your own local
   stack (`local-stack`) when the PR needs one. Tell the orchestrator the path.
+- **Never reuse a worktree**, even a predecessor's in your own letter's chain: its session may
+  still be listed, and removing that session (`claude rm`) deletes its worktree. Your base
+  already holds the predecessor's merged PR. A plan or handoff that names an older worktree
+  path is re-pointed at yours.
 - Run `workflow <mode> <slug>` with your session brief's PR description as the idea. Scope's
   header records `> Mode: <mode>`, `> Project: <project>`, `> Base: <base>`, `> Worktree: <path>`<,
   and `> Hackathon: <idea page URL>`>; plan copies them.
-- **Gates are Mohammad's, in this session** — scope's open questions, the plan go, escalations,
-  asked here as `workflow` normally does. <Relayed gates: never ask Mohammad; report the gate to
-  the orchestrator and wait for its answer.> <Hackathon: agentic — take the recommended option,
-  record the Assumption, and report it.>
+- **Gates are Mohammad's, in this session** — scope's open questions, the plan go, escalations.
+  <Relayed gates: never ask Mohammad; report the gate to the orchestrator and wait for its
+  answer.> <Hackathon: agentic — take the recommended option, record the Assumption, and report
+  it.>
+- **Ask every question inline, never with `AskUserQuestion` or any picker** — numbered questions,
+  each with its options (one line each) and your recommendation, then end the turn and wait. The
+  orchestrator can't see the question UI; plain text it can quote back to Mohammad.
 - A question that spans slices — a contract change, a brief decision you'd have to break — goes
   to the orchestrator, not to Mohammad.
 - **The orchestrator owns the base** — it pushes to it and syncs main into it. You
