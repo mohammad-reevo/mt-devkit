@@ -1,6 +1,6 @@
 ---
 name: session-orchestrator
-description: Run a multi-PR project from one top-level session that holds only the project's context, while each PR runs in its own background Claude Code sub-session. The orchestrator frames the project, settles the design with me one decision at a time, presents a PR breakdown (hard/soft dependencies, which session builds which PRs) for approval, owns the project base branch, spawns one sub-session per PR running `workflow`, and re-checks every session's live state each turn (`session_status.py`: agent state, PR, checks, threads, merge queue, spec files) instead of reading their work; sessions message it only for merges, handoffs, decisions and blockers. I answer each sub-session's gates in that session; the orchestrator owns everything cross-slice and tells me which session needs me and why. More PRs run concurrently, and no session carries the whole project in its context. A `summary` mode renders where every session stands. A hackathon (§ Hackathon) skips the planning phase and adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "session-orchestrator summary", "/session-orchestrator", "/session-orchestrator summary".
+description: Run a multi-PR project from one top-level session that holds only the project's context, while each PR runs in its own background Claude Code sub-session. The orchestrator frames the project, settles the design with me one decision at a time, presents a PR breakdown (hard/soft dependencies, which session builds which PRs) for approval, owns the project base branch, spawns one sub-session per PR running `workflow`, and re-checks every session's live state each turn (`session_status.py`: agent state, PR, checks, threads, merge queue, spec files) instead of reading their work; sessions run through babysit on their own and message it whenever they need its instruction or action — never halting silently. I answer each sub-session's gates in that session; the orchestrator owns everything cross-slice and tells me which session needs me and why. More PRs run concurrently, and no session carries the whole project in its context. A `summary` mode renders where every session stands. A hackathon (§ Hackathon) skips the planning phase and adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "session-orchestrator summary", "/session-orchestrator", "/session-orchestrator summary".
 ---
 
 # session-orchestrator — one session holds the project, sub-sessions do the work
@@ -154,8 +154,10 @@ the orchestrator sends me to a session it says, in a line or two, what that sess
 where it is (scoping / planning / building / PR), and what it is waiting on me for — the
 § Summary block.
 
-**Sessions push only what the orchestrator must act on and can't see in an artifact** — no
-scoped / planned / go / verified / ready messages. On each:
+**Sessions run on their own and never halt silently.** Each drives its PR through the whole
+funnel, babysit included, without a go from the orchestrator, and messages it whenever it needs
+the orchestrator's instruction or action. Those messages are only what the orchestrator must act
+on and can't see in an artifact — no scoped / planned / go / verified / ready. On each:
 
 - **`PR open <url>`** → record the PR in the index (it's how the pull finds it).
 - **`merged` / `queued`** (its PR merged, or entered main's merge queue) → base sync if it was
@@ -166,10 +168,13 @@ scoped / planned / go / verified / ready messages. On each:
   the brief → record it in the brief (Decisions or the contracts) and tell any affected session.
 - **`blocked`** — a cross-slice question, or a brief decision the session would have to break →
   answer it from the brief, or bring it to me here; then relay the answer.
+- **`need <what>`** — anything else it can't proceed without → act on it, or bring it to me.
 - **A pushed dependency** → spawn sessions whose hard deps are now met, and tell sessions with a
   soft dep on it to `git merge origin/<its branch>`.
 - **A session `not running` in the pull** with work left → it stopped mid-flight. Read
   `claude logs`; resend its brief's resume line, or replace it.
+- **A session `idle` but not `blocked`, with work left and no message** → a silent halt, which the
+  protocol forbids. Ask it what it is waiting on.
 
 **Idle notices only while waiting on a swap or a wrap-up** — after asking a session to hand off or
 to `/done`, subscribe once (`SendMessage({to: "<name>", message: "", notify_when_idle: true})`)

@@ -41,15 +41,25 @@ project.
   diff and whose cause is already in the base, or on main but not yet in it, is base-inherited
   (`babysit`): report it once, don't rerun or fix it in your PR.
 
-## Status reports to the orchestrator
+## Run on your own; message whenever you need the orchestrator
+1. **Run the whole funnel without being told** — scope → plan (Mohammad's gates, in this session)
+   → implement → verify → babysit to ready, then address review comments and CI until your PR
+   merges. No phase waits for a go from the orchestrator. <Hackathon: through verify, then
+   report `verified` — no babysit.>
+2. **Message the orchestrator whenever you need its instruction or action**, and **never halt
+   silently**: if you stop for any reason other than waiting on Mohammad's answer in this session,
+   message it why and what you need. An idle session with no message is a bug — the orchestrator
+   sees only `idle`.
+
 The orchestrator reads your state itself every turn — your scope / plan / handoff files, your PR,
 whether you're busy or waiting on Mohammad — so don't report phases (scoped, planned, go,
-verified, ready). Send only what it must act on, to `<orchestrator name>` with `SendMessage`
-(load it via ToolSearch `select:SendMessage`), the first line being the status:
+verified, ready). Message `<orchestrator name>` with `SendMessage` (load it via ToolSearch
+`select:SendMessage`), the first line being the status — one of these where it fits, otherwise
+`need <slug> <what>`:
 
 - `PR open <slug> <url>` — once, so the PR lands in the index.
 - `merged <slug>` / `queued <slug>` — your PR merged, or entered main's merge queue.
-  <Hackathon: `verified <slug>` instead — the orchestrator merges on it; then stop.>
+  <Hackathon: `verified <slug>` instead — the orchestrator merges on it; then wait for it.>
 - `decided <slug>` — any decision Mohammad makes that touches another slice, a contract, or the
   brief.
 - `blocked <slug> <why>` — a cross-slice question or a brief decision you'd have to break. Wait
