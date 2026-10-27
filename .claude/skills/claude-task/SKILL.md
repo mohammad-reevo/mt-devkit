@@ -68,6 +68,11 @@ Short kebab-case slug (e.g. "the 40-line edit cap starves subagents" →
 
 **Dedup check first:** `ls tasks/` and scan slugs/titles. If a task
 already covers this, update that file instead of creating a duplicate — say so.
+**Unless it is in progress** (`status: in-progress` in its frontmatter, or the
+**in progress** marker in `TASKS.md`): another session is executing it, and editing it
+changes its scope under that session's feet. File a new task instead, carrying only the
+added context, with a Links line `[[<in-progress-slug>]] — in progress since <date>;
+this adds <what>` — and say so in the confirmation.
 
 ### 3. Determine the target
 - `personal-claude` — the fix touches `~/.claude/` (hooks, rules, skills, config).
@@ -267,6 +272,9 @@ stay **in progress**: `/done` drains each one once its PR is merged.
   → memory, not this. Redirect and don't file it here.
 - **One status: in progress.** Set by § Claim, cleared by Release; absent means open.
   No other states, no `done/`.
+- **Never edit an in-progress task** — extend it with a new task that links it
+  (§ Defer step 2). The only writes to one are Release and draining, by the session
+  that claimed it.
 - **Defer is creation only.** Finishing a task =
   deleting its file — which **`/done` does at close-out**, for the tasks a
   session actually finished. When the work lands with no worktree to tear down
