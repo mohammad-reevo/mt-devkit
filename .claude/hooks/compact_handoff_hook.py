@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Compact handoff: after a compaction, point the session back at its checkpoint.
+"""Compact handoff: after a compaction, point the session back at its handoff.
 
-`session-deferral checkpoint` writes a living handoff for a session that keeps
-running, plus a pointer file at ~/.claude/tmp/checkpoints/<session_id> holding
+`handoff-session` (default mode) writes a living handoff for a session that keeps
+running, plus a pointer file at ~/.claude/tmp/handoffs/.sessions/<session_id> holding
 the handoff's path. Compaction keeps the session id, so on SessionStart with
 source "compact" this hook finds that pointer and injects "read <handoff> first"
 as additional context -- the auto-summary drops environment details and rules
-set mid-session, and the checkpoint is where they survive.
+set mid-session, and the handoff is where they survive.
 
 No pointer, a pointer to a missing file, or any other source -> no output, so a
-session that never checkpointed is untouched.
+session that never wrote a handoff is untouched.
 
-MT_CHECKPOINT_DIR overrides the pointer directory (the probe uses it).
+MT_HANDOFF_POINTER_DIR overrides the pointer directory (the probe uses it).
 
 Runs under /usr/bin/python3 (macOS system Python 3.9): keep 3.9-compatible.
 """
@@ -20,7 +20,7 @@ import os
 import sys
 
 POINTER_DIR = os.environ.get(
-    "MT_CHECKPOINT_DIR", os.path.expanduser("~/.claude/tmp/checkpoints"))
+    "MT_HANDOFF_POINTER_DIR", os.path.expanduser("~/.claude/tmp/handoffs/.sessions"))
 
 
 def main():
@@ -38,10 +38,10 @@ def main():
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "SessionStart",
         "additionalContext": (
-            "This session was just compacted. Before anything else, read its checkpoint "
+            "This session was just compacted. Before anything else, read its handoff "
             "`" + handoff + "` in full: it holds the environment, the rules the user set "
             "(verbatim -- they still bind), what is blocked on the user, and the next step. "
-            "Resume from its Next step; refresh it with `session-deferral checkpoint` as "
+            "Resume from its Next steps; refresh it with `handoff-session` as "
             "work moves on."),
     }}))
 

@@ -4,8 +4,8 @@
     /usr/bin/python3 .claude/hooks/tests/compact_handoff_probe.py
 
 Feeds real SessionStart payloads to the hook as a subprocess, against a scratch
-pointer directory (MT_CHECKPOINT_DIR), and asserts whether it injects the
-checkpoint path. Exits non-zero on the first mismatch.
+pointer directory (MT_HANDOFF_POINTER_DIR), and asserts whether it injects the
+handoff path. Exits non-zero on the first mismatch.
 """
 import json
 import os
@@ -18,7 +18,7 @@ HOOK = os.path.normpath(os.path.join(
 
 
 def run(pointer_dir, payload):
-    env = dict(os.environ, MT_CHECKPOINT_DIR=pointer_dir)
+    env = dict(os.environ, MT_HANDOFF_POINTER_DIR=pointer_dir)
     out = subprocess.run([sys.executable, HOOK], input=json.dumps(payload),
                          capture_output=True, text=True, env=env, check=True).stdout
     return json.loads(out) if out.strip() else None
@@ -26,11 +26,11 @@ def run(pointer_dir, payload):
 
 def main():
     with tempfile.TemporaryDirectory() as tmp:
-        pointers = os.path.join(tmp, "checkpoints")
+        pointers = os.path.join(tmp, "sessions")
         os.makedirs(pointers)
         handoff = os.path.join(tmp, "topic.md")
         with open(handoff, "w") as f:
-            f.write("# checkpoint\n")
+            f.write("# handoff\n")
         with open(os.path.join(pointers, "s-live"), "w") as f:
             f.write(handoff + "\n")
         with open(os.path.join(pointers, "s-stale"), "w") as f:
