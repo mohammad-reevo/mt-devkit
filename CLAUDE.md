@@ -33,7 +33,7 @@ Postgres), `snowflake` (reporting warehouse),
 `posthog` (read the right PostHog project — DEV vs PROD — and a flag's real evaluation),
 `session-deferral` (park a session to a handoff file and resume it later),
 `merged-prs-digest` (post my PRs merged in the last 24h to my Slack channel),
-`uat-announcement` (draft or review a "now in UAT" Slack post),
+`uat-announcement` (work out a "now in UAT" Slack post with me, or review my draft),
 `estimate-timeline` (aggressive + likely dates per release stage, from measured velocity),
 `hackathon` (ideate innovative ideas into the Notion Hackathon Ideas db, or execute one as a
 throwaway agentic MVP that never reaches main), `session-orchestrator` (one session holds a
