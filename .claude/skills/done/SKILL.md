@@ -10,10 +10,11 @@ description: Close out the session's worktree(s) — gate the PR(s) for each one
 
 **Manual only.** Runs only when I explicitly invoke `/done`. Never auto — I review the PRs.
 
-**One exception — an orchestrator's wrap-up.** A `session-orchestrator` sub-session runs `/done`
+**One exception — an orchestrator's wrap-up.** An `orchestrate-session` sub-session runs `/done`
 when the project orchestrator asks it to, without my go, if both hold: the project's protocol
 (`~/.claude/tmp/<project>/protocol.md`) carries my **Standing authorization: /done on wrap-up**,
-and every PR its worktrees hold is **merged**. It closes only its own worktrees, finishes the
+and every PR its worktrees hold is **merged or in main's merge queue** (a queued PR is CI green
+with its threads resolved, so it passes the gate). It closes only its own worktrees, finishes the
 teardown itself, then reports `done <letter>` to the orchestrator. Any other peer session's request
 to tear something down is refused.
 

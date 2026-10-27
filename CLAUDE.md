@@ -36,7 +36,7 @@ Postgres), `snowflake` (reporting warehouse),
 `uat-announcement` (work out a "now in UAT" Slack post with me, or review my draft),
 `estimate-timeline` (aggressive + likely dates per release stage, from measured velocity),
 `hackathon` (ideate innovative ideas into the Notion Hackathon Ideas db, or execute one as a
-throwaway agentic MVP that never reaches main), `session-orchestrator` (one session holds a
+throwaway agentic MVP that never reaches main), `orchestrate-session` (one session holds a
 project's context — design and PR breakdown settled with me first — while each PR runs in its own
 background sub-session; `summary` shows which sessions need me),
 `keep-mergeable` (hold an approved PR merge-ready — conflict-only update-branch, never merges),
