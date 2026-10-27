@@ -31,7 +31,7 @@ of a design or flow), `author-knowledge-base` (the cross-session knowledge base)
 Postgres), `snowflake` (reporting warehouse),
 `langfuse-traces` (analyze LLM traces — latency, throughput, tokens),
 `posthog` (read the right PostHog project — DEV vs PROD — and a flag's real evaluation),
-`session-deferral` (park a session to a handoff file and resume it later),
+`handoff-session` (a living handoff that survives `/compact`, or park a session and resume it later),
 `merged-prs-digest` (post my PRs merged in the last 24h to my Slack channel),
 `uat-announcement` (work out a "now in UAT" Slack post with me, or review my draft),
 `estimate-timeline` (aggressive + likely dates per release stage, from measured velocity),
