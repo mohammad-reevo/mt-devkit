@@ -1,6 +1,6 @@
 ---
 name: session-deferral
-description: Park the current session so a fresh session can pick it up later with nothing lost — writes one self-contained handoff file (the question, what was found with file:line / links / data, what was agreed, what's built or decided, what's still open, and the ordered next steps) to `~/.claude/tmp/deferred/<slug>.md`. Three subcommands — `defer` (default) writes it, `list` shows parked sessions, `resume <fuzzy>` reads one back in and picks up at its next step. For a paused discussion or investigation, not a tooling chore (that's `claude-task`) and not durable knowledge (that's `author-knowledge-base`). Triggers on "defer this session", "park this", "save this session for later", "write this down so I can pick it up later", "resume the <x> session", "/session-deferral".
+description: Park the current session so a fresh session can pick it up later with nothing lost — writes one self-contained handoff file (the question, what was found with file:line / links / data, what was agreed, what's built or decided, what's still open, and the ordered next steps) to `~/.claude/tmp/deferred/<slug>.md`. Four subcommands — `defer` (default) writes it, `list` shows parked sessions, `resume <fuzzy>` reads one back in and picks up at its next step, and `checkpoint` keeps a living handoff for a session that carries on, so it survives `/compact` — a SessionStart hook points the compacted session back at it. For a paused discussion or investigation, not a tooling chore (that's `claude-task`) and not durable knowledge (that's `author-knowledge-base`). Triggers on "defer this session", "park this", "save this session for later", "write this down so I can pick it up later", "resume the <x> session", "checkpoint this session", "save state before compacting", "write a handoff before /compact", "/session-deferral".
 ---
 
 # session-deferral — park a session, resume it cold
@@ -18,6 +18,7 @@ resume and then thrown away.
 - **`defer`** (default, "park this", "save this session") → **§ Defer**.
 - **`list`** → **§ List**.
 - **`resume <fuzzy>`** ("pick up the skills-in-workflows session") → **§ Resume**.
+- **`checkpoint`** ("checkpoint this", "save state before compacting") → **§ Checkpoint**.
 
 ## Store
 
@@ -94,3 +95,32 @@ summary of where it stopped. Don't paste the file back.
    §7 step as a question or proposal. Then continue the conversation normally.
 5. The file stays. When the topic is finished, or the user parks it again, **update or delete
    it**. A stale deferral that reads as current is worse than none.
+
+---
+
+## § Checkpoint
+
+The same handoff, for a session that **keeps running** — written before `/compact` (or whenever
+I ask) so the working state the auto-summary drops survives: environment details, rules I set
+mid-session, per-area status, the exact next step.
+
+1. **Write or refresh** `~/.claude/tmp/deferred/<slug>.md` exactly as § Defer (same slug rule,
+   same rebuild-don't-research rule), with three sections added after §5 and the first line under
+   the title `- **Checkpoint:** <date time> — living; refreshed in place, not a parked session`:
+   - **User-set rules** — verbatim, each with when it was set ("only touch [Testing Party]
+     prospects in Outreach"). These bind after compaction exactly as before it.
+   - **Environment** — ports, ids, branches, running processes, and the restart recipe for
+     anything that dies (a tunnel, a worker).
+   - **Blocked on the user** — what waits on me, or "nothing".
+
+   If the session keeps a todo list (`todo-list`), point at its file — don't copy it.
+2. **Register the pointer** so the compacted session finds it:
+   `mkdir -p ~/.claude/tmp/checkpoints && echo <handoff path> > ~/.claude/tmp/checkpoints/<CLAUDE_CODE_SESSION_ID>`
+   (read the id with `echo $CLAUDE_CODE_SESSION_ID`, then write the literal — `bash-literal-paths.md`).
+   Compaction keeps the session id, so `compact_handoff_hook.py` (SessionStart, matcher `compact`)
+   finds the pointer and tells the compacted session to read the handoff before anything else.
+3. **Report** the path in one line, and that `/compact` is safe now.
+
+Refresh it — same file, same pointer — whenever the state moves enough that the last checkpoint
+would mislead. When the session ends, delete both the file and the pointer, or convert it with
+§ Defer if the topic is being parked.

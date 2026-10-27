@@ -31,7 +31,8 @@ of a design or flow), `author-knowledge-base` (the cross-session knowledge base)
 Postgres), `snowflake` (reporting warehouse),
 `langfuse-traces` (analyze LLM traces — latency, throughput, tokens),
 `posthog` (read the right PostHog project — DEV vs PROD — and a flag's real evaluation),
-`session-deferral` (park a session to a handoff file and resume it later),
+`session-deferral` (park a session to a handoff file and resume it later, or checkpoint a live one
+so it survives `/compact`),
 `merged-prs-digest` (post my PRs merged in the last 24h to my Slack channel),
 `estimate-timeline` (aggressive + likely dates per release stage, from measured velocity),
 `hackathon` (ideate innovative ideas into the Notion Hackathon Ideas db, or execute one as a
