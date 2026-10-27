@@ -101,8 +101,8 @@ For a session that **keeps running** — before `/compact`, or whenever I ask.
 3. **Report** the path in one line, and that `/compact` is safe now.
 
 Refresh it — same file, same pointer — whenever the state moves enough that the last version
-would mislead. When the session ends, delete the file and its pointer, or convert it with
-§ Defer if the topic is being parked.
+would mislead. `/done` deletes the file and its pointer at close-out; to keep it past the
+session, park it with § Defer first.
 
 ## § Defer
 
