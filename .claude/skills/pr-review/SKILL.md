@@ -114,11 +114,11 @@ common shape of a good PR; counting its test files would charge it the trio for 
 Its test lines still count, so a large test rewrite still gets `full`.
 
 **"Hand-written" is the load-bearing word.** Generated output counts toward neither number, or a
-one-file migration measures as three files and wrongly gets the trio:
+one-file migration measures as two files and wrongly gets the trio:
 
 ```bash
 git diff --stat <base>...HEAD -- . \
-  ':(exclude)**/schema.sql' ':(exclude)**/latest_revision.txt' \
+  ':(exclude)**/schema.sql' \
   ':(exclude)packages/openapi-client/**' \
   ':(exclude)**/*.lock' ':(exclude)**/pnpm-lock.yaml' ':(exclude)**/package-lock.json'
 ```

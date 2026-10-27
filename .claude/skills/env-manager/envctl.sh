@@ -20,7 +20,7 @@ usage() {
   cat <<'USAGE'
 Usage: envctl.sh <command>   (run from the relevant sub-repo — cwd matters)
 
-  salestech-be:      run-be  kill-be  kill-be-f  gen-be  alembic-up  awssso
+  salestech-be:      run-be  kill-be  kill-be-f  gen-be  migrate-db  awssso
                      d-up  d-down  d-cleanup
   frontend-monorepo: run-fe  run-fe-2  kill-fe  gen-fe
   reevo-realtime:    run-rt  kill-rt
@@ -45,7 +45,7 @@ case "$cmd" in
     true
     ;;
   gen-be)      uv run generate_openapi.py ;;
-  alembic-up)  uv run alembic upgrade head ;;
+  migrate-db)  make apply-db-migrations ;;
   awssso)      env -u BROWSER aws sso login --profile "${AWS_PROFILE:-workflow}" ;;
   d-up)
     mkdir -p logs
