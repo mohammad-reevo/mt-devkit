@@ -40,6 +40,8 @@ throwaway agentic MVP that never reaches main), `orchestrate-session` (one sessi
 project's context — design and PR breakdown settled with me first — while each PR runs in its own
 background sub-session; `summary` shows which sessions need me),
 `keep-mergeable` (hold an approved PR merge-ready — conflict-only update-branch, never merges),
+`agent-testing-party` (test a project end to end with me — areas I approve, a reproducible kit in
+the KB, bugs → Linear → fixes → re-test on main),
 `env-manager`, `spinup-local-db`, `falkor-cleanup` (reap the local FalkorDB org graphs test runs
 leave behind), `investigate-memory-usage` (where memory went — by consumer, or per session).
 
