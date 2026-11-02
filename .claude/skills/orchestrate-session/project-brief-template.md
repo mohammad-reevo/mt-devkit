@@ -27,6 +27,10 @@
 
 - <a question no slice can settle alone; it moves to Decisions once answered>
 
+## Ownership
+
+- **<concept — a behaviour, not a file>** — owned by `<slice>`. Not decided by: `<slices>`.
+
 ## Contracts between slices
 
 - **<contract>** — produced by `<slice>`, consumed by `<slices>`. <The shape, as planned; updated

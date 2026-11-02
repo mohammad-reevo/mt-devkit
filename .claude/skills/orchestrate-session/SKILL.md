@@ -74,7 +74,7 @@ Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hacka
    lands in the brief's Decisions as it is given; a question that stays open goes to Open, and the
    sub-session whose slice it belongs to asks it in its own scope.
 2. **PR breakdown.** Slices are PRs: one independently buildable, reviewable piece each, named per
-   scope's naming rule. Present two tables:
+   scope's naming rule. Present three tables:
    - **PRs** — slice · ticket · base · hard deps · soft deps. **Hard** = can't build without the
      other PR's code; its session waits until that PR has pushed, then branches from it.
      **Soft** = both edit the same file. That is conflict bookkeeping, not ordering: once the
@@ -87,6 +87,11 @@ Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hacka
      bring up a local stack (`local-stack`'s pool holds 5 orgs) and `local-test-scope.md` allows
      one pytest run machine-wide. A session over the cap waits for a finished one's slot; it is
      never folded into another letter to fit.
+   - **Ownership** — concept · owning slice · what every other slice must not decide. One row per
+     *behaviour* more than one slice touches (e.g. "hiding external sequence ids in Filter"),
+     never per ticket or file. Every shared concept has exactly one owner; the rest build on its
+     result. It lands in the project brief's Ownership section and in each session brief's
+     **Not yours** line.
 3. **Wait for my approval** of the breakdown. Nothing is set up before it.
 
 **Base per PR.** `main`, by default — unrelated PRs, standalone tickets and bug fixes each merge
