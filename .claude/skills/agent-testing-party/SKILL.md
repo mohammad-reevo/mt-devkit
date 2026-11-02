@@ -12,14 +12,17 @@ re-run and the results stay a reference point. Reference run: Sequences Integrat
 Outreach org, four bugs → CRMF-3051 → fixed through `orchestrate-session` → re-tested). Read its
 README before starting a new kit; it shows every section below in use.
 
-**It is interactive.** Every phase that needs a call asks me, one numbered question at a time, with
-options and a recommendation (`discussion-turns.md`). A question the code, the docs or a read-only
-tool can answer is researched, not asked.
+**It is interactive, in batches.** A phase that needs calls puts all of them in one turn, numbered,
+and answers each itself as `Decided: <x> — <why>`. It ends the turn with a short **Needs you** list:
+only what I alone can give — consent, a manual step, a real tradeoff. My reply overrides any
+`Decided` I disagree with. A question the code, the docs or a read-only tool can answer is
+researched, not asked.
 
 ## 1. Frame — ask me
 
 Read what exists first: the project's KB entries, PRD / eng doc, tickets, any human testing-party
-doc. Then ask only what's still open, one at a time:
+doc. Then put every point below that's still open in one turn, each self-answered, with the
+Needs you list last:
 
 1. **What's in scope** — the features / tickets to cover, and what's explicitly out (e.g. waiting
    on another team, needs an account we don't have).
@@ -35,7 +38,8 @@ doc. Then ask only what's still open, one at a time:
    agent does itself, through APIs where a UI isn't needed.
 5. **Where to stop** — e.g. report bugs only, or also fix them.
 
-Record each answer as it's given in the kit README (§ 3) — never only in the conversation.
+Record each answer in the kit README (§ 3) once I've replied — never only in the conversation.
+When the Needs you list is empty, present § 2's area plan in the same turn.
 
 ## 2. Plan the areas — I approve
 
