@@ -1,6 +1,6 @@
 ---
 name: local-stack
-description: Run several port-isolated local stacks at once — one per worktree, so more than one in-flight PR can be exercised in the app simultaneously. Each stack gets its own backend/frontend/realtime ports, its own Temporal namespace and Kafka consumer groups, and an org from a fixed pool of pre-seeded orgs. Modes — up / down / list / down-all / seed-pool. Distinct from `env-manager`, which owns the single default stack on 8000/3000/8787. Triggers on "run a second stack", "run two backends", "spin up a stack for this worktree", "start a parallel stack", "local-stack up/down/list", "/local-stack".
+description: Run several port-isolated local stacks at once — one per worktree, so more than one in-flight PR can be exercised in the app simultaneously. Each stack gets its own backend/frontend/realtime ports, its own Temporal namespace and Kafka consumer groups, and an org from a fixed pool of pre-seeded orgs. Modes — up / down / add / remove / list / down-all / seed-pool; worker groups are started on demand with add and stopped with remove. Distinct from `env-manager`, which owns the single default stack on 8000/3000/8787. Triggers on "run a second stack", "run two backends", "spin up a stack for this worktree", "start a parallel stack", "local-stack up/down/list", "/local-stack".
 ---
 
 > Personal rebuild — mt-devkit owns the front door; salestech-be still owns the isolation.
@@ -19,6 +19,8 @@ backend 8000+index    frontend 3000+index    realtime 8787+index
 bash .claude/skills/local-stack/stack.sh up
 bash .claude/skills/local-stack/stack.sh up --name planner-inline-first -- --askreevo --skip-org-setup
 bash .claude/skills/local-stack/stack.sh down --name planner-inline-first
+bash .claude/skills/local-stack/stack.sh add flows    # start a worker group on the running stack
+bash .claude/skills/local-stack/stack.sh remove flows # stop it again
 bash .claude/skills/local-stack/stack.sh list         # every stack that exists, and whether it is running
 bash .claude/skills/local-stack/stack.sh down-all     # every stack (env-manager's `kill stacks`)
 bash .claude/skills/local-stack/stack.sh seed-pool    # once, from main: seed the pool orgs
@@ -26,8 +28,29 @@ bash .claude/skills/local-stack/stack.sh seed-pool    # once, from main: seed th
 
 `--name` is the **worktree** name (under `<main>/worktrees/`); omit it and the worktree
 containing the cwd is used. Everything after `--` passes through to the underlying script:
-`--workers <flows,graph,bulk,crm-sync>`, `--askreevo`, `--no-fe`, `--skip-org-setup` on `up`;
-`--restore-env` on `down`.
+`--workers <flows,graph,integrity,bulk,crm-sync>`, `--askreevo`, `--no-fe`, `--skip-org-setup` on
+`up`; `--restore-env` on `down`.
+
+## Workers — start them when the test needs them
+
+`up` starts the backend and frontend only. Each worker process holds ~0.65–1.8 GB, so start a
+group with `add` at the moment a test needs it and `remove` it once that test is done — never
+guess a set up front. `add` and `remove` delegate to salestech-be's `stack_workers.sh`, whose
+`reevo-local-stack` SKILL.md is the reference for each group; in short:
+
+| Group | Add it when |
+|---|---|
+| `flows` | running or triggering a workflow — **before** the action that should trigger it |
+| `graph` | something reads FalkorDB, e.g. the accounts list page |
+| `integrity` | testing merge / archive / move of CRM records |
+| `bulk`, `crm-sync` | testing those features |
+
+Ask Reevo (chat worker + realtime) is not addable: start the stack with `up -- --askreevo`.
+
+**Add `flows` before the triggering action.** The CDC consumers start from the newest message
+when their consumer group has no committed offset, and `down` deletes the stack's groups — so on
+a fresh stack, a record change made before `flows` was added never reaches the flow engine.
+Removing and re-adding later is safe: offsets are committed.
 
 ## Framework — who owns what
 

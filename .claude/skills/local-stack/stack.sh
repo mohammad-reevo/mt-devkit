@@ -18,9 +18,12 @@ PASSTHRU=""
 usage() {
   cat <<'EOF'
 Usage: stack.sh up|down|list|down-all|seed-pool [--name <worktree>] [-- <passthrough flags>]
+       stack.sh add|remove <group>... [--name <worktree>]
 
-  up         take the lowest free pool slot (1-5), bring the stack up
+  up         take the lowest free pool slot (1-5), bring the stack up (no workers unless --workers)
   down       tear this worktree's stack down and free its slot
+  add        start worker groups on this worktree's running stack (flows, graph, integrity, bulk, crm-sync)
+  remove     stop worker groups on this worktree's running stack
   list       show every stack that exists — allocated, left behind, or untracked — and whether it runs
   down-all   tear down every allocated instance (env-manager's `kill stacks`)
   seed-pool  seed + bootstrap the pool orgs (slots 1-5) once; re-running is safe
@@ -35,6 +38,8 @@ Examples:
   stack.sh up
   stack.sh up --name planner-inline-first -- --askreevo --skip-org-setup
   stack.sh down --name planner-inline-first
+  stack.sh add flows --name planner-inline-first
+  stack.sh remove flows --name planner-inline-first
 EOF
 }
 
@@ -42,19 +47,28 @@ EOF
 [ $# -gt 0 ] || { usage; exit 2; }
 MODE="$1"; shift
 case "$MODE" in
-  up|down|list|down-all|seed-pool) ;;
+  up|down|list|down-all|seed-pool|add|remove) ;;
   -h|--help) usage; exit 0 ;;
   *) echo "error: unknown mode '$MODE'" >&2; usage; exit 2 ;;
 esac
 
+WORKER_ARGS=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --name) WT_NAME="$2"; shift 2 ;;
+    --name) [ $# -ge 2 ] || { echo "error: --name needs a value" >&2; exit 2; }; WT_NAME="$2"; shift 2 ;;
     --) shift; PASSTHRU="$*"; break ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "error: unknown option '$1' (put script flags after \`--\`)" >&2; exit 2 ;;
+    -*) echo "error: unknown option '$1' (put script flags after \`--\`)" >&2; exit 2 ;;
+    *)
+      case "$MODE" in
+        add|remove) WORKER_ARGS="$WORKER_ARGS $1"; shift ;;
+        *) echo "error: unexpected argument '$1'" >&2; exit 2 ;;
+      esac ;;
   esac
 done
+case "$MODE" in
+  add|remove) [ -n "$WORKER_ARGS" ] || { echo "error: $MODE needs at least one worker group" >&2; exit 2; } ;;
+esac
 
 # --- resolve the worktree -----------------------------------------------------
 # A worktree is the dir holding salestech-be/ and frontend-monorepo/ as siblings —
@@ -140,6 +154,21 @@ for record in InstanceRegistry().list_all():
 PY
   )
 }
+
+# --- add / remove -------------------------------------------------------------
+# Worker groups on a running stack. stack_workers.sh owns the group table, the PID
+# file and the liveness checks; this only supplies the worktree's instance id and
+# runs it from the stack's own salestech-be checkout, which it requires.
+if [ "$MODE" = "add" ] || [ "$MODE" = "remove" ]; then
+  [ -f "$STACK_SCRIPTS/stack_workers.sh" ] || {
+    echo "error: this worktree's salestech-be predates stack_workers.sh — start workers with" >&2
+    echo "       \`stack.sh up -- --workers <groups>\` instead" >&2
+    exit 1
+  }
+  # shellcheck disable=SC2086
+  ( cd "$BE_DIR" && bash "$STACK_SCRIPTS/stack_workers.sh" "$MODE" $WORKER_ARGS --name "$INSTANCE" )
+  exit $?
+fi
 
 # --- list ---------------------------------------------------------------------
 # Every stack that exists, running or not. The registry alone misses two kinds:

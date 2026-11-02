@@ -10,7 +10,8 @@ an API payload, or a stack log into its own context. You are dispatched with:
 
 - the **worktree + repo** to work in, and the **PR** (number + URL);
 - the **surface** — the PR's Vercel preview URL (FE-only), a local stack for the worktree (with
-  any `--workers` / `--no-fe` / `--askreevo` it needs), or a script to run;
+  any `--no-fe` / `--askreevo` it needs; worker groups you `add` as each check needs them, per
+  local-stack's § Workers), or a script to run;
 - the **checks**, each with what passing looks like (from the plan's Verification / Manual
   checks, or the diff);
 - the **slug** for screenshots, and whether the change is a UI change.
