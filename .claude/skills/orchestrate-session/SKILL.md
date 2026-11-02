@@ -44,6 +44,9 @@ permission prompts, or answer its `AskUserQuestion`. What follows from that:
   the orchestrator's own cwd.
 - **Stop before you spawn under a reused name.** A name resolves to the latest session, so the old
   one must be stopped first or messages go astray.
+- **Missing from `claude agents` is not ended.** An idle session can drop off the list and
+  reappear when I bring it up. Before spawning for a slice, its index owner must be one you or I
+  deliberately stopped, or one I said to replace — never one that merely isn't listed.
 - **Resume is a last resort, and asked first.** Every resume shows up as another session in my
   agents view. If a stopped session must continue, ask me, then resume exactly once (row above).
   Never spawn extra sessions to recover one.
@@ -71,7 +74,7 @@ Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hacka
    lands in the brief's Decisions as it is given; a question that stays open goes to Open, and the
    sub-session whose slice it belongs to asks it in its own scope.
 2. **PR breakdown.** Slices are PRs: one independently buildable, reviewable piece each, named per
-   scope's naming rule. Present two tables:
+   scope's naming rule. Present three tables:
    - **PRs** — slice · ticket · base · hard deps · soft deps. **Hard** = can't build without the
      other PR's code; its session waits until that PR has pushed, then branches from it.
      **Soft** = both edit the same file. That is conflict bookkeeping, not ordering: once the
@@ -84,6 +87,11 @@ Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hacka
      bring up a local stack (`local-stack`'s pool holds 5 orgs) and `local-test-scope.md` allows
      one pytest run machine-wide. A session over the cap waits for a finished one's slot; it is
      never folded into another letter to fit.
+   - **Ownership** — concept · owning slice · what every other slice must not decide. One row per
+     *behaviour* more than one slice touches (e.g. "hiding external sequence ids in Filter"),
+     never per ticket or file. Every shared concept has exactly one owner; the rest build on its
+     result. It lands in the project brief's Ownership section and in each session brief's
+     **Not yours** line.
 3. **Wait for my approval** of the breakdown. Nothing is set up before it.
 
 **Base per PR.** `main`, by default — unrelated PRs, standalone tickets and bug fixes each merge
@@ -201,8 +209,11 @@ on and can't see in an artifact — no scoped / planned / go / verified / ready.
 - **A pushed dependency** → spawn sessions whose hard deps are now met, and tell sessions with a
   soft dep on it to `git merge origin/<its branch>`. A conflict from that merge or from an
   update-branch is the session's to resolve — no orchestrator call.
-- **A session `not running` in the pull** with work left → it stopped mid-flight. Read
-  `claude logs`; resend its brief's resume line, or replace it.
+- **A session `not listed — ask Mohammad` in the pull** (missing from `claude agents`, work left)
+  → it is not gone: idle sessions drop off that list and come back once I bring them up. Ask me to
+  bring it back, naming the session and what it's needed for. Never spawn a replacement unless I
+  say so, or it was deliberately stopped — two sessions in one worktree corrupt each other's
+  merges and pushes.
 - **A session `idle` but not `blocked`, with work left and no message** → a silent halt, which the
   protocol forbids. Ask it what it is waiting on.
 

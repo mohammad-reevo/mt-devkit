@@ -8,7 +8,13 @@ project.
 - Project brief: `~/.claude/spec/<project>-brief.md` — the goal and the **settled decisions**.
   Don't re-open a settled decision in your scope; build on it. If the code makes one impossible
   or clearly wrong, ask Mohammad, with why.
-- Index (read-only for you): `~/.claude/spec/<project>-project.md`.
+- Index (read-only for you): `~/.claude/spec/<project>-project.md` — every sibling slice, its
+  session and status.
+- **Your siblings' work, before you decide.** Before scoping, and again before deciding anything
+  that touches a concept in the brief's Ownership section, read the other slices'
+  `~/.claude/spec/<slug>-scope.md` and `-plan.md` where they exist. A concept your brief lists
+  under **Not yours** is the owner's: build on what its files say, and if they haven't settled it
+  yet, ask Mohammad rather than deciding it.
 <- Hackathon: <idea page URL> — the hackathon rules in `workflow` § Hackathon projects apply.>
 
 ## How you run a PR
