@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # mt-devkit local-stack — one port-isolated stack per worktree.
 #
-# Thin wrapper over salestech-be's reevo-local-stack scripts. It does the three
+# Thin wrapper over salestech-be's reevo-local-stack scripts. It does the two
 # things that skill cannot do from here, then delegates:
 #   1. derives all three repo paths from the worktree name
 #   2. derives the instance id from the worktree name (the BE default is unusable
 #      in this layout — see resolve_instance below)
-#   3. preflights the derived ports before anything launches
 #
 # Targets bash 3.2 (macOS system bash): no associative arrays, no `;;&`.
 set -euo pipefail
@@ -20,7 +19,7 @@ usage() {
   cat <<'EOF'
 Usage: stack.sh up|down|list|down-all|seed-pool [--name <worktree>] [-- <passthrough flags>]
 
-  up         take the lowest free pool slot (1-5), preflight its ports, bring the stack up
+  up         take the lowest free pool slot (1-5), bring the stack up
   down       tear this worktree's stack down and free its slot
   list       show every stack that exists — allocated, left behind, or untracked — and whether it runs
   down-all   tear down every allocated instance (env-manager's `kill stacks`)
@@ -309,61 +308,21 @@ if [ "$MODE" = "down" ]; then
 fi
 
 # --- up -----------------------------------------------------------------------
-# Allocate the slot first so the ports are knowable before anything launches.
-# `registry.allocate` is idempotent for the same workspace, and stack_up.sh runs
-# the same `up --no-launch` itself, so this costs a repeat of a step that was
-# already going to happen rather than adding a new side effect.
-echo "allocating slot for '$INSTANCE' (worktree: $WT)"
-( cd "$BE_DIR" && uv run python -m scripts.local_dev.cli up "$INSTANCE" --no-launch >/dev/null )
-
-INDEX="$(cd "$BE_DIR" && uv run python - "$INSTANCE" <<'PY'
+# stack_up.sh claims the slot and checks its derived ports itself; this only reads
+# the registry. The registry keeps an instance's slot until `down`, so a stack first
+# brought up before the pool still holds its old hashed slot, whose org is not a
+# seeded pool org.
+HELD_INDEX="$(cd "$BE_DIR" && uv run python - "$INSTANCE" <<'PY'
 import sys
 from scripts.local_dev.instance_isolation import InstanceRegistry
 
 record = InstanceRegistry().lookup(instance_id=sys.argv[1])
-if record is None:
-    raise SystemExit(f"instance {sys.argv[1]!r} missing from the registry")
-print(record.index)
+print(record.index if record is not None else "")
 PY
 )"
-
-# The registry keeps an instance's slot until `down`, so a stack first brought up before
-# the pool still holds its old hashed slot, whose org is not a seeded pool org.
-if [ "$POOL" -eq 1 ] && [ "$INDEX" -gt "$POOL_SIZE" ]; then
-  echo "error: '$INSTANCE' still holds pre-pool slot $INDEX (pool is 1-$POOL_SIZE)." >&2
+if [ "$POOL" -eq 1 ] && [ -n "$HELD_INDEX" ] && [ "$HELD_INDEX" -gt "$POOL_SIZE" ]; then
+  echo "error: '$INSTANCE' still holds pre-pool slot $HELD_INDEX (pool is 1-$POOL_SIZE)." >&2
   echo "       Release it once, then re-run:  stack.sh down --name $(basename "$WT")" >&2
-  exit 1
-fi
-
-BE_PORT=$((8000 + INDEX))
-FE_PORT=$((3000 + INDEX))
-RT_PORT=$((8787 + INDEX))
-
-# Preflight. Nothing in the BE scripts or the allocator checks whether a derived
-# port is actually free — the allocator only avoids indices already in its own
-# registry. That is how slot 10 (frontend 3010, which the dep stack publishes as
-# FalkorDB's browser UI) gets handed out: the frontend then dies, or Next quietly
-# moves to 3011 while every env var still says 3010, and neither failure mentions
-# FalkorDB. Catch it here instead, before any env file is rewritten.
-# lsof exits 1 when nothing listens; under pipefail + -e that would end the script
-# on exactly the free port we want, so a free port must read as empty output.
-port_holder() { lsof -nP -iTCP:"$1" -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1" (pid "$2")"}' || true; }
-
-BUSY=""
-for pair in "backend:$BE_PORT" "frontend:$FE_PORT" "realtime:$RT_PORT"; do
-  label="${pair%%:*}"; port="${pair##*:}"
-  holder="$(port_holder "$port")"
-  [ -n "$holder" ] && BUSY="$BUSY  $label port $port — held by $holder"$'\n'
-done
-
-if [ -n "$BUSY" ]; then
-  echo "error: slot $INDEX derives a port that is already in use:" >&2
-  printf '%s' "$BUSY" >&2
-  cat >&2 <<EOF
-
-Free the port, then re-run. The slot stays claimed until you release it:
-  stack.sh down --name $(basename "$WT")
-EOF
   exit 1
 fi
 
@@ -377,7 +336,6 @@ if [ "$POOL" -eq 1 ]; then
   esac
 fi
 
-echo "slot $INDEX — backend :$BE_PORT  frontend :$FE_PORT  realtime :$RT_PORT"
 # shellcheck disable=SC2086
 ( cd "$BE_DIR" && bash "$STACK_SCRIPTS/stack_up.sh" \
     --name "$INSTANCE" --fe-repo "$FE_DIR" --realtime-repo "$RT_DIR" $PASSTHRU )

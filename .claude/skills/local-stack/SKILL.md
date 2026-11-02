@@ -75,7 +75,7 @@ prefixing, the `TEMPORAL_NAMESPACE`, the CDC org skip-list, and the per-slot dev
 backend reads exactly what `derive()` produces, so that stays where the backend can change it in
 lockstep. **Never reimplement it here** — a fork of that contract breaks silently at runtime.
 
-This skill owns the four things the backend-side skill cannot do from an mt-devkit session:
+This skill owns the three things the backend-side skill cannot do from an mt-devkit session:
 
 1. **All three repo paths from the worktree name.** The BE skill takes `--fe-repo` /
    `--realtime-repo`, both defaulting to `~/frontend-monorepo` / `~/reevo-realtime`. Omit them on
@@ -84,8 +84,7 @@ This skill owns the four things the backend-side skill cannot do from an mt-devk
    are derived and the failure mode stops existing.
 2. **An instance id that differs per worktree.** This is what makes a second stack possible at
    all — see below.
-3. **A free-port preflight**, which is what fixes slot 10.
-4. **Reachability.** The BE skill lives behind a door the funnel won't open: entering the
+3. **Reachability.** The BE skill lives behind a door the funnel won't open: entering the
    `salestech-be` sub-repo as a worktree loads its `PreToolUse:Bash` hook and blocks all Bash.
    This runs from the mt-devkit session root.
 
@@ -150,6 +149,7 @@ would overwrite each other. See `.claude/rules/local-logs.md`.
 - **Never start or stop Docker from here.** One shared dep stack, owned by `env-manager`.
 - **Slots are allocated lazily at `up`**, never at `worktree create` — there are only 5 in the
   pool, and most worktrees never run a stack.
-- **A preflight failure keeps its slot claimed.** Free the port, or `down` to release the slot.
+- **A busy-port refusal keeps its slot claimed.** `stack_up.sh` checks the slot's ports before
+  anything starts; free the port and re-run, or `down` to release the slot.
 - **Every stack needs its own three checkouts.** That is what the `worktree` skill produces; don't
   point two stacks at one frontend checkout, whatever the flags allow.
