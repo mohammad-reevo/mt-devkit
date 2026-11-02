@@ -1,6 +1,6 @@
 ---
 name: orchestrate-session
-description: Run a multi-PR project from one top-level session that holds only the project's context, while each PR runs in its own background Claude Code sub-session. The orchestrator frames the project, settles the design with me one decision at a time, presents a PR breakdown (hard/soft dependencies, which session builds which PRs) for approval, owns the project base branch when a hard-dep chain needs one (unrelated PRs go straight to main), spawns one sub-session per PR running `workflow`, each creating its own worktree, and re-checks every session's live state each turn (`session_status.py`: agent state, PR, checks, threads, merge queue, spec files) instead of reading their work; sessions run through babysit on their own and message it whenever they need its instruction or action — never halting silently. I answer each sub-session's gates in that session; the orchestrator owns everything cross-slice and tells me which session needs me and why. More PRs run concurrently, and no session carries the whole project in its context. A `summary` mode renders where every session stands. A hackathon (§ Hackathon) skips the planning phase and adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "orchestrate-session summary", "/orchestrate-session", "/orchestrate-session summary".
+description: Run a multi-PR project from one top-level session that holds only the project's context, while each PR runs in its own background Claude Code sub-session. The orchestrator frames the project, settles the design with me one decision at a time, presents a PR breakdown (hard/soft dependencies, which session builds which PRs) for approval, owns the project base branch when a hard-dep chain needs one (unrelated PRs go straight to main), spawns one sub-session per PR running `workflow`, each creating its own worktree, and re-checks every session's live state each turn (`session_status.py`: agent state, PR, checks, threads, merge queue, spec files) instead of reading their work; sessions run through babysit on their own and message it whenever they need its instruction or action — never halting silently. Sub-sessions ask me every question directly, cross-slice ones included, and message the orchestrator only with status it acts on (PR open, merged / queued, handoff, done); the orchestrator tells me which session needs me and why. More PRs run concurrently, and no session carries the whole project in its context. A `summary` mode renders where every session stands. A hackathon (§ Hackathon) skips the planning phase and adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "orchestrate-session summary", "/orchestrate-session", "/orchestrate-session summary".
 ---
 
 # orchestrate-session — one session holds the project, sub-sessions do the work
@@ -191,10 +191,12 @@ question it is asking me. Update the index from it, then act on what changed —
 queued PR, a session now waiting on me. Never read a session's conversation beyond that quoted
 message to find out.
 
-**Gates are mine, in the sub-session.** Each sub-session runs `workflow`'s assistant mode and
-asks me its own gates — scope's open questions, the plan go, implement escalations — in its own
-session. The orchestrator settles only what the brief already settles or what has one dominant
-answer, and passes those answers along so the session doesn't ask me again.
+**Every question is mine, in the sub-session.** Each sub-session runs `workflow`'s assistant
+mode and asks me directly — its gates (scope's open questions, the plan go, implement
+escalations) and cross-slice questions alike, such as a contract change or a brief decision it
+would have to break. The orchestrator never answers or relays a session's question. A decision I
+make there that moves the design or a contract I bring back here myself, and the orchestrator
+records it in the brief.
 
 **Every pointer to a session carries its context.** I don't hold each slice's context, so whenever
 the orchestrator sends me to a session it says, in a line or two, what that session is building,
@@ -211,13 +213,10 @@ on and can't see in an artifact — no scoped / planned / go / verified / ready.
   a main PR and a base exists, then Replace / Wrap up (below).
 - **`handoff`** → Replace (below).
 - **`done`** → the wrap-up's idle wait (below).
-- **`decided`** — I decided something in that session that touches another slice, a contract, or
-  the brief → record it in the brief (Decisions or the contracts) and tell any affected session.
-- **`blocked`** — a cross-slice question, or a brief decision the session would have to break →
-  answer it from the brief, or bring it to me here; then relay the answer.
 - **`base-red <check>`** — a base-inherited red on its PR → add it to the index's
   `> Carry-over:` line, the list the final-PR session (§ 7) fixes. No other action.
-- **`need <what>`** — anything else it can't proceed without → act on it, or bring it to me.
+- **`need <what>`** — an orchestrator action it can't proceed without (a base sync, a spawn) →
+  act on it. Never a question: those go to me, in the session.
 - **A pushed dependency** → spawn sessions whose hard deps are now met, stacked on it (§ 2 Base
   per PR). A soft dep needs nothing: no session merges a sibling's branch, and a conflict from
   an update-branch is the session's to resolve — no orchestrator call.
@@ -260,11 +259,6 @@ on the queue: a queued PR has nothing left for its session to do.
 brief and handoff, in a new scratch dir (§ 4); it recreates its worktree from the PR's branch
 (`switch -C mohammad/<slug> origin/mohammad/<slug>`), fixes it, and re-queues.
 
-**Relayed gates** — for a small project, at my ask: sub-sessions never ask me; they report each
-gate to the orchestrator and wait, and the orchestrator brings me **one session's gate at a time**
-(that slice's context, then its questions) and relays my answers. Sessions still run concurrently;
-only their gates are serialised. Record it in the index's `> Mode:` line and the protocol.
-
 The orchestrator **never** writes slice code, reads slice diffs, or runs a slice's checks — that
 context belongs in the sub-session. It reads only the messages, the brief, the index, and the
 `session_status.py` pull.
@@ -273,7 +267,7 @@ context belongs in the sub-session. It reads only the messages, the brief, the i
 
 `orchestrate-session summary` — and unasked whenever the orchestrator needs my input on a
 session. Build it from a fresh `session_status.py` run (§ 5 Pull) and the index — a session whose
-agent state is `blocked`, or that sent `blocked`, needs me. Then two tiers:
+agent state is `blocked` needs me. Then two tiers:
 
 **Needs your input** — one block per session waiting on me:
 

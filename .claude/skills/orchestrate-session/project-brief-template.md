@@ -20,8 +20,8 @@
 - **Bases:** <every slice targets main | the chain <slices> targets `mohammad/<project>-base` in
   <repos>; every other slice, and every migration, targets main>. Merging slices, and any final
   base → main PR, are Mohammad's.
-- **Gates:** <direct — Mohammad answers each session's gates in that session | relayed — one
-  session's gate at a time, through the orchestrator>.
+- **Questions:** every session asks Mohammad directly, in that session; none go through the
+  orchestrator.
 
 ## Open
 
@@ -34,4 +34,4 @@
 ## Contracts between slices
 
 - **<contract>** — produced by `<slice>`, consumed by `<slices>`. <The shape, as planned; updated
-  from each `decided` report.>
+  when Mohammad brings a change back to the orchestrator.>
