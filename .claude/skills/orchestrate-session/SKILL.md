@@ -129,12 +129,15 @@ the cap. First its scratch dir, new for this PR, then the session, from inside i
 ```bash
 SCRATCH=<MAIN>/worktrees/.sessions/<project>-<slug>
 mkdir -p $SCRATCH/.claude && cp <MAIN>/.claude/settings.local.json $SCRATCH/.claude/
-(cd $SCRATCH && claude --bg -n "<orchestrator title> - <letter>" \
+(cd $SCRATCH && claude --bg -n "<project> <letter> · <what it builds>" \
   --permission-mode <this session's mode> --autocompact 400000 \
   "You are session <letter> of the <project> project. Ask every question inline as text with options and a recommendation; never use the question UI. Read ~/.claude/tmp/<project>/<letter>-brief.md and follow it.")
 ```
 
 Each line is load-bearing:
+- **The name says what the session builds**, e.g. `crmf-3086 A · sequences field`: a few words
+  from the PR's slice. The leading `<project>` slug ties it to its orchestrator in the agents
+  view, and `session_status.py` matches on `<project> <letter> ` when an index row has no id yet.
 - **Under `<MAIN>/worktrees/`** — gitignored, and inside the trusted mt-devkit tree. A dir under
   `~/.claude/tmp/` fails: `claude --bg` refuses it as "Workspace not trusted".
 - **`settings.local.json` copied in** — the scratch dir is its own project, and without the
@@ -212,8 +215,8 @@ so its stop is clean. No standing subscriptions: every notice is a turn of noise
 for a PR into the project base (no merge queue there), **in the merge queue** for a PR into main —
 tell it to hand off. It writes `~/.claude/tmp/<project>/<letter>-handoff.md` (what shipped, the
 contracts it settled, what's left for the next PR) and reports `handoff`. If its letter has a next
-PR: wrap it up (below), then spawn a fresh session under the **same name** with the brief and the
-handoff, in a new scratch dir (§ 4); it creates its own worktree for the next PR — never the
+PR: wrap it up (below), then spawn a fresh session under the **same letter**, named for its next
+PR, with the brief and the handoff, in a new scratch dir (§ 4); it creates its own worktree for the next PR — never the
 predecessor's. A slice split mid-flight (e.g. a code-owners carve-out) gets a new letter, never a
 second PR in the current session. Until its session wraps up, review comments and CI on a PR are
 that session's.

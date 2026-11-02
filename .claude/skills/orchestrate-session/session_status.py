@@ -63,10 +63,14 @@ def session_of(cell):
     return (letter.group(1) if letter else None, short_id.group(1) if short_id else None)
 
 
-def agent_of(agents, orchestrator, letter, short_id):
+def agent_of(agents, project, orchestrator, letter, short_id):
+    """By the index row's id, else by name: '<project> <letter> · …', or the older
+    '<orchestrator> - <letter>' that sessions spawned before the rename still carry."""
     for a in agents:
-        if (short_id and a.get("id") == short_id) or (
-                letter and orchestrator and a.get("name") == "%s - %s" % (orchestrator, letter)):
+        name = a.get("name") or ""
+        if (short_id and a.get("id") == short_id) or (letter and (
+                name.startswith("%s %s " % (project, letter))
+                or (orchestrator and name == "%s - %s" % (orchestrator, letter)))):
             return a
     return None
 
@@ -139,7 +143,7 @@ def main():
     for row in rows:
         slug = re.sub(r"\s*\(.*\)$", "", row.get("slice", "")).strip()
         letter, short_id = session_of(row.get("session", ""))
-        agent = agent_of(agents, orchestrator, letter, short_id) if letter else None
+        agent = agent_of(agents, project, orchestrator, letter, short_id) if letter else None
         if agent and agent.get("state") == "blocked":
             blocked.append((letter, agent.get("sessionId")))
         pr_url = re.search(r"\((https://github\.com/[^)]+)\)", row.get("pr", ""))
