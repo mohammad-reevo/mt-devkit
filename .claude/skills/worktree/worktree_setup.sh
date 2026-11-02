@@ -80,11 +80,37 @@ sync_primary() {
     fi
 }
 
+# Serialized machine-wide: orchestrate-session sub-sessions each create their own worktree, so
+# creates can overlap, and two concurrent fetch / fast-forwards of one primary race on its index
+# and refs. A mkdir lock is atomic; a holder that died leaves its pid behind, and a dead pid frees it.
+sync_lock="${main}/worktrees/.sync-primaries.lock"
+mkdir -p "${main}/worktrees"
+waited=0
+until mkdir "$sync_lock" 2>/dev/null; do
+    holder="$(cat "${sync_lock}/pid" 2>/dev/null || true)"
+    if [[ -n "$holder" ]] && ! kill -0 "$holder" 2>/dev/null; then
+        rm -rf "$sync_lock"
+        continue
+    fi
+    if (( waited >= 600 )); then
+        echo "error: another worktree create (pid ${holder:-?}) has held ${sync_lock} for 10 minutes" >&2
+        exit 1
+    fi
+    (( waited == 0 )) && echo "waiting for another worktree create to finish syncing primaries…" >&2
+    sleep 2
+    waited=$((waited + 2))
+done
+echo $$ > "${sync_lock}/pid"
+trap 'rm -rf "$sync_lock"' EXIT
+
 echo "syncing primary checkouts to fresh main:" >&2
 sync_primary "$main" "$(basename "$main")"
 for subrepo in salestech-be frontend-monorepo reevo-realtime; do
     sync_primary "${main}/${subrepo}" "$subrepo"
 done
+
+rm -rf "$sync_lock"
+trap - EXIT
 
 # --- 1. Parent-workspace worktree (container: holds the sub-repo worktrees) -----------------
 # A directory that exists but is NOT a registered worktree is a stale leftover from a partial

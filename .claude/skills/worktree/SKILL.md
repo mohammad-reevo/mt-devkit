@@ -22,7 +22,8 @@ the first entry of `git worktree list` in the parent repo; fall back to
 
 ## `create <name> [--no-enter]`
 
-1. Run the setup script (it **syncs all four primary checkouts to fresh main** first, then
+1. Run the setup script (it **syncs all four primary checkouts to fresh main** first — under a
+   machine-wide lock, so concurrent creates queue rather than race — then
    creates the parent + sub-repo worktrees on `mohammad/<name>`,
    copies `.env*` + nested frontend env + `settings.local.json`, **sets `REEVO_BACKEND_PATH`**
    in the worktree's frontend env to `<worktree>/salestech-be` — rewriting the key in place, or

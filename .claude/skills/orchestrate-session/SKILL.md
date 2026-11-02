@@ -1,6 +1,6 @@
 ---
 name: orchestrate-session
-description: Run a multi-PR project from one top-level session that holds only the project's context, while each PR runs in its own background Claude Code sub-session. The orchestrator frames the project, settles the design with me one decision at a time, presents a PR breakdown (hard/soft dependencies, which session builds which PRs) for approval, owns the project base branch when a hard-dep chain needs one (unrelated PRs go straight to main), spawns one sub-session per PR running `workflow` inside a worktree it creates for that PR, and re-checks every session's live state each turn (`session_status.py`: agent state, PR, checks, threads, merge queue, spec files) instead of reading their work; sessions run through babysit on their own and message it whenever they need its instruction or action — never halting silently. I answer each sub-session's gates in that session; the orchestrator owns everything cross-slice and tells me which session needs me and why. More PRs run concurrently, and no session carries the whole project in its context. A `summary` mode renders where every session stands. A hackathon (§ Hackathon) skips the planning phase and adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "orchestrate-session summary", "/orchestrate-session", "/orchestrate-session summary".
+description: Run a multi-PR project from one top-level session that holds only the project's context, while each PR runs in its own background Claude Code sub-session. The orchestrator frames the project, settles the design with me one decision at a time, presents a PR breakdown (hard/soft dependencies, which session builds which PRs) for approval, owns the project base branch when a hard-dep chain needs one (unrelated PRs go straight to main), spawns one sub-session per PR running `workflow`, each creating its own worktree, and re-checks every session's live state each turn (`session_status.py`: agent state, PR, checks, threads, merge queue, spec files) instead of reading their work; sessions run through babysit on their own and message it whenever they need its instruction or action — never halting silently. I answer each sub-session's gates in that session; the orchestrator owns everything cross-slice and tells me which session needs me and why. More PRs run concurrently, and no session carries the whole project in its context. A `summary` mode renders where every session stands. A hackathon (§ Hackathon) skips the planning phase and adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "orchestrate-session summary", "/orchestrate-session", "/orchestrate-session summary".
 ---
 
 # orchestrate-session — one session holds the project, sub-sessions do the work
@@ -48,10 +48,12 @@ permission prompts, or answer its `AskUserQuestion`. What follows from that:
   agents view. If a stopped session must continue, ask me, then resume exactly once (row above).
   Never spawn extra sessions to recover one.
 - **`claude rm` only after the session's own `/done`.** It deletes "a background session and its
-  worktree" (2.1.312 help), and whether it treats a cwd it didn't create as that worktree is
-  unverified. It is safe only because every session is spawned inside its own worktree (§ 4), and
-  `/done` has already torn that down (§ 5 Wrap up). Never `claude rm` a session whose cwd is a
-  primary checkout — `claude stop` it and leave it for me. Tearing down is `/done`'s.
+  worktree" (2.1.312 help). On a session whose cwd is a plain directory it didn't create, it
+  leaves that directory in place (verified on 2.1.316). Every session is spawned in its own
+  scratch dir (§ 4), so `claude rm` never sees a primary checkout as the session's tree, and runs
+  only after `/done` has torn the session's worktree down; the scratch dir is removed by hand
+  afterwards (§ 5 Wrap up). Never `claude rm` a session whose cwd is a primary checkout — `claude stop` it and leave it
+  for me. Tearing down a worktree is `/done`'s.
 
 ## 1. Frame
 
@@ -111,9 +113,10 @@ synced main into it.
 - **Session brief** `~/.claude/tmp/<project>/<letter>-brief.md` from `session-brief-template.md`
   per session — the PRs it builds, in order, each with its contract and dependencies.
 
-**The orchestrator creates each PR's worktree** at spawn (§ 4), so every session runs inside its
-own tree from its first turn and never from the primary checkout. The session brings up its own
-local stack, and creates any further tree it needs itself. **One worktree per PR, named after its
+**Each session creates its own worktree**, as its first act; the orchestrator never runs
+`worktree_setup.sh` or switches a session's repos. It creates only the session's **scratch dir**
+(§ 4), so no session ever runs from the primary checkout. The session brings up its own local
+stack, and creates any further tree it needs itself. **One worktree per PR, named after its
 slug (`worktrees/<slug>`), never reused** — not even by the next session of the same letter,
 whose predecessor may still be listed. The orchestrator stays at the mt-devkit root and reaches
 PRs through `gh`.
@@ -121,22 +124,30 @@ PRs through `gh`.
 ## 4. Spawn
 
 Per session whose first PR's hard dependencies have pushed (merged only in a hackathon), up to
-the cap. First its worktree — creates run **one after another** (the setup script fast-forwards
-the shared primaries, so parallel creates race) — then the session, from inside it:
+the cap. First its scratch dir, new for this PR, then the session, from inside it:
 
 ```bash
-bash <MAIN>/.claude/skills/worktree/worktree_setup.sh <slug> <MAIN>   # `worktree create <slug> --no-enter`
-git -C <MAIN>/worktrees/<slug>/<repo> switch -C mohammad/<slug> origin/<base>   # per repo
-(cd <MAIN>/worktrees/<slug> && claude --bg -n "<orchestrator title> - <letter>" \
+SCRATCH=<MAIN>/worktrees/.sessions/<project>-<slug>
+mkdir -p $SCRATCH/.claude && cp <MAIN>/.claude/settings.local.json $SCRATCH/.claude/
+(cd $SCRATCH && claude --bg -n "<orchestrator title> - <letter>" \
   --permission-mode <this session's mode> --autocompact 400000 \
   "You are session <letter> of the <project> project. Ask every question inline as text with options and a recommendation; never use the question UI. Read ~/.claude/tmp/<project>/<letter>-brief.md and follow it.")
 ```
 
-`<base>` is the PR's base, or the branch of a hard dependency it builds on. Spawn in the
-**parent** worktree, never `<wt>/salestech-be` — a session in a sub-repo is blocked from Bash —
-and never from the primary checkout, which `claude rm` must never see as the session's tree
-(§ What a session can do). The inline-questions line is in the prompt, not only
-the protocol, because a session can hit a gate before it has finished reading; the orchestrator
+Each line is load-bearing:
+- **Under `<MAIN>/worktrees/`** — gitignored, and inside the trusted mt-devkit tree. A dir under
+  `~/.claude/tmp/` fails: `claude --bg` refuses it as "Workspace not trusted".
+- **`settings.local.json` copied in** — the scratch dir is its own project, and without the
+  `enabledMcpjsonServers` approvals the session stops at a "new MCP servers found" prompt nobody
+  can answer. Every server in `<MAIN>/.mcp.json` must be listed there, or it stops anyway.
+- **A plain dir, never the primary checkout or a worktree** — so `claude rm` deletes nothing that
+  matters (§ What a session can do). From it the session runs `worktree create <slug>`, which
+  enters the parent tree (`EnterWorktree` accepts it: the scratch dir sits in the same repo) —
+  never `<wt>/salestech-be`, where Bash is blocked.
+
+The session's brief names its base: `main`, or the branch of a hard dependency it builds on.
+
+The inline-questions line is in the prompt, not only the protocol, because a session can hit a gate before it has finished reading; the orchestrator
 can't see a question asked through the question UI. Record the session in the index
 (`<letter> · <id>`) and set its PR to `scoping`. Then tell me the session is up, with its pointer (§ 5).
 
@@ -202,7 +213,7 @@ for a PR into the project base (no merge queue there), **in the merge queue** fo
 tell it to hand off. It writes `~/.claude/tmp/<project>/<letter>-handoff.md` (what shipped, the
 contracts it settled, what's left for the next PR) and reports `handoff`. If its letter has a next
 PR: wrap it up (below), then spawn a fresh session under the **same name** with the brief and the
-handoff, in a new worktree the orchestrator creates for the next PR (§ 4) — never the
+handoff, in a new scratch dir (§ 4); it creates its own worktree for the next PR — never the
 predecessor's. A slice split mid-flight (e.g. a code-owners carve-out) gets a new letter, never a
 second PR in the current session. Until its session wraps up, review comments and CI on a PR are
 that session's.
@@ -214,15 +225,15 @@ on the queue: a queued PR has nothing left for its session to do.
    authorization (`done` § One exception), and to report `done <letter>` with what was torn down.
 2. **Wait for its idle notice** after that report — never stop it on the `done` message itself,
    which can arrive while teardown is still running (stopping it then leaves a half-deleted
-   worktree). Check read-only that its worktrees are gone, then `claude stop <id>` and
-   `claude rm <id>` — safe now, its worktree is gone and no other session shares it — and mark it
-   `done` in the index.
+   worktree). Check read-only that its worktrees are gone, then `claude stop <id>`,
+   `claude rm <id>`, and `rm -r` its scratch dir (`claude rm` leaves it), and mark it `done` in
+   the index.
 3. **The session finishes its own teardown.** The orchestrator never removes a sub-session's
    worktree. If teardown was interrupted, ask me, then resume it once (§ What a session can do).
 
 **Kicked out of the queue after wrap-up** → spawn a fresh session under the same letter with its
-brief and handoff, in a worktree recreated from the PR's branch (§ 4, with
-`switch -C mohammad/<slug> origin/mohammad/<slug>`), to fix it and re-queue.
+brief and handoff, in a new scratch dir (§ 4); it recreates its worktree from the PR's branch
+(`switch -C mohammad/<slug> origin/mohammad/<slug>`), fixes it, and re-queues.
 
 **Relayed gates** — for a small project, at my ask: sub-sessions never ask me; they report each
 gate to the orchestrator and wait, and the orchestrator brings me **one session's gate at a time**
@@ -310,8 +321,8 @@ replaced:
 
 - **The orchestrator holds context, not work.** If it is about to read code, it should be asking a
   sub-session instead.
-- **The orchestrator owns the base and creates each PR's worktree; the sub-session owns it from
-  there** — working in it and tearing it down. Neither touches the other's.
+- **The orchestrator owns the base and each session's scratch dir; the session owns its
+  worktree** — creating it, working in it and tearing it down. Neither touches the other's.
 - **A base PR doesn't fix CI it didn't cause.** A red whose cause is already in the base, or on
   main but not yet in it, is base-inherited (`babysit`): reported once, fixed by the final-PR
   session (§ 7).
