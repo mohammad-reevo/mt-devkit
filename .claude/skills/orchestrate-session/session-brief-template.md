@@ -13,6 +13,8 @@ orchestrator tells you when to hand off.
   dir you were spawned in (protocol § How you run a PR).
 - **Builds:** <one to three lines: what this PR delivers, and the house skills it should follow>
 - **Contract:** <what it produces for or consumes from other PRs, e.g. the endpoint shape>
+- **Not yours:** <each shared concept another slice owns — "<concept>, owned by `<slice>`" — or none>.
+  Build on the owner's result; never decide it here.
 - **Depends on:** <hard: PRs it needs pushed first; soft: PRs it merges in once pushed; or none>
 
 ## 2. `<slug>` (<ticket>) — later
