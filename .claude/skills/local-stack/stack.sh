@@ -14,6 +14,7 @@ set -euo pipefail
 MAIN_DEFAULT="$HOME/Desktop/code/mt-devkit"
 MODE=""
 WT_NAME=""
+ORG=""
 PASSTHRU=""
 
 usage() {
@@ -27,6 +28,9 @@ Usage: stack.sh up|down|list|down-all|seed-pool [--name <worktree>] [-- <passthr
   seed-pool  seed + bootstrap the pool orgs (slots 1-5) once; re-running is safe
 
   --name <worktree>   worktree under <main>/worktrees/ (default: the one cwd sits in)
+  --org <1-5>         up only: sign the frontend in to this pool org instead of the slot's own.
+                      Refused if another stack's slot holds it. The stack's CDC still drops that
+                      org's events, so CDC-driven triggers won't fire for it.
 
 Anything after `--` is passed straight to the underlying script:
   up    --workers <groups> | --askreevo | --no-fe | --skip-org-setup
@@ -35,6 +39,7 @@ Anything after `--` is passed straight to the underlying script:
 Examples:
   stack.sh up
   stack.sh up --name planner-inline-first -- --askreevo --skip-org-setup
+  stack.sh up --org 3
   stack.sh down --name planner-inline-first
 EOF
 }
@@ -51,6 +56,7 @@ esac
 while [ $# -gt 0 ]; do
   case "$1" in
     --name) WT_NAME="$2"; shift 2 ;;
+    --org) ORG="$2"; shift 2 ;;
     --) shift; PASSTHRU="$*"; break ;;
     -h|--help) usage; exit 0 ;;
     *) echo "error: unknown option '$1' (put script flags after \`--\`)" >&2; exit 2 ;;
@@ -129,6 +135,15 @@ if grep -q -- '--org-token-only' "$STACK_SCRIPTS/stack_up.sh"; then
 else
   POOL=0
   echo "note: this worktree's salestech-be predates the org pool — hashed slot, per-slot org" >&2
+fi
+
+if [ -n "$ORG" ]; then
+  [ "$MODE" = "up" ] || { echo "error: --org only applies to up" >&2; exit 2; }
+  [ "$POOL" -eq 1 ] || { echo "error: --org needs a salestech-be with the org pool" >&2; exit 1; }
+  case "$ORG" in
+    [1-$POOL_SIZE]) ;;
+    *) echo "error: --org must be a pool org, 1-$POOL_SIZE (got '$ORG')" >&2; exit 2 ;;
+  esac
 fi
 
 # Every registry record as "<index> <instance id> <salestech-be path>", one per line.
@@ -335,6 +350,16 @@ if [ "$POOL" -eq 1 ] && [ "$INDEX" -gt "$POOL_SIZE" ]; then
   exit 1
 fi
 
+if [ -n "$ORG" ] && [ "$ORG" != "$INDEX" ]; then
+  HOLDER="$(registry_records | awk -v org="$ORG" '$1 == org {print $2}')"
+  if [ -n "$HOLDER" ]; then
+    echo "error: pool org $ORG belongs to stack '$HOLDER' (slot $ORG)." >&2
+    echo "       Bring that stack down, or pick another org. This worktree keeps slot $INDEX until:" >&2
+    echo "         stack.sh down --name $(basename "$WT")" >&2
+    exit 1
+  fi
+fi
+
 BE_PORT=$((8000 + INDEX))
 FE_PORT=$((3000 + INDEX))
 RT_PORT=$((8787 + INDEX))
@@ -370,7 +395,23 @@ fi
 # A pool org is already seeded, so the slow org-setup (migrate + seed + bootstrap)
 # is skipped and only the frontend's session token is written for this slot's org —
 # which can differ from this worktree's last run, so the token is never reused.
-if [ "$POOL" -eq 1 ]; then
+#
+# --org writes another pool org's token here instead, before launch: the frontend's dev
+# script exports the token into its process env at start, so a later .env write never
+# reaches a running frontend. stack_up.sh's .env.pre-stack backup keeps the first copy
+# it sees, so the backup is taken first — through patch_env.py itself, writing a value
+# stack_up.sh writes anyway — or `down --restore-env` would hand back this override.
+# The org only moves the sign-in: `derive()` skip-lists every other slot's org per
+# slot, so this stack's CDC still drops the org's events.
+FE_ENV="$FE_DIR/apps/reevo-webapp/.env"
+if [ -n "$ORG" ] && [ "$ORG" != "$INDEX" ]; then
+  ( cd "$BE_DIR" && uv run python "$STACK_SCRIPTS/patch_env.py" "$FE_ENV" \
+      --backup ".pre-stack" --stamp "$INSTANCE" "BASE_API_URL=http://localhost:$BE_PORT" ) >/dev/null
+  ( cd "$BE_DIR" && uv run python -m scripts.local_dev.cli org-setup \
+      --slot "$ORG" --token-only --write-frontend "$FE_ENV" )
+  PASSTHRU="$(printf '%s' " $PASSTHRU " | sed 's/ --skip-org-setup / /') --skip-org-setup"
+  echo "note: frontend signs in to pool org $ORG, on slot $INDEX — this stack's CDC drops org $ORG's events" >&2
+elif [ "$POOL" -eq 1 ]; then
   case " $PASSTHRU " in
     *" --skip-org-setup "*) ;;
     *) PASSTHRU="$PASSTHRU --org-token-only" ;;

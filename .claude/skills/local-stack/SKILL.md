@@ -18,6 +18,7 @@ backend 8000+index    frontend 3000+index    realtime 8787+index
 ```bash
 bash .claude/skills/local-stack/stack.sh up
 bash .claude/skills/local-stack/stack.sh up --name planner-inline-first -- --askreevo --skip-org-setup
+bash .claude/skills/local-stack/stack.sh up --org 3   # sign the frontend in to pool org 3
 bash .claude/skills/local-stack/stack.sh down --name planner-inline-first
 bash .claude/skills/local-stack/stack.sh list         # every stack that exists, and whether it is running
 bash .claude/skills/local-stack/stack.sh down-all     # every stack (env-manager's `kill stacks`)
@@ -53,7 +54,10 @@ containing the cwd is used. Everything after `--` passes through to the underlyi
   `falkor-cleanup` always keeps their FalkorDB graphs.
 - **Every `up` re-writes only the frontend's session token** for its slot's org (`--org-token-only`)
   — seconds, not the minutes a full org setup takes. After a reset a session may come back on a
-  different slot; that's fine, the pool orgs are seeded alike. An `up` on an unseeded pool org
+  different slot; that's fine, the pool orgs are seeded alike. **`up --org <N>`** signs the
+  frontend in to pool org N instead (e.g. the org a test seeded data into), and is refused while
+  another stack's slot holds N. The stack's CDC still skips N's events (`derive()` skip-lists
+  every other slot's org), so CDC-driven triggers don't fire for it. An `up` on an unseeded pool org
   fails and names `seed-pool`. A `seed-pool` slot failing on `user_email_idx` means stale seed users
   from an older run of that slot's org: `uv run python -m scripts.seed_dev_data --org-id <org>
   --reset` in salestech-be, then re-run `seed-pool`.
