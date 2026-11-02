@@ -44,6 +44,9 @@ permission prompts, or answer its `AskUserQuestion`. What follows from that:
   the orchestrator's own cwd.
 - **Stop before you spawn under a reused name.** A name resolves to the latest session, so the old
   one must be stopped first or messages go astray.
+- **Missing from `claude agents` is not ended.** An idle session can drop off the list and
+  reappear when I bring it up. Before spawning for a slice, its index owner must be one you or I
+  deliberately stopped, or one I said to replace — never one that merely isn't listed.
 - **Resume is a last resort, and asked first.** Every resume shows up as another session in my
   agents view. If a stopped session must continue, ask me, then resume exactly once (row above).
   Never spawn extra sessions to recover one.
@@ -202,8 +205,11 @@ on and can't see in an artifact — no scoped / planned / go / verified / ready.
 - **A pushed dependency** → spawn sessions whose hard deps are now met, and tell sessions with a
   soft dep on it to `git merge origin/<its branch>`. A conflict from that merge or from an
   update-branch is the session's to resolve — no orchestrator call.
-- **A session `not running` in the pull** with work left → it stopped mid-flight. Read
-  `claude logs`; resend its brief's resume line, or replace it.
+- **A session `not listed — ask Mohammad` in the pull** (missing from `claude agents`, work left)
+  → it is not gone: idle sessions drop off that list and come back once I bring them up. Ask me to
+  bring it back, naming the session and what it's needed for. Never spawn a replacement unless I
+  say so, or it was deliberately stopped — two sessions in one worktree corrupt each other's
+  merges and pushes.
 - **A session `idle` but not `blocked`, with work left and no message** → a silent halt, which the
   protocol forbids. Ask it what it is waiting on.
 
