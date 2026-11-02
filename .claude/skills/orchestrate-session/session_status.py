@@ -23,6 +23,7 @@ SPEC = os.path.expanduser("~/.claude/spec")
 TMP = os.path.expanduser("~/.claude/tmp")
 PROJECTS = os.path.expanduser("~/.claude/projects")
 QUESTION_CHARS = 1500
+FINISHED = {"done", "merged", "queued"}  # index statuses whose session wraps up (§ 5 Wrap up)
 
 PR_QUERY = """query($owner:String!,$repo:String!,$n:Int!){repository(owner:$owner,name:$repo){
 pullRequest(number:$n){state mergeStateStatus reviewDecision isInMergeQueue
@@ -153,11 +154,19 @@ def main():
             # Legit business flow: one unreachable PR must not hide every other session's
             # state — the error is printed in that row for the orchestrator to see.
             pr = "error: %s" % e
+        status = row.get("status", "")
+        if agent:
+            agent_cell = "%s/%s" % (agent.get("status"), agent.get("state"))
+        elif not letter:
+            agent_cell = "—"
+        elif status in FINISHED:
+            agent_cell = "not running"
+        else:
+            # `claude agents` drops idle sessions that are still alive, so a missing
+            # session with work left is unaccounted for, not ended.
+            agent_cell = "not listed — ask Mohammad"
         print("| %s | %s | %s | %s | %s | %s |" % (
-            letter or "—", slug, row.get("status", ""),
-            "%s/%s" % (agent.get("status"), agent.get("state")) if agent
-            else ("not running" if letter else "—"),
-            pr, files_of(project, slug, letter)))
+            letter or "—", slug, status, agent_cell, pr, files_of(project, slug, letter)))
     for letter, session_id in blocked:
         print("\n**%s asks:**\n%s" % (letter, last_question(session_id) or "— no transcript found"))
 
