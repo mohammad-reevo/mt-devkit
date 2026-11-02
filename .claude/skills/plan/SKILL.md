@@ -99,7 +99,9 @@ must name real files and real seams, not guesses.
   gates the whole PR on its review, so that part is split out and reviewed alone. In salestech-be,
   pipe the files the tasks touch to `python3 .claude/harness/code_owners.py owners` (run in the
   worktree's `salestech-be/`; paths on stdin, new files included). Each row names a team beyond the
-  catch-all default, `required` or `requested`; both count. Group the rows by team. A team needed
+  catch-all default. Only `required` rows count — `CODEOWNERS`, whose approval `main` enforces; a
+  `requested` row (`CODEREVIEWERS`) is auto-requested but never blocks the merge, so it never
+  splits a PR and is never raised as a split question. Group the required rows by team. A team needed
   by only part of the PR moves that part into its own `### PR <n> — <team> review`. A team the PR's
   core change needs stays. The split has one shape wherever it's decided — here, in `workflow`
   § Project drive, or after the PR is open (`address-comments`, a CI fix):
