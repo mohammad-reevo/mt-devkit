@@ -213,7 +213,8 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
    the conflict when it comes. No chain, no project base — the index's `> Base:` reads `main`. **Migrations and paths another
    team owns** become their own slices with base `main`: feed the paths a scope names to
    `python3 .claude/harness/code_owners.py owners` (from primary salestech-be, paths on stdin); a
-   row, `required` or `requested`, for a team that only part of the slice needs is such a path
+   `required` row (never a `requested` one — it doesn't block the merge) for a team that only
+   part of the slice needs is such a path
    (`plan` § Resolve and break down). When carving one out changes a split I already agreed, ask
    first. Re-run it on the plans' task files once they
    land — a plan that turns up one splits the slice and re-plans both halves. A slice that needs a
