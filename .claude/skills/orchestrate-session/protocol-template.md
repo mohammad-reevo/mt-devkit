@@ -12,13 +12,18 @@ project.
 <- Hackathon: <idea page URL> — the hackathon rules in `workflow` § Hackathon projects apply.>
 
 ## How you run a PR
-- **Your worktree is ready.** The orchestrator created `worktrees/<slug>` for this PR, its repos
-  on `mohammad/<slug>` off the PR's base, and spawned you inside it — your cwd is that tree. Work
-  there and never from the primary checkout; never `EnterWorktree` a sub-repo (it blocks Bash). A
-  further tree you need for some other reason you create yourself (`worktree create <name>
-  --no-enter`). Bring up your own local stack (`local-stack`) when the PR needs one.
+- **Create your worktree first.** You were spawned in a scratch dir
+  (`worktrees/.sessions/<project>-<slug>`), not a tree. Run `worktree create <slug>` — it builds
+  `worktrees/<slug>` with every repo on `mohammad/<slug>` off `main`, and enters it. If your base
+  isn't `main`, switch each repo the PR touches onto it:
+  `git -C <wt>/<repo> switch -C mohammad/<slug> origin/<base>` (salestech-be: if the switch aborts
+  over overlaid files, use the skip-worktree workaround in
+  `knowledge-base/concepts/harness/assimilation-harness.md`, then re-apply the overlay). Work there
+  and never from the primary checkout or the scratch dir; never `EnterWorktree` a sub-repo (it
+  blocks Bash). A further tree you need for some other reason you create yourself (`worktree
+  create <name> --no-enter`). Bring up your own local stack (`local-stack`) when the PR needs one.
 - **Never reuse a worktree**, even a predecessor's in your own letter's chain: its session may
-  still be listed, and removing that session (`claude rm`) deletes its worktree. Your base
+  still be listed, and its teardown is that session's, not yours. Your base
   already holds the predecessor's merged PR. A plan or handoff that names an older worktree
   path is re-pointed at yours.
 - Run `workflow <mode> <slug>` with your session brief's PR description as the idea. Scope's
