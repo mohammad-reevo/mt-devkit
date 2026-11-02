@@ -44,9 +44,12 @@ project.
   orchestrator can't see the question UI; plain text it can quote back to Mohammad.
 - **The orchestrator owns the project base**, when there is one — it pushes to it and syncs main
   into it. You **update-branch your PR from its base yourself** (main or the project base)
-  whenever it is CONFLICTING or BEHIND (`git-merge.md`, never ask, never wait to be told). A soft
-  dependency: `git merge origin/<its branch>` once the orchestrator says it pushed. Any conflict
-  either brings is yours to resolve — no need to ask the orchestrator.
+  whenever it is CONFLICTING or BEHIND (`git-merge.md`, never ask, never wait to be told).
+  **Never merge a sibling PR's branch** for a soft dependency — two PRs that share a file stay
+  independent, and whichever lands second resolves the conflict by update-branch. **Stacked on
+  another PR** (your base is its branch): once it merges, retarget your PR to `main`
+  (`gh pr edit <n> --base main`) and update-branch (`git-merge.md`, the parent-merged case). Any
+  conflict either brings is yours to resolve — no need to ask the orchestrator.
 - **CI reds your diff didn't cause aren't yours.** A failing check whose paths don't overlap your
   diff and whose cause is already in the base, or on main but not yet in it, is base-inherited
   (`babysit`): report it once (`base-red`), don't rerun or fix it in your PR.

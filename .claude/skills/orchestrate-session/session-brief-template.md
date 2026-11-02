@@ -15,7 +15,8 @@ orchestrator tells you when to hand off.
 - **Contract:** <what it produces for or consumes from other PRs, e.g. the endpoint shape>
 - **Not yours:** <each shared concept another slice owns — "<concept>, owned by `<slice>`" — or none>.
   Build on the owner's result; never decide it here.
-- **Depends on:** <hard: PRs it needs pushed first; soft: PRs it merges in once pushed; or none>
+- **Depends on:** <hard: the PR it stacks on (base = that PR's branch, or the project base); soft:
+  PRs sharing a file — never merged in, the second to land update-branches; or none>
 
 ## 2. `<slug>` (<ticket>) — later
 - <same fields>
