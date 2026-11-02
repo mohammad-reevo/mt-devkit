@@ -40,7 +40,7 @@ project.
   either brings is yours to resolve — no need to ask the orchestrator.
 - **CI reds your diff didn't cause aren't yours.** A failing check whose paths don't overlap your
   diff and whose cause is already in the base, or on main but not yet in it, is base-inherited
-  (`babysit`): report it once, don't rerun or fix it in your PR.
+  (`babysit`): report it once (`base-red`), don't rerun or fix it in your PR.
 
 ## Run on your own; message whenever you need the orchestrator
 1. **Run the whole funnel without being told** — scope → plan (Mohammad's gates, in this session)
@@ -65,6 +65,9 @@ verified, ready). Message `<orchestrator name>` with `SendMessage` (load it via 
   brief.
 - `blocked <slug> <why>` — a cross-slice question or a brief decision you'd have to break. Wait
   for the orchestrator.
+- `base-red <slug> <check>` — once per base-inherited red on your PR, so the final base → main
+  PR fixes it.
+- `ready <url>` — final-PR session only: the base → main PR is green with every thread resolved.
 - `done <letter>` — `/done` finished on your worktrees (§ Standing authorization below); name
   what was torn down.
 

@@ -252,7 +252,9 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
    draft), its body linking every slice PR, and add it to the index as the last row. This PR is
    where `main` is reconciled: merge `origin/main` into the project base **once** and resolve every
    conflict and cascading CI failure there. babysit it like any PR; `done <project>` after it
-   merges stays mine.
+   merges stays mine. Under `orchestrate-session` the orchestrator builds it via a final-PR
+   sub-session instead, one per base (`orchestrate-session` § 7). Follow-ups found after the base
+   merges go to `main` as ordinary PRs, never back onto the base.
 
 **Never update-branch across the stack.** No slice on the project base is ever synced with `main` (a slice based on `main` update-branches as any PR does), and a parent's
 later fixes aren't merged down into its children — not for a conflict, not for red CI inherited

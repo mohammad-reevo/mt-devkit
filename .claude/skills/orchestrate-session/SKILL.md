@@ -100,11 +100,12 @@ synced main into it.
   fresh main (`workflow` § Project drive step 2). **The orchestrator owns the base**: it creates
   it, syncs main into it (after a migration lands, or when slices need something from main), and
   tells sessions with an open PR that it moved. Sub-sessions never push to or merge into the
-  base — but each **update-branches its own PR from its base** (main or the project base)
+  base — the final-PR session (§ 7) excepted — but each **update-branches its own PR from its base** (main or the project base)
   whenever it is CONFLICTING or BEHIND (`git-merge.md`, never ask), without waiting to be told.
 - **Index** `~/.claude/spec/<project>-project.md` in `workflow`'s format, with the columns
   `Session` (`<letter> · <id>`) and `Depends on (hard / soft)`, the status `blocked`, and a
-  `> Orchestrator:` header line (name, id, brief). With no base, its `> Base:` line reads `main`.
+  `> Orchestrator:` header line (name, id, brief). With no base, its `> Base:` line reads `main`;
+  with one, a `> Carry-over:` line collects what the final-PR session must fix (§ 5, § 7).
 - **Protocol** `~/.claude/tmp/<project>/protocol.md` from `protocol-template.md` — the gates,
   reports, handoff and boundaries every sub-session shares.
 - **Session brief** `~/.claude/tmp/<project>/<letter>-brief.md` from `session-brief-template.md`
@@ -181,6 +182,8 @@ on and can't see in an artifact — no scoped / planned / go / verified / ready.
   the brief → record it in the brief (Decisions or the contracts) and tell any affected session.
 - **`blocked`** — a cross-slice question, or a brief decision the session would have to break →
   answer it from the brief, or bring it to me here; then relay the answer.
+- **`base-red <check>`** — a base-inherited red on its PR → add it to the index's
+  `> Carry-over:` line, the list the final-PR session (§ 7) fixes. No other action.
 - **`need <what>`** — anything else it can't proceed without → act on it, or bring it to me.
 - **A pushed dependency** → spawn sessions whose hard deps are now met, and tell sessions with a
   soft dep on it to `git merge origin/<its branch>`. A conflict from that merge or from an
@@ -252,8 +255,28 @@ I answer each session in its own session.
 lands on its own, and there is nothing more to open.
 
 **With a base:** once every chain PR is merged into the base, show the index table and run
-`pr-explanation` on the base → main diff. From there `workflow` § Project drive steps 7–8
-apply — merging slices into the base, and the final base → main PR, are mine.
+`pr-explanation` on the base → main diff. Merging slices into the base stays mine (`workflow`
+§ Project drive step 7). **The final base → main PR is the orchestrator's, built by a final-PR
+sub-session** — one per base (per repo), so the reconciliation's conflicts and CI logs never
+enter the orchestrator's context:
+
+1. **Spawn it** like any session (§ 4), letter `Z<repo initial>`, in a worktree whose repo is on
+   the base itself (`switch -C mohammad/<project>-base origin/mohammad/<project>-base`). Its
+   brief names the base, the repo, and the index's `> Carry-over:` list — the base-inherited reds
+   and pending verifications logged during the project (§ 5). It is the **one session authorized
+   to push to the base**.
+2. **It runs no scope or plan.** It merges `origin/main` into the base **once** and resolves every
+   conflict, fixes every CI failure — the carry-over reds included — then opens the PR base →
+   main via `verify` (ready, never draft; its body links every slice PR), and babysits it to
+   green with every thread resolved. Then it reports `ready <url>`, and the orchestrator adds the
+   PR to the index as the last row and tells me it is ready for my double-check.
+3. **Cross-repo order is a mechanism.** The frontend base's PR type-checks against FE main, so it
+   greens only once the backend final PR has merged, deployed, and the client regen is on FE main
+   (`openapi-regen.md`). Its session reports that as the one red left, not as a failure.
+4. Merging it stays mine; the session wraps up (§ 5) once it merges or is queued.
+
+**After a base merges, follow-ups go to main** as ordinary PRs, each in its own session — never
+back onto the merged base.
 
 Either way every session has been wrapped up as its PR merged or queued (§ 5), so nothing is left
 running; the orchestrator's own `/done` is mine to call.
@@ -290,8 +313,11 @@ replaced:
 - **The orchestrator owns the base and creates each PR's worktree; the sub-session owns it from
   there** — working in it and tearing it down. Neither touches the other's.
 - **A base PR doesn't fix CI it didn't cause.** A red whose cause is already in the base, or on
-  main but not yet in it, is base-inherited (`babysit`): reported once, fixed on the base.
+  main but not yet in it, is base-inherited (`babysit`): reported once, fixed by the final-PR
+  session (§ 7).
 - **Sub-sessions never merge, never message anyone but the orchestrator, never touch another
   session's worktree.**
+- **The final base → main PR is the orchestrator's**, built through its final-PR session (§ 7);
+  the orchestrator never reconciles a base itself.
 - **Merging into main or the project base, and requesting reviews, stay mine** in every mode —
   a hackathon base is the one thing the orchestrator merges into.
