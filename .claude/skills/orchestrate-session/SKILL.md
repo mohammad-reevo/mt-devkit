@@ -77,9 +77,13 @@ Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hacka
    scope's naming rule. Present three tables:
    - **PRs** — slice · ticket · base · hard deps · soft deps. **Hard** = can't build without the
      other PR's code; its session waits until that PR has pushed, then branches from it.
-     **Soft** = both edit the same file. That is conflict bookkeeping, not ordering: once the
-     earlier one pushes, the later one `git merge`s its branch, and whoever hits a conflict
-     resolves it then.
+     **Soft** = both edit the same file. That is conflict bookkeeping, not ordering: both stay
+     independent on their own base and **neither ever merges the other's branch** — whichever
+     lands second resolves the conflict by update-branch. If the later PR really needs the
+     earlier one's code, the dep is hard, not soft.
+     **Check before presenting:** no open PR may carry another open PR's commits unless it is
+     stacked on that PR (its base is that PR's branch), or its diff stops being reviewable alone
+     and an approval on it lands the other PR unreviewed.
    - **Sessions** — letter · the PRs it builds, in order · why they're grouped. A session builds
      **one PR at a time**, and a letter holds more than one PR **only for a hard-dep chain** —
      each PR on a fresh session (§ 5 Replace) in a fresh worktree. A soft dep never puts two PRs
@@ -95,9 +99,16 @@ Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hacka
 3. **Wait for my approval** of the breakdown. Nothing is set up before it.
 
 **Base per PR.** `main`, by default — unrelated PRs, standalone tickets and bug fixes each merge
-to main on their own. A **project base** exists only for a hard-dep chain (a PR sequence), and
-only that chain's PRs target it, so the chain pays for CI and the merge queue once, on the final
-base → main PR, instead of per PR. A project with no chain has no base. Hackathons always have
+to main on their own. **Sequential PRs** — a hard-dep chain — are based by length:
+
+- **Two PRs stack directly.** The later PR's base is the earlier PR's branch; no project base,
+  which would be more machinery than two PRs need. Once the earlier PR merges, the later PR's
+  session retargets it to `main` (`gh pr edit <n> --base main`) and runs update-branch itself
+  (`git-merge.md`, the parent-merged case) — no orchestrator call.
+- **Three or more get a project base**, and only that chain's PRs target it, so the chain pays
+  for CI and the merge queue once, on the final base → main PR, instead of per PR.
+
+A project with no chain of three has no base. Hackathons always have
 one (§ Hackathon). One exception, forced by CI: salestech-be fails any PR that mixes
 `db/changelog/changes/*.sql` with code, so a **migration** is its own slice with base `main`
 (`workflow` § Project drive step 2). Code that needs the table depends on it hard, and starts
@@ -106,7 +117,7 @@ synced main into it.
 
 ## 3. Set up
 
-- **Base branch per repo** a hard-dep chain touches — only when the breakdown has one — cut from
+- **Base branch per repo** a chain of three or more touches — only when the breakdown has one — cut from
   fresh main (`workflow` § Project drive step 2). **The orchestrator owns the base**: it creates
   it, syncs main into it (after a migration lands, or when slices need something from main), and
   tells sessions with an open PR that it moved. Sub-sessions never push to or merge into the
@@ -207,9 +218,9 @@ on and can't see in an artifact — no scoped / planned / go / verified / ready.
 - **`base-red <check>`** — a base-inherited red on its PR → add it to the index's
   `> Carry-over:` line, the list the final-PR session (§ 7) fixes. No other action.
 - **`need <what>`** — anything else it can't proceed without → act on it, or bring it to me.
-- **A pushed dependency** → spawn sessions whose hard deps are now met, and tell sessions with a
-  soft dep on it to `git merge origin/<its branch>`. A conflict from that merge or from an
-  update-branch is the session's to resolve — no orchestrator call.
+- **A pushed dependency** → spawn sessions whose hard deps are now met, stacked on it (§ 2 Base
+  per PR). A soft dep needs nothing: no session merges a sibling's branch, and a conflict from
+  an update-branch is the session's to resolve — no orchestrator call.
 - **A session `not listed — ask Mohammad` in the pull** (missing from `claude agents`, work left)
   → it is not gone: idle sessions drop off that list and come back once I bring them up. Ask me to
   bring it back, naming the session and what it's needed for. Never spawn a replacement unless I
