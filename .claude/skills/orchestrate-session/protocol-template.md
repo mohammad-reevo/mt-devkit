@@ -7,7 +7,7 @@ project.
 ## Read first
 - Project brief: `~/.claude/spec/<project>-brief.md` — the goal and the **settled decisions**.
   Don't re-open a settled decision in your scope; build on it. If the code makes one impossible
-  or clearly wrong, report `blocked` with why.
+  or clearly wrong, ask Mohammad, with why.
 - Index (read-only for you): `~/.claude/spec/<project>-project.md`.
 <- Hackathon: <idea page URL> — the hackathon rules in `workflow` § Hackathon projects apply.>
 
@@ -29,15 +29,13 @@ project.
 - Run `workflow <mode> <slug>` with your session brief's PR description as the idea. Scope's
   header records `> Mode: <mode>`, `> Project: <project>`, `> Base: <base>`, `> Worktree: <path>`<,
   and `> Hackathon: <idea page URL>`>; plan copies them.
-- **Gates are Mohammad's, in this session** — scope's open questions, the plan go, escalations.
-  <Relayed gates: never ask Mohammad; report the gate to the orchestrator and wait for its
-  answer.> <Hackathon: agentic — take the recommended option, record the Assumption, and report
-  it.>
+- **Every question is Mohammad's, in this session** — scope's open questions, the plan go,
+  escalations, and cross-slice questions too (a contract change, a brief decision you'd have to
+  break). Never send a question to the orchestrator. <Hackathon: agentic — take the recommended
+  option, record the Assumption, and report it.>
 - **Ask every question inline, never with `AskUserQuestion` or any picker** — numbered questions,
   each with its options (one line each) and your recommendation, then end the turn and wait. The
   orchestrator can't see the question UI; plain text it can quote back to Mohammad.
-- A question that spans slices — a contract change, a brief decision you'd have to break — goes
-  to the orchestrator, not to Mohammad.
 - **The orchestrator owns the project base**, when there is one — it pushes to it and syncs main
   into it. You **update-branch your PR from its base yourself** (main or the project base)
   whenever it is CONFLICTING or BEHIND (`git-merge.md`, never ask, never wait to be told). A soft
@@ -60,16 +58,12 @@ project.
 The orchestrator reads your state itself every turn — your scope / plan / handoff files, your PR,
 whether you're busy or waiting on Mohammad — so don't report phases (scoped, planned, go,
 verified, ready). Message `<orchestrator name>` with `SendMessage` (load it via ToolSearch
-`select:SendMessage`), the first line being the status — one of these where it fits, otherwise
-`need <slug> <what>`:
+`select:SendMessage`), the first line being the status — one of these, or `need <slug> <what>`
+for an orchestrator action you can't proceed without (a base sync, a spawn). Never a question:
 
 - `PR open <slug> <url>` — once, so the PR lands in the index.
 - `merged <slug>` / `queued <slug>` — your PR merged, or entered main's merge queue.
   <Hackathon: `verified <slug>` instead — the orchestrator merges on it; then wait for it.>
-- `decided <slug>` — any decision Mohammad makes that touches another slice, a contract, or the
-  brief.
-- `blocked <slug> <why>` — a cross-slice question or a brief decision you'd have to break. Wait
-  for the orchestrator.
 - `base-red <slug> <check>` — once per base-inherited red on your PR, so the final base → main
   PR fixes it.
 - `ready <url>` — final-PR session only: the base → main PR is green with every thread resolved.
