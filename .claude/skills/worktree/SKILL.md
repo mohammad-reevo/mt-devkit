@@ -77,13 +77,16 @@ Three differences from `create`, each load-bearing:
 
 ## `list`
 
-Show worktrees under `$MAIN/worktrees/`, most-recently-active first. For each, per sub-repo:
+Show worktrees under `$MAIN/worktrees/`, most-recently-active first. For each, read the parent
+and every sub-repo present:
+- last commit: `git -C "$MAIN/worktrees/<name>[/<subrepo>]" log -1 --format='%ct|%cr'` — the
+  worktree's age is its newest `%ct`; sort by it, show that repo's `%cr` ("3 hours ago")
 - branch: `git -C "$MAIN/worktrees/<name>/<subrepo>" branch --show-current`
-- last commit: `git -C "$MAIN/worktrees/<name>/<subrepo>" log -1 --format='%ct|%cr'` (sort by
-  `%ct`, show `%cr`)
 
-Render a compact table (worktree | updated | salestech-be branch | frontend-monorepo branch |
-reevo-realtime branch). `—` for a missing sub-repo. No `EnterWorktree`. If none: say so.
+Render a two-column table: `worktree | updated`. Branches stay out of it — they almost always
+just repeat `mohammad/<name>`. Under the table, one line naming any worktree off that shape: a
+sub-repo on another branch, a detached sub-repo, or no sub-repos at all. No such worktree, no
+line. No `EnterWorktree`. If none: say so.
 
 ## `remove <name>`
 
