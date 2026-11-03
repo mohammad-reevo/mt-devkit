@@ -17,6 +17,10 @@ file is the "how to fill each section" layer.
 - **Masthead at the top**, before §1: Author(s), Created, Last Updated, Reviewers,
   Status, and a **Companion PRD** link. Trailing double-space for the soft line breaks;
   `<mention-date start="YYYY-MM-DD"/>` for dates (use the real current date, don't guess).
+  **Skip it when the page is an Eng Docs row** — the row's properties (Author, Status,
+  Product Area, Reviewers) already carry it, and a masthead just repeats them.
+- **Trailing full stops: ask once.** Mohammad's docs end no paragraph or bullet with a full
+  stop. Ask at the outline whether this doc follows that, then apply it in every section.
 - **Open questions as answered `<details>` toggles** — `<summary>the question</summary>`
   with the resolution / current lean inside (tab-indented). Pose *and* answer (or give
   the current thinking); a bare unanswered list is weaker.
@@ -61,6 +65,27 @@ content. What it shows:
 - **Cross-cutting sections as short bolded bullets** — security, observability, rollout,
   testing and the like: one bolded lead per point, a sentence or two each.
 - **Appendix of files as New / Changed / Removed / Reuses, per repo.**
+
+## The mini example
+
+The Workflows Duplication Detection doc (ID in `notion-workspace.md`) is the reference for a
+mini design doc — one algorithm, no PRD, `Category: One-pager`. Read it for patterns, not
+content. What it shows:
+
+- **Five sections, no padding** — Overview, Goals and Non-goals, Background / Context,
+  Proposed Architecture, and one "How OOTB Workflows Will Use This" section. No API, Data
+  Model, Security, Rollout, Open Questions or Appendices sections, and no N/A stubs for them.
+- **Background as the problem, then the current state in code** — why it matters, with a
+  real prod number, then the existing services and the one existing check it improves on.
+- **Architecture grows subsections as it needs them** — overview with an ASCII chart and a
+  mapping table, scoring, classification and limits, validation, performance.
+- **One worked example with real numbers, the rest as a table** — a single pair scored step
+  by step, then a short table of pairs and the class each gets.
+- **Validation against real data** — the design hand-scored against one org's real
+  workflows in a table with a "Correct?" column, then the design changes the test forced.
+- **The consumer section as bolded bullets** — what gets compared, where it runs, what the
+  user sees, what stays with the user.
+- **No masthead, no trailing full stops** — the Eng Docs row carries the metadata.
 
 ## Enhanced-markdown quirks (Notion MCP)
 

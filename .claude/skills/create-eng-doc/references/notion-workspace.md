@@ -14,6 +14,9 @@ truth — re-fetch and trust it over these notes.
 - **Golden example** (read before drafting; what it shows is in `house-style.md`):
   "Sequences Integration" eng doc — `3df7019cb5b180adb612c0e461e2f999`. Live, so read it for
   patterns, not content.
+- **Mini example** (a one-pager; what it shows is in `house-style.md` § The mini example):
+  "[Eng Design] - Workflows Duplication Detection Algorithm" —
+  `40c7019cb5b180788d65e04117f514cf`.
 - **Other exemplar eng docs** (optional, for depth calibration):
   - "[Eng Design] - Workflows Platformization" — `3347019cb5b180a9bce0fd303ea6e8b4`
   - "Technical Design: AI Workflow Debugging" — `3957019cb5b180138995ee4f540fef77`
@@ -21,7 +24,8 @@ truth — re-fetch and trust it over these notes.
 ## Draft → publish mechanics
 
 1. **Draft** in a personal page first (write into a page the user gives you, or create
-   one under their Drafts). Optionally instantiate the skeleton with
+   one under their Drafts). When the user hands you an **Eng Docs row** they created from
+   the template, write into it directly and skip step 2. Optionally instantiate the skeleton with
    `notion-update-page` `command: "apply_template"`, `template_id:
    2b87019cb5b180a895a4e359e54a6d0c`.
 2. **Publish** = `notion-move-pages` with
@@ -39,6 +43,7 @@ truth — re-fetch and trust it over these notes.
   user with `notion-fetch self`.
 - **Product Area** (multi-select) — e.g. `["Workflows"]` (options include Core CRM, AI,
   Reporting, Infrastructure / Platform, …).
+- **Category** (select) — `One-pager` for a mini doc; otherwise leave it.
 - **Reviewers** (person) — **leave blank. The user assigns reviewers, never the skill.**
 
 ## Notes
