@@ -17,7 +17,7 @@ backend 8000+index    frontend 3000+index    realtime 8787+index
 
 ```bash
 bash .claude/skills/local-stack/stack.sh up
-bash .claude/skills/local-stack/stack.sh up --name planner-inline-first -- --askreevo --skip-org-setup
+bash .claude/skills/local-stack/stack.sh up --name planner-inline-first -- --askreevo
 bash .claude/skills/local-stack/stack.sh down --name planner-inline-first
 bash .claude/skills/local-stack/stack.sh add flows    # start a worker group on the running stack
 bash .claude/skills/local-stack/stack.sh remove flows # stop it again
@@ -28,42 +28,30 @@ bash .claude/skills/local-stack/stack.sh seed-pool    # once, from main: seed th
 
 `--name` is the **worktree** name (under `<main>/worktrees/`); omit it and the worktree
 containing the cwd is used. Everything after `--` passes through to the underlying script:
-`--workers <flows,graph,integrity,bulk,crm-sync>`, `--askreevo`, `--no-fe`, `--skip-org-setup` on
-`up`; `--restore-env` on `down`.
+`--workers <groups>`, `--askreevo`, `--no-fe` on `up`; `--restore-env` on `down`. Leave
+`--skip-org-setup` off a pool stack: it also skips writing the frontend token for this run's slot.
 
 ## Workers — start them when the test needs them
 
-`up` starts the backend and frontend only. Each worker process holds ~0.65–1.8 GB, so start a
-group with `add` at the moment a test needs it and `remove` it once that test is done — never
-guess a set up front. `add` and `remove` delegate to salestech-be's `stack_workers.sh`, whose
-`reevo-local-stack` SKILL.md is the reference for each group; in short:
-
-| Group | Add it when |
-|---|---|
-| `flows` | running or triggering a workflow — **before** the action that should trigger it |
-| `graph` | something reads FalkorDB, e.g. the accounts list page |
-| `integrity` | testing merge / archive / move of CRM records |
-| `bulk`, `crm-sync` | testing those features |
-
-Ask Reevo (chat worker + realtime) is not addable: start the stack with `up -- --askreevo`.
-
-**Add `flows` before the triggering action.** The CDC consumers start from the newest message
-when their consumer group has no committed offset, and `down` deletes the stack's groups — so on
-a fresh stack, a record change made before `flows` was added never reaches the flow engine.
-Removing and re-adding later is safe: offsets are committed.
+`up` starts the backend and frontend only. Each worker process holds ~0.65–1.8 GB, so `add` a
+group at the moment a test needs it and `remove` it once that test is done — never guess a set up
+front. Which group a test needs, and why `flows` must be added **before** the action that should
+trigger a flow, is in salestech-be's `.claude/skills/reevo-local-stack/SKILL.md` (§ workers) —
+read it there; it is the one copy. Ask Reevo (chat worker + realtime) is not addable: `up -- --askreevo`.
 
 ## Framework — who owns what
 
 - **Each worktree session owns its own stack**: `up` when it needs the app, `down` the moment its
   testing is done — in the same turn, never left up while the PR waits on review. A stack costs
-  ~10 GB (its backend processes plus vite), and review gaps run for hours, so a few idle stacks
+  ~3–5 GB for the backend and vite, plus ~0.65–1.8 GB per added worker process, and review gaps run for hours, so a few idle stacks
   exhaust the machine. `/done` runs `down` for every worktree it tears down, as the backstop. The default stack
   (:8000/:3000/:8787, `env-manager`) is reserved for the orchestrator session on `main`.
 - **Stopping another session's stack means telling that session.** Whenever a session takes down
   a stack it didn't start — a cleanup, `down-all`, `env-manager`'s `kill stacks` or `reset
   everything` — it finds the owner (the session working in that worktree, via `ListAgents`) and
   sends it one `SendMessage`: what was stopped and why, and the exact `stack.sh up --name <worktree>`
-  (with the stack's original `--workers` / `--no-fe`) to bring it back. Add that a re-`up` can land
+  (with the stack's original `--no-fe` / `--askreevo`, then `stack.sh add` for each worker group
+  that was running) to bring it back. Add that a re-`up` can land
   on a different slot, so its ports and pool org come from the new output, not memory. A session
   that has exited needs no message; name it in the report instead.
 - **The orchestrator owns the shared layer**: Docker, migrations, and resets (`env-manager`'s
@@ -132,9 +120,9 @@ This skill owns **numbered stacks**. Both resolve a worktree the same way (walk 
 holding `salestech-be/` and `frontend-monorepo/` as siblings), so they agree on what a worktree is.
 
 **Never tear a numbered stack down with `env-manager`.** Its kills are process-name-based and
-port-agnostic — `kill-be` is `pkill -f salestech_be`, `kill-rt` is `pkill -f "pnpm.*dev"` — so
-either one kills **every** stack on the machine, which is precisely what this skill exists to
-prevent. `stack.sh down` is scoped: a PID file plus a process-tree walk, then `reevo-local down`
+port-agnostic — `kill-be` is `pkill -f salestech_be` — so it kills **every** stack on the
+machine, which is precisely what this skill exists to prevent. `stack.sh down` is scoped: it
+signals the process groups in the stack's PID file, then `reevo-local down`
 frees the slot and deletes that instance's Kafka topics and Temporal namespace. `env-manager`'s `kill stacks` row is the
 exception that proves it: it delegates to `down-all` here rather than killing anything itself.
 

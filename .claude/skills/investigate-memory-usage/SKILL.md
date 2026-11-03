@@ -31,8 +31,9 @@ Lead with the verdict — total vs the machine's RAM, swap used, and the one or 
 explain it. Then the script's table (consumer or session), then each anomaly as a sentence with
 what stopping it would free. The usual culprits, in the order they've mattered:
 
-1. **Local stacks left up after testing** — ~10 GB each (backend processes + vite); the default
-   stack runs more workers, ~17 GB. A session at `[TO REVIEW]` / `[CI]` / done doesn't need one.
+1. **Local stacks left up after testing** — ~3–5 GB each for the backend and vite, plus
+   ~0.65–1.8 GB per worker process added to it; the default stack (`env-manager`'s `run backend`)
+   runs every worker, ~17 GB. A session at `[TO REVIEW]` / `[CI]` / done doesn't need one.
 2. **Vite servers outliving their session** — ~2 GB each; anything up more than a day is suspect.
 3. **Orphaned processes** — an API worker whose parent died, or anything still running from a
    deleted worktree.
