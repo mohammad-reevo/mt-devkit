@@ -22,7 +22,7 @@ Usage: stack.sh up|down|list|down-all|seed-pool [--name <worktree>] [-- <passthr
 
   up         take the lowest free pool slot (1-5), bring the stack up (no workers unless --workers)
   down       tear this worktree's stack down and free its slot
-  add        start worker groups on this worktree's running stack (flows, graph, integrity, bulk, crm-sync)
+  add        start worker groups on this worktree's running stack (groups: salestech-be's stack_lib.sh)
   remove     stop worker groups on this worktree's running stack
   list       show every stack that exists — allocated, left behind, or untracked — and whether it runs
   down-all   tear down every allocated instance (env-manager's `kill stacks`)
@@ -31,12 +31,12 @@ Usage: stack.sh up|down|list|down-all|seed-pool [--name <worktree>] [-- <passthr
   --name <worktree>   worktree under <main>/worktrees/ (default: the one cwd sits in)
 
 Anything after `--` is passed straight to the underlying script:
-  up    --workers <groups> | --askreevo | --no-fe | --skip-org-setup
+  up    --workers <groups> | --askreevo | --no-fe
   down  --restore-env
 
 Examples:
   stack.sh up
-  stack.sh up --name planner-inline-first -- --askreevo --skip-org-setup
+  stack.sh up --name planner-inline-first -- --askreevo
   stack.sh down --name planner-inline-first
   stack.sh add flows --name planner-inline-first
   stack.sh remove flows --name planner-inline-first

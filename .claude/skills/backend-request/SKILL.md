@@ -39,7 +39,8 @@ Response JSON → **stdout**; HTTP status + per-call timing + diagnostics → **
 
 **`--stack`** calls the stack of the worktree cwd sits in, or `--worktree <name>`'s. Its port and
 pool org come from salestech-be's own instance registry (`InstanceRegistry`, `org_id_for`), and
-its token from `seed_dev_data --org-id <org> --token` — the same admin and token `local-stack up`
+its token from `python -m scripts.local_dev.dev_token --org-id <org>` (`seed_dev_data --token` on a
+salestech-be branch that predates it) — the same admin and token `local-stack up`
 signs the stack's frontend in with. No identity file to edit, and it follows the stack to a new
 slot after a reset.
 

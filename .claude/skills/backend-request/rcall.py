@@ -8,7 +8,7 @@ Three targets, allowlisted by host — prod is structurally unreachable:
   * local (default): localhost/127.0.0.1, signed with the local dev key.
   * stack (--stack [--worktree <name>]): a numbered `local-stack` backend on localhost:8000+slot,
     as that stack's pool-org admin. Port and org come from salestech-be's instance
-    registry; the token from `seed_dev_data --token`, the same one `local-stack up`
+    registry; the token from `scripts.local_dev.dev_token`, the same one `local-stack up`
     writes for the stack's frontend. No identity file.
   * dev (--dev): https://api-ng-private-dev.reevo.ai, signed with the dev key read via
     chamber from the dev-v2 AWS account. Requires Tailscale + AWS SSO, because
@@ -284,10 +284,16 @@ def stack_target(name: str) -> tuple[str, str, str, str]:
         except Exception:
             pass  # Legit business flow: a corrupt/absent cache just means we mint fresh.
     print(f"minting stack token for pool org {org_id}", file=sys.stderr)
+    # scripts.local_dev.dev_token mints without importing the whole seeder (~1.6s vs ~18s);
+    # a salestech-be branch that predates it still has the seeder's --token entry.
+    if (Path(be_dir) / "scripts" / "local_dev" / "dev_token.py").is_file():
+        mint = ["uv", "run", "python", "-m", "scripts.local_dev.dev_token", "--org-id", org_id]
+    else:
+        mint = ["uv", "run", "python", "-m", "scripts.seed_dev_data", "--org-id", org_id, "--token"]
     out = _run_in(
         be_dir,
-        ["uv", "run", "python", "-m", "scripts.seed_dev_data", "--org-id", org_id, "--token"],
-        what="`seed_dev_data --token` (is the pool org seeded? see local-stack seed-pool)",
+        mint,
+        what="the dev token mint (is the pool org seeded? see local-stack seed-pool)",
     )
     found = dict(
         line.split("=", 1) for line in out.splitlines() if line.startswith("LOCAL_SESSION_OVERRIDE_")
@@ -296,7 +302,7 @@ def stack_target(name: str) -> tuple[str, str, str, str]:
     user_id = found.get("LOCAL_SESSION_OVERRIDE_USER_ID", "").strip().strip('"')
     token = found.get("LOCAL_SESSION_OVERRIDE_ACCESS_TOKEN", "").strip().strip('"')
     if not user_id or not _JWT.match(token):
-        sys.exit("could not parse the admin user id and token from `seed_dev_data --token`")
+        sys.exit("could not parse the admin user id and token from the dev token mint")
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps({"user_id": user_id, "org_id": org_id, "token": token}))
     return base, user_id, org_id, token
