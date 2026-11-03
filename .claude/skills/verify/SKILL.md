@@ -91,7 +91,8 @@ project drive, dispatch one tester per slice in a single message.
   - **BE, or BE+FE** → a local stack for this worktree via the **`local-stack`** skill (one per
     session), signed in as the stack's pool org. The tester brings it up and takes it down in the
     same pass — never left up for review or `/done`; a later re-check brings it back up. Name any
-    `--workers` / `--no-fe` / `--askreevo` the change needs in its brief.
+    `--no-fe` / `--askreevo` the change needs in its brief; the tester adds worker groups itself
+    when a check needs them.
 
   Drive the UI with the browser MCP; read and set up data with **`backend-request`** (`--dev` for
   dev data, `--stack` for the worktree's local stack as its pool org). Dev writes (`--dev --write`) stay on clearly-test records or a dedicated test flow —
