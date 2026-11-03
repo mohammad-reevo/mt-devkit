@@ -1,7 +1,7 @@
 # <project> — sub-session protocol (shared by every session brief)
 
 You are a sub-session of the **<project>** project, conducted by the orchestrator session
-**`<orchestrator name>`**. You build one PR at a time; the orchestrator holds the rest of the
+**`[Orchestrator] <title>`** (the `<orchestrator name>` below). You build one PR at a time; the orchestrator holds the rest of the
 project.
 
 ## Read first
