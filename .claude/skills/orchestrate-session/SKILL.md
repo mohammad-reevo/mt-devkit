@@ -66,6 +66,17 @@ the orchestration choices, and the contracts between slices. It is what the orch
 and every sub-session reads — a decision recorded there is one no sub-session re-opens in its own
 scope.
 
+**Names, settled here, before anything is spawned.** I find and address sessions by name, and a
+ticket id is a name I'd have to look up. So:
+
+- **Project name** — a short phrase I recognise ("duplication detection"), chosen with me and
+  recorded on the brief's `> Name:` line. Every session name starts with it. The `<project>`
+  slug stays the file name (it may be a ticket id); it never appears in a session name.
+- **Orchestrator name** — `[Orchestrator] <title>`, e.g. `[Orchestrator] Workflows Duplication
+  Detection`, recorded on the brief's `> Orchestrator:` line. The CLI can't rename a live
+  session — only `/rename` typed in that session works — so ask me to `/rename` this one, and
+  wait for it: the protocol embeds this name, and sub-sessions message it.
+
 ## 2. Plan
 
 Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hackathon).
@@ -125,7 +136,7 @@ synced main into it.
   whenever it is CONFLICTING or BEHIND (`git-merge.md`, never ask), without waiting to be told.
 - **Index** `~/.claude/spec/<project>-project.md` in `workflow`'s format, with the columns
   `Session` (`<letter> · <id>`) and `Depends on (hard / soft)`, the status `blocked`, and a
-  `> Orchestrator:` header line (name, id, brief). With no base, its `> Base:` line reads `main`;
+  `> Orchestrator:` header line (name, id, brief) and a `> Name:` line (the project name, § 1). With no base, its `> Base:` line reads `main`;
   with one, a `> Carry-over:` line collects what the final-PR session must fix (§ 5, § 7).
 - **Protocol** `~/.claude/tmp/<project>/protocol.md` from `protocol-template.md` — the gates,
   reports, handoff and boundaries every sub-session shares.
@@ -148,15 +159,17 @@ the cap. First its scratch dir, new for this PR, then the session, from inside i
 ```bash
 SCRATCH=<MAIN>/worktrees/.sessions/<project>-<slug>
 mkdir -p $SCRATCH/.claude && cp <MAIN>/.claude/settings.local.json $SCRATCH/.claude/
-(cd $SCRATCH && claude --bg -n "<project> <letter> · <what it builds>" \
+(cd $SCRATCH && claude --bg -n "<project name> <letter> - <what it builds>" \
   --permission-mode <this session's mode> --autocompact 400000 \
   "You are session <letter> of the <project> project. Ask every question inline as text with options and a recommendation; never use the question UI. Read ~/.claude/tmp/<project>/<letter>-brief.md and follow it.")
 ```
 
 Each line is load-bearing:
-- **The name says what the session builds**, e.g. `crmf-3086 A · sequences field`: a few words
-  from the PR's slice. The leading `<project>` slug ties it to its orchestrator in the agents
-  view, and `session_status.py` matches on `<project> <letter> ` when an index row has no id yet.
+- **The name says what the session builds**, e.g. `duplication detection A - comparison
+  service`: the project name (§ 1, never the slug or a ticket id), the letter, ` - `, and a few
+  words from the PR's slice. The leading project name ties it to its orchestrator in the agents
+  view, and `session_status.py` matches on `<project name> <letter> ` when an index row has no id
+  yet.
 - **Under `<MAIN>/worktrees/`** — gitignored, and inside the trusted mt-devkit tree. A dir under
   `~/.claude/tmp/` fails: `claude --bg` refuses it as "Workspace not trusted".
 - **`settings.local.json` copied in** — the scratch dir is its own project, and without the
@@ -290,7 +303,8 @@ lands on its own, and there is nothing more to open.
 sub-session** — one per base (per repo), so the reconciliation's conflicts and CI logs never
 enter the orchestrator's context:
 
-1. **Spawn it** like any session (§ 4), letter `Z<repo initial>`, in a worktree whose repo is on
+1. **Spawn it** like any session (§ 4), letter `Z<repo initial>` (named `<project name>
+   Z<repo initial> - final PR`), in a worktree whose repo is on
    the base itself (`switch -C mohammad/<project>-base origin/mohammad/<project>-base`). Its
    brief names the base, the repo, and the index's `> Carry-over:` list — the base-inherited reds
    and pending verifications logged during the project (§ 5). It is the **one session authorized

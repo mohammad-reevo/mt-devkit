@@ -1,6 +1,7 @@
 # <project> — project brief
 
-> Orchestrator: <session name> (mt-devkit root). Tickets: <IDs>. Linear: <project, milestone>.
+> Orchestrator: [Orchestrator] <title> (mt-devkit root). Tickets: <IDs>. Linear: <project, milestone>.
+> Name: <project name — the short phrase every session name starts with, never a ticket id>.
 <> Hackathon: <idea page URL>>
 
 ## Goal

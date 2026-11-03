@@ -44,17 +44,20 @@ def read_index(project):
     with open(path) as f:
         lines = f.read().splitlines()
     orchestrator = ""
+    display = ""
     for line in lines:
         if line.startswith("> Orchestrator:"):
             quoted = re.search(r'"([^"]+)"', line)
             orchestrator = quoted.group(1) if quoted else line.split(":", 1)[1].split("(")[0].strip()
+        elif line.startswith("> Name:"):
+            display = line.split(":", 1)[1].strip().rstrip(".").strip()
     table = [l for l in lines if l.startswith("|")]
     header = [c.strip().lower() for c in table[0].strip("|").split("|")]
     rows = []
     for line in table[2:]:
         cells = [c.strip() for c in line.strip("|").split("|")]
         rows.append(dict(zip(header, cells)))
-    return orchestrator, rows
+    return orchestrator, display, rows
 
 
 def session_of(cell):
@@ -64,13 +67,14 @@ def session_of(cell):
     return (letter.group(1) if letter else None, short_id.group(1) if short_id else None)
 
 
-def agent_of(agents, project, orchestrator, letter, short_id):
-    """By the index row's id, else by name: '<project> <letter> · …', or the older
-    '<orchestrator> - <letter>' that sessions spawned before the rename still carry."""
+def agent_of(agents, project, display, orchestrator, letter, short_id):
+    """By the index row's id, else by name: '<project name> <letter> - …' (the index's
+    '> Name:'), or the older '<project slug> <letter> · …' / '<orchestrator> - <letter>'."""
+    prefixes = ["%s %s " % (p, letter) for p in (display, project) if p]
     for a in agents:
         name = a.get("name") or ""
         if (short_id and a.get("id") == short_id) or (letter and (
-                name.startswith("%s %s " % (project, letter))
+                any(name.startswith(p) for p in prefixes)
                 or (orchestrator and name == "%s - %s" % (orchestrator, letter)))):
             return a
     return None
@@ -136,7 +140,7 @@ def main():
     if len(sys.argv) != 2:
         sys.exit("usage: session_status.py <project>")
     project = sys.argv[1]
-    orchestrator, rows = read_index(project)
+    orchestrator, display, rows = read_index(project)
     agents = json.loads(run(["claude", "agents", "--json"]))
     blocked = []
     print("| Session | Slice | Index status | Agent | PR | Files |")
@@ -144,7 +148,7 @@ def main():
     for row in rows:
         slug = re.sub(r"\s*\(.*\)$", "", row.get("slice", "")).strip()
         letter, short_id = session_of(row.get("session", ""))
-        agent = agent_of(agents, project, orchestrator, letter, short_id) if letter else None
+        agent = agent_of(agents, project, display, orchestrator, letter, short_id) if letter else None
         if agent and agent.get("state") == "blocked":
             blocked.append((letter, agent.get("sessionId")))
         pr_url = re.search(r"\((https://github\.com/[^)]+)\)", row.get("pr", ""))
