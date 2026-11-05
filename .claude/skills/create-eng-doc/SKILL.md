@@ -1,19 +1,19 @@
 ---
 name: create-eng-doc
-description: Create a house-format engineering design doc in Notion from a converged design + its companion PRD — or a mini design doc (one-pager, PRD optional, reduced outline). Structure is pulled live from the team's Eng-Design template; substance is grounded in real code via research subagents; the doc is drafted in one pass after outline approval, shaped like a golden example, then the user rewrites it while Claude only reviews, and it is published to the Eng Docs database on the user's go. Standalone (not part of the scope→plan→implement funnel). Triggers on "create the eng doc", "write the eng design", "/create-eng-doc".
+description: Create a house-format engineering design doc in Notion from a converged design + its companion PRD — or a mini design doc (one-pager, PRD optional, reduced outline). Structure is pulled live from the team's Eng-Design template; substance is grounded in real code via research subagents; the doc is drafted in one pass after outline approval, shaped like a golden example, then the user rewrites it while Claude only reviews. It is written into the Notion page the user gives; moving or publishing it is theirs. Standalone (not part of the scope→plan→implement funnel). Triggers on "create the eng doc", "write the eng design", "/create-eng-doc".
 ---
 
 # Create an Engineering Design Doc
 
 Turn a converged design (+ its companion PRD) into a house-format engineering design
-doc in Notion, published to the **Eng Docs** database. This skill owns the *process
+doc in Notion, written into the page the user gives. This skill owns the *process
 and the quality bar* — the section structure comes **live from the team's Notion
 template** (never hard-coded here), and the substance is **grounded in real code**,
 never paraphrased from a spec.
 
 **Shape of the run:** open scope decisions settled first, one approval gate on the
 outline, a full draft written in one pass, then a review-only loop while the user rewrites
-it, and one publish gate at the end. The finished doc is one the user has read and revised
+it. The finished doc is one the user has read and revised
 section by section — that is the point, not a polished first pass. Keep the
 main thread lean — delegate wide reads and code research to subagents; think in the
 main thread.
@@ -30,10 +30,10 @@ are the same for both; where they differ, the step says so.
 
 Collect (or infer from context) whatever isn't provided:
 
-- **The target page — ask first, before writing anything.** Either a page the user names,
-  an **Eng Docs row** they created from the template (write straight into it; there is no
-  later move), or, if they have neither, a private draft (see §5) moved into Eng Docs at
-  publish. Asking up front is what stops the content being written two or three times.
+- **The target page — ask first, before writing anything.** The page the user names (often
+  an Eng Docs row they created from the template); write straight into it. Never create a page
+  of your own, and never move the doc or set its properties — publishing is the user's.
+  Asking up front is what stops the content being written two or three times.
 - **The converged design** — the "design bible" / scope doc / handoff brief the doc is built from.
 - **The companion PRD** — the product contract (requirements, use cases, non-goals). Read it in
   full. **Optional for a mini doc:** when the design came out of a discussion, that discussion
@@ -62,8 +62,8 @@ whatever the team changes. Exact IDs in `references/notion-workspace.md`.
   pattern, is in `references/house-style.md` § The golden example. It is a live doc, so read
   it for patterns, never copy its project content. **For a mini doc, read the mini example
   instead** (same files, § The mini example).
-- When you create the draft page you may `apply_template` the template onto it, so the
-  skeleton is instantiated from the team's own template.
+- You may `apply_template` the template onto an empty target page, so the skeleton is
+  instantiated from the team's own template.
 
 ## 3. Ground it in real code (auto-dispatch research)
 
@@ -109,7 +109,7 @@ code. Say in the hand-over that the file exists.
 
 Draft mechanics: write with the `notion` MCP `notion-update-page` tool
 (`insert_content` / `replace_content` for a fresh page). The house-style rules —
-numbered `## N.` headings, `---` dividers, masthead, answered `<details>` toggles,
+numbered `## N.` headings, `---` dividers, no masthead, answered `<details>` toggles,
 one-physical-line paragraphs, honest N/A, the New/Changed/Reuses appendix — live in
 `references/house-style.md`. Follow it.
 
@@ -138,19 +138,6 @@ After the draft, the user owns the doc. They rewrite it section by section; Clau
 - **Comments from other reviewers** go through the same loop: the user rewrites, Claude
   reviews and hands over wording.
 
-## 7. Publish on the user's go
-
-Only when the user says go:
-
-- **Move** the draft into the **Eng Docs** database (`notion-move-pages` → data
-  source). This preserves the page, its content, comments, and URL. Skip this when the doc
-  was written into an Eng Docs row (§1) — it is already there.
-- **Set the row properties** — Doc name, Type: Eng Design, Status, Product Area,
-  Author/Owner, and `Category: One-pager` for a mini doc. Exact IDs + property schema in
-  `references/notion-workspace.md`.
-- **Never assign Reviewers, and never treat publishing as automatic.** Requesting
-  review and the decision to publish are the user's — surface the doc as ready and stop.
-
 ## Guardrails
 
 - **Ground in real code** — every load-bearing claim traces to a real identifier (§3).
@@ -159,7 +146,7 @@ Only when the user says go:
   behavior. A gap the design leaves open is an Open Question, not an invented answer.
 - **Response altitude** when synthesizing multi-agent research — lead with the
   load-bearing findings; don't dump transcripts into the doc or the chat.
-- **Never assign reviewers; never merge/publish outward** without the user's explicit go.
+- **Never assign reviewers or publish** — requesting review and moving the doc are the user's.
 - **Review, don't rewrite** — after the draft, edit only a section handed over by name (§6).
 - **One Notion edit per call** — never batch many replacements into one `update_content`
   (house-style § Enhanced-markdown quirks).

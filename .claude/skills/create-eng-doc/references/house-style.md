@@ -14,11 +14,8 @@ file is the "how to fill each section" layer.
   Give a distinct piece (a trigger, a node) its own subsection beside its peers rather than a
   sub-bullet of a component list that other sections then point back to.
 - **`---` divider between sections** (the template uses them).
-- **Masthead at the top**, before §1: Author(s), Created, Last Updated, Reviewers,
-  Status, and a **Companion PRD** link. Trailing double-space for the soft line breaks;
-  `<mention-date start="YYYY-MM-DD"/>` for dates (use the real current date, don't guess).
-  **Skip it when the page is an Eng Docs row** — the row's properties (Author, Status,
-  Product Area, Reviewers) already carry it, and a masthead just repeats them.
+- **No masthead.** The doc opens at §1; author, status and reviewers live on the Eng Docs
+  row's properties, which the user sets.
 - **Trailing full stops: ask once.** Mohammad's docs end no paragraph or bullet with a full
   stop. Ask at the outline whether this doc follows that, then apply it in every section.
 - **Open questions as answered `<details>` toggles** — `<summary>the question</summary>`
@@ -85,7 +82,7 @@ content. What it shows:
   workflows in a table with a "Correct?" column, then the design changes the test forced.
 - **The consumer section as bolded bullets** — what gets compared, where it runs, what the
   user sees, what stays with the user.
-- **No masthead, no trailing full stops** — the Eng Docs row carries the metadata.
+- **No trailing full stops.**
 
 ## Enhanced-markdown quirks (Notion MCP)
 
