@@ -39,6 +39,14 @@ their ground wastes the fan-out and produces three shallow reviews instead of th
   error handling that swallows the failure, N+1s that will actually bite at real row counts.
   Read enough of the surrounding code to confirm what the caller expects. A finding you cannot
   trace to a concrete failure is a guess — and guesses are what make a review unusable.
+  **Rollout safety for a removed or moved run-time check:** when the diff deletes or loosens a
+  condition, gate or filter evaluated inside a Temporal workflow or activity, or in code they
+  call (e.g. a flow's `matches_event` / `evaluate_*`), ask whether runs the *previous* deploy
+  already dispatched still need it. Moving a check to dispatch time strands every run started
+  before the deploy: they execute on new workers with no gate at all. Report it unless the diff
+  keeps the run-time check alongside the new one (removal in a later PR, once those runs drain)
+  or shows no dispatched run can reach that code. Decode-compatibility for old payloads is a
+  separate requirement and does not cover it.
 
 - **house-rules** — conformance to the **written** rules (see below). Name the rule in every
   finding; a house-rules finding that cites no rule is really a correctness or taste finding and
