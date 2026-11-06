@@ -56,6 +56,11 @@ CASES = [
     ("uv run pytest big/", "deny", None, {}),
     ("uv run pytest", "deny", None, {}),
     ("cd sub && uv run pytest ../big/", "deny", None, {}),
+    ("uv run --directory sub pytest ../big/", "deny", None, {}),
+    ("uv --directory=sub run pytest ../t/test_1.py", "none", None, {}),
+    ("uv run --project sub pytest big/", "deny", None, {}),
+    ("uv run --directory sub pytest -n 8 ../t/test_1.py", "rewrite",
+     "uv run --directory sub pytest -n 2 ../t/test_1.py", {}),
     # worker cap
     ("uv run pytest -n 12 t/test_1.py", "rewrite", "uv run pytest -n 2 t/test_1.py", {}),
     ("uv run pytest -n auto t/test_1.py", "rewrite", "uv run pytest -n 2 t/test_1.py", {}),
