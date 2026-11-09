@@ -5,7 +5,7 @@ Scoping, planning, or implementing salestech-be or frontend-monorepo work. Sessi
 mt-devkit root, so Claude Code never loads the sub-repos' skills on its own. When one below fits the
 work, read its `<repo>/.claude/skills/<name>/SKILL.md` and follow it; a plan task names it in `Follows:`.
 
-## salestech-be (last updated 2026-10-22)
+## salestech-be (last updated 2026-11-09)
 - `flow-trigger-create` — new workflow trigger, full lifecycle: definition, emission, filters, form, dry run, data-model rules; ends in a review checklist.
 - `flow-node-create` — new customer-facing workflow node, full lifecycle: config + render fields, executor + errors, registration, validation, dry run, results/run history, contract changes, availability + AI builder; ends in a review checklist.
 - `flow-node-agent-create` — new Flow Builder node agent: signature, examples, registration, training.
@@ -24,6 +24,10 @@ work, read its `<repo>/.claude/skills/<name>/SKILL.md` and follow it; a plan tas
 - `temporal-debug` — read-only investigation of Temporal workflow failures and timeouts.
 - `investigate-prod` — starting point for a prod issue spanning Sentry, Langfuse, Temporal, Datadog, Postgres.
 - `db-migration` — any schema change: a Liquibase changeset (Alembic is frozen), CDC safety, backfills.
+- `mailbox-testing` — required for any edit under `core/email/` or the email Temporal workflows/activities.
+- `db-model-repo` — a new `db/models/` table model, repository, or DAO.
+- `ai-agent-create` — registering an agent (`agent_variants/`, `ai/v3/agents/`): descriptor, owner team, tier.
+- `cross-repo-investigate` — tracing a feature across frontend and backend.
 
 ## frontend-monorepo (last updated 2026-10-22)
 - `flow-node-create` — how-to for adding a workflow node on the FE: entry + flag, flowTransforms, renderers, labels, run history; ends in a review checklist.

@@ -190,6 +190,39 @@ def _pytest_at(words):
     return None
 
 
+# uv's location options: True when the value moves the directory pytest's paths resolve
+# against (`--directory`), False when it only picks the project (`--project`).
+UV_LOCATION_OPTIONS = {"--directory": True, "--project": False}
+
+
+def _strip_uv_locations(words, cwd):
+    """Drop uv's location options (and their values) ahead of `pytest`.
+
+    Returns the remaining words and the directory the run resolves its paths against;
+    without this, `uv run --directory salestech-be pytest ...` never reads as a run.
+    """
+    if not words or words[0] != "uv":
+        return words, cwd
+    out, i = [], 0
+    while i < len(words):
+        word = words[i]
+        if word in ("pytest", "py.test") or word.endswith("/pytest"):
+            out.extend(words[i:])
+            break
+        name, eq, value = word.partition("=")
+        if name in UV_LOCATION_OPTIONS:
+            if not eq:
+                i += 1
+                value = words[i] if i < len(words) else ""
+            if UV_LOCATION_OPTIONS[name] and value:
+                cwd = _resolve(value, cwd)
+            i += 1
+            continue
+        out.append(word)
+        i += 1
+    return out, cwd
+
+
 def _path_args(args):
     """The positional path arguments of one pytest run (options dropped)."""
     paths = []
@@ -313,13 +346,14 @@ def _problems(command, cwd):
                 rest = targets[targets.index("pytest") + 1:]
                 runs.append(("make-C" if "-C" in words else "make", rest, cwd, []))
             continue
+        words, run_cwd = _strip_uv_locations(words, cwd)
         at = _pytest_at(words)
         if at is None:
             continue
         args = words[at + 1:]
         if COLLECT_ONLY.intersection(args) or INFO_OPTS.intersection(args):
             continue  # collection / info runs no tests
-        runs.append(("pytest", args, cwd, addopts))
+        runs.append(("pytest", args, run_cwd, addopts))
 
     integration = any(
         _is_integration(_resolve(p, run_cwd))
