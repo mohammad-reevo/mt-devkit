@@ -13,10 +13,15 @@ mt-devkit disagrees — mt-devkit wins. Overridden:
 - Independent review via `agentic-code-review`: use the `reviewer` agent / `pr-review`.
 - Tier 3 (e2e skill or builder-agent UI check): only when I ask.
 - Watching every open PR with `watch-prs`: `babysit` does that.
-- `pr-slicing.md`, `context-docs.md`, `progress-log.md`: don't apply — no `<project>/base`,
+- Tests "once on the change as a whole, never chunk by chunk": `implement` still runs each
+  task's targeted tests.
+- `pr-slicing.md`, `context-docs.md`, `progress-log.md`, and the slice/owner-branch parts of
+  `definition-of-done.md` and `prohibitions.md`: don't apply — no `<project>/base`,
   `.context/`, or `progress.md`.
-- `skill-activation.md` routing to a skill mt-devkit has its own of: use mt-devkit's
-  (`backend-request`, `db`, `openapi-regen.md`, `langfuse-traces`, `posthog`, `pr-description`).
+- `skill-activation.md`: its path and URL triggers stand; its "scan the `/` menu" step doesn't
+  (`subrepo-skills.md` is the routing). Where it routes to a skill mt-devkit has its own of, use
+  mt-devkit's (`backend-request`, `db`, `openapi-regen.md`, `langfuse-traces`, `posthog`,
+  `pr-description`).
 
 Everything else stands, notably Tier 1 + Tier 2 of `definition-of-done.md`, `prohibitions.md`
 (incl. no Claude co-author line on salestech-be commits), and the pytest cap (≤5 files,

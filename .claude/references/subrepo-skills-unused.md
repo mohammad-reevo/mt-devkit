@@ -3,9 +3,8 @@
 The triaged-out half of `.claude/rules/subrepo-skills.md`. Updated together with it; a skill on
 neither list is new since the last triage.
 
-## salestech-be (last updated 2026-09-30)
+## salestech-be (last updated 2026-11-09)
 - agentic-code-review
-- ai-agent-create
 - ai-dev
 - ai-eval-create
 - ai-eval-run
@@ -26,9 +25,7 @@ neither list is new since the last triage.
 - code-review-calibrator
 - create-claude-rule
 - create-lance-migration
-- cross-repo-investigate
 - datadog-debug
-- db-model-repo
 - dev-db
 - e2e-module-generator
 - e2e-test
@@ -49,7 +46,6 @@ neither list is new since the last triage.
 - local-fe-be-e2e
 - local-kafka-inspect
 - local-temporal-inspect
-- mailbox-testing
 - new-worktree
 - populate-dev-data
 - post-change-check
