@@ -134,10 +134,11 @@ Run these **per worktree**, for each one that passed its own gate.
    treated as dangerous; it gets denied). A split PR (no `<slug>-scope.md` of its own): read
    its plan's `> Scope:` header first, delete only its plan, and delete that shared scope only
    when no `<scope-slug>-*-plan.md` remains and every PR the scope lists has been planned.
-   **Once per session, also its living handoff:** if `~/.claude/tmp/handoffs/.sessions/<id>`
-   exists (`<id>` from `echo $CLAUDE_CODE_SESSION_ID`, written as a literal), `rm` the handoff
-   it points to and then the pointer. A handoff meant to outlive the session is parked with
-   `handoff-session defer`, which moves it to `~/.claude/tmp/deferred/` — never deleted here.
+   **Once per session, also its handoff pointer:** if `~/.claude/tmp/handoffs/.sessions/<id>`
+   exists (`<id>` from `echo $CLAUDE_CODE_SESSION_ID`, written as a literal), `rm` the pointer.
+   The handoff it points to lives in `knowledge-base/projects/<project>/handoff.md` and is
+   **not** deleted here — it goes when the work it hands off is finished or dropped, the
+   project's call (`handoff-session` § Resume step 5), or with the project at `graduate`.
 3. **Drain any deferred task this session finished.** A `tasks/` chore that this
    session's PR actually resolves is done once that PR is up — delete `tasks/<slug>.md`
    **and** its line in `TASKS.md`. That is the `claude-task` protocol; close-out is simply where
@@ -165,7 +166,7 @@ Run these **per worktree**, for each one that passed its own gate.
 
 ## Report
 What was closed, **per worktree**: the PR link(s), what went into the knowledge base (or that
-nothing did), which spec files were deleted, the living handoff deleted (or that there was none), **which deferred tasks were drained or released** (by
+nothing did), which spec files were deleted, the handoff pointer deleted and the handoff's path (or that there was none), **which deferred tasks were drained or released** (by
 slug, or that none were), and that the worktree was removed. If a PR passed on the queued-to-merge exception, **say so and name the
 checks still running** — I'm closing out before CI finished, and GitHub will land it unattended.
 Name any worktree left standing because its own gate failed, so nothing is silently skipped.

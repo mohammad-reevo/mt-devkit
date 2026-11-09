@@ -116,7 +116,8 @@ knowledge-base/
 ├── INDEX.md              ← imported by CLAUDE.md; in every session's context
 ├── projects/<name>.md    ← where a project stands, what its tickets cover
 ├── projects/<name>/      ← the same, split into several entries once one page isn't enough
-│   └── rules.md          ← optional: how this project's entries are to be kept
+│   ├── rules.md          ← optional: how this project's entries are to be kept
+│   └── handoff.md        ← optional: a session's disposable working-state dump (`handoff-session`)
 └── concepts/<area>/<topic>.md
 ```
 
@@ -136,7 +137,9 @@ Check these whenever you touch the store:
   it stops being read.
 - **One page per entry, hard cap.** Past a page, split it. This is what stops the KB drifting
   into codebase documentation — `spec/inline-computed-fields/CONTEXT.md` reached 53 KB and is
-  loaded by nothing.
+  loaded by nothing. The one exemption is a project's `handoff.md`: `handoff-session` writes it
+  exhaustive on purpose, it is marked disposable, and it is deleted once its work resumes or is
+  dropped.
 
 ## Modes
 
