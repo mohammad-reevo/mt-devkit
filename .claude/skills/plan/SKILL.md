@@ -168,7 +168,7 @@ The file:
 > Mode: <assistant | agentic | investigate>   (copied from the scope file; kept on revision)
 > Project: <project>   (project drive only, with Worktree; omit them otherwise)
 > Depends on: <none | other slice's slug>   (project drive or split PR)
-> Base: <mohammad/<project>-base | mohammad/<dependency> | main>   (the PR's base; project drive or split PR)
+> Base: <main | mohammad/<dependency>>   (the PR's base; project drive or split PR)
 > Worktree: <worktree path>
 
 ## Goals

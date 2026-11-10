@@ -103,8 +103,8 @@ one sub-ticket per bug. Write the ticket ids back into the write-ups and the res
 
 ## 6. Fix — only if I said so in § 1
 
-Hand the bugs to `orchestrate-session`: one PR per bug, each to main (no project base unless the
-fixes chain). The sessions read the bug write-ups and the kit's repro steps.
+Hand the bugs to `orchestrate-session`: one PR per bug, each to main (stacked on another fix only when it
+depends on it). The sessions read the bug write-ups and the kit's repro steps.
 
 ## 7. Re-test on main
 

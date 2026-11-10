@@ -1,6 +1,6 @@
 ---
 name: orchestrate-session
-description: Run a multi-PR project from one top-level session that holds only the project's context, while each PR runs in its own background Claude Code sub-session. The orchestrator frames the project, settles the design with me one decision at a time, presents a PR breakdown (hard/soft dependencies, which session builds which PRs) for approval, owns the project base branch when a hard-dep chain needs one (unrelated PRs go straight to main), spawns one sub-session per PR running `workflow`, each creating its own worktree, and re-checks every session's live state each turn (`session_status.py`: agent state, PR, checks, threads, merge queue, spec files) instead of reading their work; sessions run through babysit on their own and message it whenever they need its instruction or action — never halting silently. Sub-sessions ask me every question directly, cross-slice ones included, and message the orchestrator only with status it acts on (PR open, merged / queued, handoff, done); the orchestrator tells me which session needs me and why. More PRs run concurrently, and no session carries the whole project in its context. A `summary` mode renders where every session stands. A hackathon (§ Hackathon) skips the planning phase and adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "orchestrate-session summary", "/orchestrate-session", "/orchestrate-session summary".
+description: Run a multi-PR project from one top-level session that holds only the project's context, while each PR runs in its own background Claude Code sub-session. The orchestrator frames the project, settles the design with me one decision at a time, presents a PR breakdown (hard/soft dependencies, which session builds which PRs) for approval, stacks a PR on the PR it depends on (unrelated PRs go straight to main), spawns one sub-session per PR running `workflow`, each creating its own worktree, and re-checks every session's live state each turn (`session_status.py`: agent state, PR, checks, threads, merge queue, spec files) instead of reading their work; sessions run through babysit on their own and message it whenever they need its instruction or action — never halting silently. Sub-sessions ask me every question directly, cross-slice ones included, and message the orchestrator only with status it acts on (PR open, merged / queued, handoff, done); the orchestrator tells me which session needs me and why. More PRs run concurrently, and no session carries the whole project in its context. A `summary` mode renders where every session stands. A hackathon (§ Hackathon) skips the planning phase and adds an orchestrator-owned base it merges into. Triggers on "orchestrate this project", "run this across sessions", "spin up sub-sessions for", "orchestrate-session summary", "/orchestrate-session", "/orchestrate-session summary".
 ---
 
 # orchestrate-session — one session holds the project, sub-sessions do the work
@@ -8,7 +8,7 @@ description: Run a multi-PR project from one top-level session that holds only t
 Three layers, each with a narrower context than the one above:
 
 ```
-orchestrator session   project brief, PR breakdown, index, base branch; spawns, routes, syncs
+orchestrator session   project brief, PR breakdown, index; spawns, routes
   └─ sub-session ×N    one PR each: `workflow assistant <slice>` scope → plan → implement → verify
        └─ subagents    the funnel's scoper / planner / implementer / reviewer / tester
 ```
@@ -88,10 +88,9 @@ Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hacka
    scope's naming rule. Present three tables:
    - **PRs** — slice · ticket · base · hard deps · soft deps. **Hard** = can't build without the
      other PR's code; its session waits until that PR has pushed, then branches from it.
-     **Soft** = both edit the same file. That is conflict bookkeeping, not ordering: both stay
-     independent on their own base and **neither ever merges the other's branch** — whichever
-     lands second resolves the conflict by update-branch. If the later PR really needs the
-     earlier one's code, the dep is hard, not soft.
+     **Soft** = both edit the same file, so they would merge-conflict. It stacks too, but never
+     delays a spawn: the later PR's session builds from main and, once the earlier PR has pushed,
+     merges its branch in and bases its PR on it (§ 2 Base per PR).
      **Check before presenting:** no open PR may carry another open PR's commits unless it is
      stacked on that PR (its base is that PR's branch), or its diff stops being reviewable alone
      and an approval on it lands the other PR unreviewed.
@@ -110,34 +109,27 @@ Skipped in a hackathon — `hackathon` execute's idea page is the plan (§ Hacka
 3. **Wait for my approval** of the breakdown. Nothing is set up before it.
 
 **Base per PR.** `main`, by default — unrelated PRs, standalone tickets and bug fixes each merge
-to main on their own. **Sequential PRs** — a hard-dep chain — are based by length:
+to main on their own. A PR with a hard or soft dependency **stacks** on that PR: its base is that
+PR's branch, and a chain is a stack — the bottom PR on main, each next on the one below
+(`workflow` § Project drive step 2). Its session links the stack natively (`verify`). If the PR
+below merges on its own, the session makes sure its PR now targets `main` (`gh pr edit <n> --base
+main` if GitHub didn't retarget it) and runs update-branch itself (`git-merge.md`, the
+parent-merged case) — no orchestrator call.
 
-- **Two PRs stack directly.** The later PR's base is the earlier PR's branch; no project base,
-  which would be more machinery than two PRs need. Once the earlier PR merges, the later PR's
-  session retargets it to `main` (`gh pr edit <n> --base main`) and runs update-branch itself
-  (`git-merge.md`, the parent-merged case) — no orchestrator call.
-- **Three or more get a project base**, and only that chain's PRs target it, so the chain pays
-  for CI and the merge queue once, on the final base → main PR, instead of per PR.
-
-A project with no chain of three has no base. Hackathons always have
-one (§ Hackathon). One exception, forced by CI: salestech-be fails any PR that mixes
-`db/changelog/changes/*.sql` with code, so a **migration** is its own slice with base `main`
-(`workflow` § Project drive step 2). Code that needs the table depends on it hard, and starts
-once the migration has merged — and, when that code targets a base, once the orchestrator has
-synced main into it.
+Hackathons also have a base (§ Hackathon). One split is forced by CI: salestech-be fails any PR
+that mixes `db/changelog/changes/*.sql` with code, so a **migration** is its own slice, on `main`
+unless it depends on another PR (`workflow` § Project drive step 2). Code that needs the table
+depends on it hard and stacks on it.
 
 ## 3. Set up
 
-- **Base branch per repo** a chain of three or more touches — only when the breakdown has one — cut from
-  fresh main (`workflow` § Project drive step 2). **The orchestrator owns the base**: it creates
-  it, syncs main into it (after a migration lands, or when slices need something from main), and
-  tells sessions with an open PR that it moved. Sub-sessions never push to or merge into the
-  base — the final-PR session (§ 7) excepted — but each **update-branches its own PR from its base** (main or the project base)
-  whenever it is CONFLICTING or BEHIND (`git-merge.md`, never ask), without waiting to be told.
+- **Hackathon base per repo** — only in a hackathon, cut from fresh main (§ Hackathon). There is
+  no other base for the orchestrator to own: each session **update-branches its own PR from its
+  base** (main, or the PR it stacks on) whenever it is CONFLICTING or BEHIND (`git-merge.md`,
+  never ask), without waiting to be told.
 - **Index** `~/.claude/spec/<project>-project.md` in `workflow`'s format, with the columns
   `Session` (`<letter> · <id>`) and `Depends on (hard / soft)`, the status `blocked`, and a
-  `> Orchestrator:` header line (name, id, brief) and a `> Name:` line (the project name, § 1). With no base, its `> Base:` line reads `main`;
-  with one, a `> Carry-over:` line collects what the final-PR session must fix (§ 5, § 7).
+  `> Orchestrator:` header line (name, id, brief) and a `> Name:` line (the project name, § 1).
 - **Protocol** `~/.claude/tmp/<project>/protocol.md` from `protocol-template.md` — the gates,
   reports, handoff and boundaries every sub-session shares.
 - **Session brief** `~/.claude/tmp/<project>/<letter>-brief.md` from `session-brief-template.md`
@@ -180,7 +172,7 @@ Each line is load-bearing:
   enters the parent tree (`EnterWorktree` accepts it: the scratch dir sits in the same repo) —
   never `<wt>/salestech-be`, where Bash is blocked.
 
-The session's brief names its base: `main`, or the branch of a hard dependency it builds on.
+The session's brief names its base: `main`, or the branch of the PR it stacks on.
 
 The inline-questions line is in the prompt, not only the protocol, because a session can hit a gate before it has finished reading; the orchestrator
 can't see a question asked through the question UI. Record the session in the index
@@ -222,17 +214,15 @@ the orchestrator's instruction or action. Those messages are only what the orche
 on and can't see in an artifact — no scoped / planned / go / verified / ready. On each:
 
 - **`PR open <url>`** → record the PR in the index (it's how the pull finds it).
-- **`merged` / `queued`** (its PR merged, or entered main's merge queue) → base sync if it was
-  a main PR and a base exists, then Replace / Wrap up (below).
+- **`merged` / `queued`** (its PR merged, or entered main's merge queue) → Replace / Wrap up
+  (below).
 - **`handoff`** → Replace (below).
 - **`done`** → the wrap-up's idle wait (below).
-- **`base-red <check>`** — a base-inherited red on its PR → add it to the index's
-  `> Carry-over:` line, the list the final-PR session (§ 7) fixes. No other action.
-- **`need <what>`** — an orchestrator action it can't proceed without (a base sync, a spawn) →
+- **`need <what>`** — an orchestrator action it can't proceed without (a spawn) →
   act on it. Never a question: those go to me, in the session.
 - **A pushed dependency** → spawn sessions whose hard deps are now met, stacked on it (§ 2 Base
-  per PR). A soft dep needs nothing: no session merges a sibling's branch, and a conflict from
-  an update-branch is the session's to resolve — no orchestrator call.
+  per PR). A soft dep needs nothing: its session stacks on the pushed PR itself, and a conflict
+  from an update-branch is the session's to resolve — no orchestrator call.
 - **A session `not listed — ask Mohammad` in the pull** (missing from `claude agents`, work left)
   → it is not gone: idle sessions drop off that list and come back once I bring them up. Ask me to
   bring it back, naming the session and what it's needed for. Never spawn a replacement unless I
@@ -245,8 +235,8 @@ on and can't see in an artifact — no scoped / planned / go / verified / ready.
 to `/done`, subscribe once (`SendMessage({to: "<name>", message: "", notify_when_idle: true})`)
 so its stop is clean. No standing subscriptions: every notice is a turn of noise.
 
-**Replace — one PR per session.** Once a session's PR no longer needs its context — **merged**
-for a PR into the project base (no merge queue there), **in the merge queue** for a PR into main —
+**Replace — one PR per session.** Once a session's PR no longer needs its context — **merged**,
+or **in the merge queue** for a PR into main —
 tell it to hand off. It writes `~/.claude/tmp/<project>/<letter>-handoff.md` (what shipped, the
 contracts it settled, what's left for the next PR) and reports `handoff`. If its letter has a next
 PR: wrap it up (below), then spawn a fresh session under the **same letter**, named for its next
@@ -255,7 +245,7 @@ predecessor's. A slice split mid-flight (e.g. a code-owners carve-out) gets a ne
 second PR in the current session. Until its session wraps up, review comments and CI on a PR are
 that session's.
 
-**Wrap up — once a session's PR is merged into the base, or in main's merge queue.** No waiting
+**Wrap up — once a session's PR is merged, or in main's merge queue.** No waiting
 on the queue: a queued PR has nothing left for its session to do.
 
 1. Message it to run `/done` on **its own worktrees only**, citing the protocol's standing
@@ -294,36 +284,9 @@ I answer each session in its own session.
 
 ## 7. Finish
 
-**No base:** once every PR is merged or in main's merge queue, show the index table — each PR
-lands on its own, and there is nothing more to open.
-
-**With a base:** once every chain PR is merged into the base, show the index table and run
-`pr-explanation` on the base → main diff. Merging slices into the base stays mine (`workflow`
-§ Project drive step 7). **The final base → main PR is the orchestrator's, built by a final-PR
-sub-session** — one per base (per repo), so the reconciliation's conflicts and CI logs never
-enter the orchestrator's context:
-
-1. **Spawn it** like any session (§ 4), letter `Z<repo initial>` (named `<project name>
-   Z<repo initial> - final PR`), in a worktree whose repo is on
-   the base itself (`switch -C mohammad/<project>-base origin/mohammad/<project>-base`). Its
-   brief names the base, the repo, and the index's `> Carry-over:` list — the base-inherited reds
-   and pending verifications logged during the project (§ 5). It is the **one session authorized
-   to push to the base**.
-2. **It runs no scope or plan.** It merges `origin/main` into the base **once** and resolves every
-   conflict, fixes every CI failure — the carry-over reds included — then opens the PR base →
-   main via `verify` (ready, never draft; its body links every slice PR), and babysits it to
-   green with every thread resolved. Then it reports `ready <url>`, and the orchestrator adds the
-   PR to the index as the last row and tells me it is ready for my double-check.
-3. **Cross-repo order is a mechanism.** The frontend base's PR type-checks against FE main, so it
-   greens only once the backend final PR has merged, deployed, and the client regen is on FE main
-   (`openapi-regen.md`). Its session reports that as the one red left, not as a failure.
-4. Merging it stays mine; the session wraps up (§ 5) once it merges or is queued.
-
-**After a base merges, follow-ups go to main** as ordinary PRs, each in its own session — never
-back onto the merged base.
-
-Either way every session has been wrapped up as its PR merged or queued (§ 5), so nothing is left
-running; the orchestrator's own `/done` is mine to call.
+Once every PR is merged or in main's merge queue, show the index table — each PR, or each stack,
+lands on its own, and there is nothing more to open. Every session has been wrapped up as its PR
+merged or queued (§ 5), so nothing is left running; the orchestrator's own `/done` is mine to call.
 
 ## Hackathon
 
@@ -334,7 +297,10 @@ replaced:
 - **Mode is agentic**, for every sub-session; hackathon rules apply per `workflow` § Hackathon
   projects (MVP bar, no CI gate, nothing reaches main).
 - **Bases** are `mohammad/hackathon-<idea-slug>-base` in each repo (salestech-be and
-  frontend-monorepo typically both).
+  frontend-monorepo typically both), cut once in § 3 — never pushing to main:
+  `git -C <primary repo> fetch origin`, then
+  `git -C <primary repo> push origin origin/main:refs/heads/mohammad/hackathon-<idea-slug>-base`.
+  The orchestrator owns them; sub-sessions never push to or merge into them.
 - **The orchestrator merges.** It merges a slice's PR into its hackathon base once the slice
   reports `verified` (`gh pr merge <url> --merge`), then messages every running slice on that base
   to `git merge origin/<base>`, and spawns the sessions that were waiting on it. **Only the
@@ -354,14 +320,12 @@ replaced:
 
 - **The orchestrator holds context, not work.** If it is about to read code, it should be asking a
   sub-session instead.
-- **The orchestrator owns the base and each session's scratch dir; the session owns its
-  worktree** — creating it, working in it and tearing it down. Neither touches the other's.
-- **A base PR doesn't fix CI it didn't cause.** A red whose cause is already in the base, or on
-  main but not yet in it, is base-inherited (`babysit`): reported once, fixed by the final-PR
-  session (§ 7).
+- **The orchestrator owns each session's scratch dir (and, in a hackathon, the base); the
+  session owns its worktree** — creating it, working in it and tearing it down. Neither touches the other's.
+- **A stacked PR doesn't fix CI it didn't cause.** A red whose cause is already in the PR it
+  stacks on is base-inherited (`babysit`): reported once, fixed in that PR.
 - **Sub-sessions never merge, never message anyone but the orchestrator, never touch another
   session's worktree.**
-- **The final base → main PR is the orchestrator's**, built through its final-PR session (§ 7);
-  the orchestrator never reconciles a base itself.
-- **Merging into main or the project base, and requesting reviews, stay mine** in every mode —
+- **Merging — a PR or a stack, never `gh stack merge` — and requesting reviews stay mine** in
+  every mode —
   a hackathon base is the one thing the orchestrator merges into.

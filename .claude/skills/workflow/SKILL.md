@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with one hard gate (after plan, needing my explicit go-ahead — scope hands off on its own once no question needs my call) and kickback routing, then stops at explicit done. Runs in one of three modes — assistant (default), agentic (takes the recommended option at every gate), investigate (scope only). Detects phase from the spec files + git/PR state. Several tickets at once run as a project drive — one slice per ticket, scoped, planned, and built in parallel, each to its own PR — into main, or onto a shared project base for a chain of dependent slices. Also a status view across every in-flight idea and project. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
+description: Orchestrates my personal dev funnel — drives an idea or Linear ticket from raw idea to a watched PR through scope → plan → implement → verify → babysit, with one hard gate (after plan, needing my explicit go-ahead — scope hands off on its own once no question needs my call) and kickback routing, then stops at explicit done. Runs in one of three modes — assistant (default), agentic (takes the recommended option at every gate), investigate (scope only). Detects phase from the spec files + git/PR state. Several tickets at once run as a project drive — one slice per ticket, scoped, planned, and built in parallel, each to its own PR — into main, or stacked on the slice it depends on. Also a status view across every in-flight idea and project. Use to run the whole workflow, resume mid-funnel, or check where things stand. Triggers on "run the workflow", "take this through the funnel", "drive <idea/TICKET-ID> through", "where am I", "workflow status".
 ---
 
 > Personal rebuild — self-contained, no devkit dependency.
@@ -75,7 +75,7 @@ Scan `~/.claude/spec/*-scope.md` and `*-plan.md`. For each idea, one line:
 The last two rows need a quick `gh pr list --head mohammad/<name>` per built idea. Read-only —
 this advances nothing. A split scope's per-PR plans group under it, one line per listed PR.
 
-Then scan `~/.claude/spec/*-project.md`: one block per project — its name, mode, and base — with
+Then scan `~/.claude/spec/*-project.md`: one block per project — its name and mode — with
 one line per slice (slug, ticket, status, PR link) read from the index. A slice's scope/plan files
 carry `> Project:`; list them under their project, not again as standalone ideas.
 
@@ -181,12 +181,11 @@ todo list: `todo-list` renders from it rather than keeping a second file.
 
 > Mode: <assistant | agentic | investigate>
 > Repo(s): <every repo a slice touches>
-> Base: mohammad/<project>-base
 > Hackathon: <idea page URL>        ← only for a hackathon drive (§ Hackathon projects)
 
 | Slice | Ticket | Status | Depends on | Base | Worktree | PR | Files |
 |---|---|---|---|---|---|---|---|
-| <slug> | <ID or —> | scoping | none | mohammad/<project>-base | <path> | — | [scope](<slug>-scope.md) · [plan](<slug>-plan.md) |
+| <slug> | <ID or —> | scoping | none | <main or mohammad/<dependency>> | <path> | — | [scope](<slug>-scope.md) · [plan](<slug>-plan.md) |
 ```
 
 Status is one of `scoping / scoped / planned / building / PR open / merged`. Each slice's scope
@@ -204,21 +203,19 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
    per § Modes — and record the answers into each slice's scope file (re-dispatching a scoper only
    where an answer needs new research). A premise-changed report stops that slice alone.
    Investigate → stop here, every slice `scoped`.
-2. **Branches.** A slice's base is `main`, unless it is part of a chain — a slice that needs
-   another slice's code. Only then, in each repo the chain touches, create the project base off
-   fresh main — once, and never push to main: `git -C <primary repo> fetch origin`, then
-   `git -C <primary repo> push origin origin/main:refs/heads/mohammad/<project>-base`. The
-   chain's slices base on the project base, or on the slice they depend on (stack only when
-   needed). Slices that merely edit the same file are not a chain: they base on main and resolve
-   the conflict when it comes. No chain, no project base — the index's `> Base:` reads `main`. **Migrations and paths another
-   team owns** become their own slices with base `main`: feed the paths a scope names to
+2. **Branches.** A slice's base is `main`, unless it depends on another slice — hard (it needs
+   that slice's code) or soft (it would merge-conflict with it). Then it **stacks** on that slice:
+   its base is the dependency's branch, `mohammad/<dependency>`. There is no other kind of base. A
+   chain is a stack — the bottom slice on `main`, each next on the one below. A stack is a line, so
+   a slice with two dependencies goes above both: stack one dependency on the other, then it on top. **Migrations and paths another
+   team owns** become their own slices, on `main` unless they depend on another slice: feed the paths a scope names to
    `python3 .claude/harness/code_owners.py owners` (from primary salestech-be, paths on stdin); a
    `required` row (never a `requested` one — it doesn't block the merge) for a team that only
    part of the slice needs is such a path
    (`plan` § Resolve and break down). When carving one out changes a split I already agreed, ask
    first. Re-run it on the plans' task files once they
    land — a plan that turns up one splits the slice and re-plans both halves. A slice that needs a
-   migration slice's table depends on it.
+   migration slice's table depends on it, and stacks on it.
 3. **Worktree per slice.** `worktree create <slug> --no-enter` per slice, **one after another**
    (the setup script fast-forwards the shared primaries, so parallel creates race). Then point
    each slice's branch at its base, per repo:
@@ -236,33 +233,23 @@ reached by path (`git -C <wt>/<repo>`, a subagent given `<wt>`).
    implementers implement needs, so parallel means **interleaved** — each round, one message
    carries the next dispatch (task, final checks, reviewer trio, commit) for every slice that is
    building. A dependent slice starts once the slice below has pushed, not once it merges. verify
-   opens each PR against **its base** (project base, dependency branch, or main). The moment a
+   opens each PR against **its base** (dependency branch or main) and links each stack natively
+   (`verify`). The moment a
    slice's PR is open, set `PR open` + link and move on — **never wait on PR approval**; I review
    whenever. A slice that stops (escalation, kickback) stops alone; the rest carry on.
 6. **Watch.** Once every slice PR is open, show the index table, run `pr-explanation` per PR,
    then `babysit <project>`. `done <project>` stays mine.
 
-7. **Land.** Merging is mine, in GitHub — never merge a slice yourself. The order I use: a chain
-   merges in **reverse** (the top slice into the one below it, down to the project base), which
-   is conflict-free and squash-safe and needs no retargeting; an independent slice merges any
-   time; a slice based on `main` (migration, another team's paths) goes through `main`'s normal
-   flow. This order is mine to apply — never write it into a PR body
-   (`pr-description-no-merge-order.md`). babysit marks a row `merged` once its PR merges.
-8. **Final PR** — only when a project base exists. Once every slice based on the project base (directly or through a chain) reads
-   `merged`, open the project PR `mohammad/<project>-base` → `main` via `verify` (ready, never
-   draft), its body linking every slice PR, and add it to the index as the last row. This PR is
-   where `main` is reconciled: merge `origin/main` into the project base **once** and resolve every
-   conflict and cascading CI failure there. babysit it like any PR; `done <project>` after it
-   merges stays mine. Under `orchestrate-session` the orchestrator builds it via a final-PR
-   sub-session instead, one per base (`orchestrate-session` § 7). Follow-ups found after the base
-   merges go to `main` as ordinary PRs, never back onto the base.
+7. **Land.** Merging is mine, in GitHub — never merge a slice yourself, never `gh stack merge`.
+   I merge a stack as a whole or a bottom part of it (PR 1, 1+2, …); a slice never merges without
+   everything below it. An independent slice merges any time. This order is mine to apply — never
+   write it into a PR body (`pr-description-no-merge-order.md`). babysit marks a row `merged` once
+   its PR merges.
 
-**Never update-branch across the stack.** No slice on the project base is ever synced with `main` (a slice based on `main` update-branches as any PR does), and a parent's
-later fixes aren't merged down into its children — not for a conflict, not for red CI inherited
-from the base. Each slice lands into the one below as it is (step 7), and `main` meets the stack
-exactly once, in step 8. A red inherited from the base is expected, never a reason to stop, ask,
-or rerun: babysit reports it as non-blocking and announces the slice ready on its own merits
-(`babysit` § Base-inherited red).
+**update-branch on a stacked slice** merges its direct parent's branch, and `origin/main` only once
+that parent has merged (`git-merge.md`). A red inherited from the parent is expected, never a
+reason to stop, ask, or rerun: babysit reports it as non-blocking and announces the slice ready on
+its own merits (`babysit` § Base-inherited red).
 
 ### Hackathon projects
 
@@ -273,10 +260,10 @@ differs from the steps above in four places:
 
 - **Every scoper and planner brief carries the MVP bar** (`hackathon` § Drive it): aim at the
   demo, tests only where they prove it, and the evidence the demo must show.
-- **Step 2:** every slice bases on the project base or a dependency's branch, never `main` —
+- **Step 2:** every slice bases on the hackathon base or a dependency's branch, never `main` —
   migrations and other teams' paths included; skip the code-owners carve-out.
-- **Steps 6–8 don't run** (nor a single drive's verify → babysit hop). No babysit, no final PR, no
-  `main` merge. CI is not a gate. Once every slice's PR is open and verified, hand back to
+- **Steps 6–7 don't run** (nor a single drive's verify → babysit hop). No babysit, no `main`
+  merge. CI is not a gate. Once every slice's PR is open and verified, hand back to
   `hackathon` § Prove it — a sub-session instead reports `verified` to its orchestrator.
 - **The drive never merges.** Only the hackathon's orchestrator merges, and only into the
   hackathon base (`orchestrate-session` § Hackathon).
