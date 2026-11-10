@@ -12,8 +12,9 @@ is the source of truth — re-fetch and trust it over these notes.
 - **Canonical PRD template (READ-ONLY — never edit):**
   `2ab7019cb5b1802289aac32876c60803` — title `[Template] (PRD) [Workstream]: [Feature
   Description]`; the section skeleton + per-section italic guidance prompts.
-- **Exemplar PRDs** (fetch for depth / house-voice calibration): search the Eng Docs DB
-  for recent `(PRD)` rows.
+- **Exemplar PRDs** (fetch for depth / house-voice calibration): "Prospecting integrations" —
+  `3c37019cb5b1804487adf00376d77732`; beyond it, search the Eng Docs DB for recent `(PRD)` rows.
+  **Not** "Sequences integrations" (`3c37019cb5b180cda0f6e29dee593e5e`) — a bad example.
 
 ## Draft → publish mechanics
 

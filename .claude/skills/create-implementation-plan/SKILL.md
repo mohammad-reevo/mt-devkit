@@ -98,6 +98,10 @@ Structure:
 - **Settled decisions** — the calls made while planning, so they aren't re-litigated at build time.
 - **Open questions** — genuinely unresolved build-time points. Pose them; don't invent answers.
 
+**Reference docs** — finished project plans in Notion, for structure only:
+[Sequences Integration - Implementation Plan](https://app.notion.com/p/3de7019cb5b180f18d81c3c5b8da5f19),
+[Prospecting Integrations - Implementation Plan](https://app.notion.com/p/4107019cb5b1803ab925e007506ae372).
+
 **Comprehensive beats pretty.** The goal is a plan complete enough to drive real
 implementation — each item buildable from its own entry plus the source docs it links. Do
 **not** put a polished overview or tracker references *in the doc itself* — the readable

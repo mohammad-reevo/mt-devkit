@@ -81,7 +81,9 @@ Append every decision to the snapshot as it's made.
 
 ## 4. Outline → my approval
 
-Default shape (adapt to the project; the team's trackers are the format reference):
+Default shape (adapt to the project; the team's trackers are the format reference, and
+[Sequences Integration - Progress Report](https://app.notion.com/p/3ea7019cb5b1805fb55bffca9ea2ccc1)
+is a finished one — structure only, never content):
 
 1. **Masthead** — `Updated <date>` · Linear · PRD · eng doc · plan links.
 2. **TL;DR** — 3 bullets: progress framed by velocity, the next deliverable + date, milestone status.
