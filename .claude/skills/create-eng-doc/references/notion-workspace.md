@@ -16,6 +16,8 @@ truth — re-fetch and trust it over these notes.
   "[Eng Design] - Workflows Duplication Detection Algorithm" —
   `40c7019cb5b180788d65e04117f514cf`.
 - **Other exemplar eng docs** (optional, for depth calibration):
+  - "[Eng Design] - Prospecting Integrations" — `4107019cb5b180b3b925efe0346aec65` (the
+    golden example's sibling project; same shape, a second vendor category)
   - "[Eng Design] - Workflows Platformization" — `3347019cb5b180a9bce0fd303ea6e8b4`
   - "Technical Design: AI Workflow Debugging" — `3957019cb5b180138995ee4f540fef77`
 

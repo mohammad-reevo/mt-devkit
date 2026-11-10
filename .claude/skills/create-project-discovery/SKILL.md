@@ -152,6 +152,16 @@ When a later step proves an earlier write-up wrong, don't rewrite history: add a
 `**Correction (<step id> / Qn, <date>):**` note at the point it corrects, and mention it in
 the later step's write-up.
 
+## Reference projects
+
+What a project's Notion workspace looks like once discovery has run — a short hub of links
+(Project Management, PRD & Technical Docs, Extra docs, Refs, the Linear project) over the
+overview, eng doc, implementation plan and the rest. Structure only:
+[Sequences Integration Workspace](https://app.notion.com/p/reevo/Sequences-Integration-Workspace-3df7019cb5b180c78908d59112886978),
+[Prospecting Integrations Workspace](https://app.notion.com/p/reevo/Prospecting-Integrations-Workspace-4107019cb5b180f78cccf971cdc0e557).
+Each step's `create-` skill names its own reference docs from these; the Sequences PRD is
+deliberately not one.
+
 ## Guardrails
 
 - **Never message anyone, request reviews, or publish a doc** — questions for other people
