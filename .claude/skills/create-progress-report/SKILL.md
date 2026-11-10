@@ -1,9 +1,9 @@
 ---
-name: progress-report
-description: Write a concise, lead-facing progress report for a project into a Notion page — what's done, the next demo-able deliverable, and when it lands. Fans out research subagents across Notion (PRD / eng doc / plan), Linear, GitHub PRs, and the code on main; keeps everything in a reusable per-project context store so the next report starts from the last snapshot instead of from scratch; aligns on the actual progress with me before any outline; then outline gate → one-pass draft → I review. Standalone. Triggers on "progress report", "write a status update for <project>", "update the progress report", "/progress-report".
+name: create-progress-report
+description: Write a concise, lead-facing progress report for a project into a Notion page — what's done, the next demo-able deliverable, and when it lands. Fans out research subagents across Notion (PRD / eng doc / plan), Linear, GitHub PRs, and the code on main; keeps everything in a reusable per-project context store so the next report starts from the last snapshot instead of from scratch; aligns on the actual progress with me before any outline; then outline gate → one-pass draft → I review. Standalone. Triggers on "progress report", "write a status update for <project>", "update the progress report", "/create-progress-report".
 ---
 
-# progress-report — a lead-facing progress report
+# create-progress-report — a lead-facing progress report
 
 Turn a project's scattered state (Notion docs, Linear, PRs, code) into a short Notion report a
 team lead can read in two minutes: **what's done, the next thing you can demo, and when.** Same
