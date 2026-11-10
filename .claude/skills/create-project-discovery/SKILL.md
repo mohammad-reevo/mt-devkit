@@ -1,9 +1,9 @@
 ---
-name: project-discovery
-description: Understand a multi-ticket project in depth before anyone executes it — the product context, how the systems involved work, the design, its gaps, the eng doc, the implementation doc, the tickets, the open questions and the knowledge base — one step at a time, each written up for me to read before the next starts. Sets up a scratch dir with a short main file (step order, decisions, parked, notes), one write-up file per step, and an open-questions file; hands a short core step list plus a menu of optional steps (vendor spike, test org, timeline, release strategy, another team's dependency, reviewer comments, PRD update). Composes create-eng-doc, create-implementation-plan, linear-tickets, author-knowledge-base and workflow's project drive rather than duplicating them. Standalone, upstream of workflow. Triggers on "discover this project", "understand <project> before we build it", "start project discovery", "next discovery step", "/project-discovery".
+name: create-project-discovery
+description: Understand a multi-ticket project in depth before anyone executes it — the product context, how the systems involved work, the design, its gaps, the eng doc, the implementation doc, the tickets, the open questions and the knowledge base — one step at a time, each written up for me to read before the next starts. Sets up a scratch dir with a short main file (step order, decisions, parked, notes), one write-up file per step, and an open-questions file; hands a short core step list plus a menu of optional steps (vendor spike, test org, timeline, release strategy, another team's dependency, reviewer comments, PRD update). Composes create-eng-doc, create-implementation-plan, linear-tickets, author-knowledge-base and workflow's project drive rather than duplicating them. Standalone, upstream of workflow. Triggers on "discover this project", "understand <project> before we build it", "start project discovery", "next discovery step", "/create-project-discovery".
 ---
 
-# project-discovery — understand the project before executing it
+# create-project-discovery — understand the project before executing it
 
 For the shape of project that needs more than `scope`: a multi-ticket feature with a PRD, a
 design doc, a Linear project, often a vendor and a dependency another team owns. The aim is
