@@ -260,9 +260,14 @@ reported — another session may have it — unless I named it explicitly.
 reviewed and merged on its own. Bundling them into one PR is the failure this step
 exists to prevent. One worktree serves the whole run: the `worktree` skill's (or the
 session's existing one), and each `mt-devkit` task gets its own branch,
-`mohammad/<slug>`, cut fresh off `origin/main` in place (`worktrees.md`). The PRs are
-siblings, not a stack. When two tasks touch the same file, they still get separate PRs;
-whichever lands second gets update-branch. `personal-claude` tasks are edited in place
+`mohammad/<slug>`, cut fresh off `origin/main` in place (`worktrees.md`). Tasks that touch
+disjoint files are siblings off main. Tasks that **overlap stack**, whether the overlap is
+hard (one needs the other's change — a file it renames, a skill it adds) or soft (both edit
+the same file, e.g. the `CLAUDE.md` skill list) — the split `orchestrate-session` uses. Order
+the chain and cut each stacked branch off the one below it, not main; each task still gets its
+own PR. A stack shares the run's one worktree: `worktrees.md`'s worktree-per-stacked-PR
+exception is for salestech-be's overlay and mypy cache, which harness tasks don't carry.
+`personal-claude` tasks are edited in place
 under `~/.claude/` and have no PR; their changes go in the final report.
 
 ### 3. Plan each task
@@ -271,6 +276,7 @@ Per task, before editing anything:
   dropped from the batch and reported. A stale path or premise is corrected in the
   plan rather than built.
 - **Read the files it touches** and settle the fix: one line per change, named by file.
+  Compare those files across the batch — any overlap decides the stack (step 2).
   Several fix ideas → pick one. A question whose answer is obvious is decided
   (`discussion-turns.md`); a genuine judgment call takes the recommended option as an
   `Assumption:`, since I'm not here to answer it. Only a call with no defensible
@@ -283,11 +289,14 @@ Take the tasks one at a time: switch to the task's branch, make its changes, and
 them. Re-read the touched sections, sweep for references the change made stale, and run
 any tests or hooks covering them. Then commit, push, and open **its own ready PR**
 (`pr-description`), then **Record its PR** (§ Claim). The PR body carries that task's
-Decided / Assumption lines, so the review sees every call. Move on to the next task. Babysit every PR to green per the
+Decided / Assumption lines, so the review sees every call. Once the last PR of a stack is
+open, link it natively (`verify`'s **Link a stack** step) and name the stack in each of its PR bodies.
+Move on to the next task. Babysit every PR to green per the
 `babysit` skill.
 
 ### 5. Hand off
-Report one line per task with its PR link, plus every Assumption, then stop. The tasks
+Report one line per task with its PR link (and its stack's link, if stacked), plus every
+Assumption, then stop. The tasks
 stay **in progress** until their PRs merge; the next run's § Close merged closes them.
 
 ## Guardrails
