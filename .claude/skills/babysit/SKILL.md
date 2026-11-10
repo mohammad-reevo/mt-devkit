@@ -79,9 +79,7 @@ Not conflicted → `ScheduleWakeup(120s)` and return (skip in `--watch-only`).
   run update-branch (see *Update-branch*) and say so in the report. Read the base branch first
   (`gh pr view <n> --json baseRefName`) — on a PR **stacked** on another feature branch,
   update-branch merges **that parent**, never `main` (`git-merge.md`), and the merge-base to
-  measure is against the parent. **Skip it for a project-drive slice** (base is
-  `mohammad/<project>-base` or another slice): the stack is never synced, and `main` is reconciled
-  once in the project PR (`workflow` § Final PR).
+  measure is against the parent.
 - **PR threads — ALL of them, incl. outdated.** Query every thread and read `isResolved`
   directly (an `isOutdated` thread is still OPEN — never trust a filtered "unresolved" list,
   per `github.md`):
@@ -116,16 +114,16 @@ you changed) **and** this `headSha` hasn't been rerun yet → `gh run rerun <run
 **once**. If it fails again, or the failing paths overlap your diff → report it as actionable.
 Track rerun state per `headSha` (a new push resets it).
 
-**Base-inherited red — not this PR's to fix.** On a PR whose base is not `main` (a project base,
+**Base-inherited red — not this PR's to fix.** On a PR whose base is not `main` (stacked on
 a slice, a long-lived split base), a failing required check is **base-inherited** when its failing
 paths don't overlap the PR's diff (`git diff origin/<base>...HEAD --name-only`) **and** its cause
 is outside this PR, either:
 - **on `main` but not yet in the base** — `git log origin/<base>..origin/main -- <failing paths>`
   shows it, or (for `Frontend Breaking Changes Check` and similar contract checks) it fails on
   routes or types `main` added that the base lacks. It clears once the base takes `main`; or
-- **already in the base** — another slice merged into it first, or the base's own state:
-  `git log origin/main..origin/<base> -- <failing paths>` names the commit. It is fixed on the base
-  itself (by the project orchestrator or a dedicated slice), or clears at the final base → `main` PR.
+- **already in the base** — the PR it stacks on carries it:
+  `git log origin/main..origin/<base> -- <failing paths>` names the commit. It is fixed in that
+  PR, and reaches this one at the next update-branch.
 
 Either way the fix isn't this PR's, and the merges that clear it are mine. So: report it **once**
 as "base-inherited", naming the commit behind it and which of the two it is; no rerun; never fix

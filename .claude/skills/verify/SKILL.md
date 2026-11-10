@@ -56,8 +56,8 @@ Create one PR per repo the change touches, **ready for review — never draft** 
 salestech-be when implement split out a migration: `mohammad/<slug>-migration` against `main`,
 and `mohammad/<slug>` against that migration branch, so its diff shows only the code. A split
 PR's branch is the plan filename minus `-plan.md`. A project slice's or split PR's PR goes against
-the plan's `> Base:` (`--base <base>`: the project base, the dependency's branch, or `main`) when
-it has one — a project slice never `main` by default. For the
+the plan's `> Base:` (`--base <base>`: the dependency's branch, or `main`) when
+it has one. For the
 description, use the **`pr-description` skill** — it routes to that repo's own convention,
 applies my house rules, and preflights the body against the repo's validator so a format miss
 doesn't cost a CI cycle. Fill it with what/why (from Goals) + the verification plan/results
@@ -71,6 +71,15 @@ finding implement declined is still mine to make the final call on.
 targeted tests, the commit hook ran lint and types, and CI runs them again — a green PR says so without a
 sentence. Don't transcribe those results into the body; `## Verification` is for what CI cannot
 prove (`pr-description` § Overrides).
+
+**Link a stack.** Once a PR whose base is another PR's branch is open (a stacked slice or split
+PR, the migration split included), register the chain as a native GitHub stack:
+`gh stack link <bottom-PR-url> … <top-PR-url>`, bottom (the PR on `main`) to top. It creates or
+extends the stack, never removes members, needs no local stack state, and prints `stack #N` and
+its URL — put that URL in the hand-back next to the PR link. Open every PR with `gh pr create`
+first (via `pr-description`, ready): `gh stack link` / `submit` create a missing PR as a draft.
+Never `gh stack sync` / `rebase` / `modify` / `submit` / `init` / `merge` — update-branch stays a
+merge (`git-merge.md`), and merging is mine.
 
 Report the PR link right away, so I can start reading it while you run the verification.
 

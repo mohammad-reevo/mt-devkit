@@ -18,9 +18,8 @@
 
 ## Orchestration
 
-- **Bases:** <every slice targets main | the chain <slices> targets `mohammad/<project>-base` in
-  <repos>; every other slice, and every migration, targets main>. Merging slices, and any final
-  base → main PR, are Mohammad's.
+- **Bases:** <every slice targets main | the stack <slices> in <repos>, bottom on main, each next
+  on the one below; every other slice targets main>. Merging slices and stacks is Mohammad's.
 - **Questions:** every session asks Mohammad directly, in that session; none go through the
   orchestrator.
 
