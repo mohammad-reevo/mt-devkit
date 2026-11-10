@@ -10,6 +10,9 @@ don't reach for this on `spec/` scope/plan files, task files, or code — those 
 (code gets reviewed as a git diff in its PR). The `author-knowledge-base` skill carries its own diff-and-approve
 sequence for `knowledge-base/` entries; it doesn't need this rule.
 
+**A doc you write or rewrite for me is never gated per section** — skill or no skill: outline,
+my yes, then the whole doc, and I review it after.
+
 ## The Rule
 
 Present the change as a fenced `diff` block, then apply only what was agreed.
