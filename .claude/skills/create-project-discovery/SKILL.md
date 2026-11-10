@@ -58,16 +58,18 @@ Every multi-ticket project needs these, in this order:
 5. **`eng-doc` — eng doc.** Via `create-eng-doc`: open scope decisions first, a draft shaped
    like its golden example, then its review-only loop while I rewrite. Detail cut from the doc
    lands in `implementation-details.md` in this scratch dir.
-6. **`impl-doc` — implementation doc.** Via `create-implementation-plan`, reading
+6. **`overview` — project overview.** Via `create-project-overview`: the one-page why, the
+   success bar and who is involved, its Goals pointing at the eng doc.
+7. **`impl-doc` — implementation doc.** Via `create-implementation-plan`, reading
    `implementation-details.md`: sections, one sentence per ticket.
-7. **`tickets` — tickets.** Via `linear-tickets`: apply the implementation doc's breakdown to
+8. **`tickets` — tickets.** Via `linear-tickets`: apply the implementation doc's breakdown to
    Linear. Carries the **Carry-ins** list (§ Conventions).
-8. **`questions` — revisit the open questions.** Close what the earlier steps answered, make
+9. **`questions` — revisit the open questions.** Close what the earlier steps answered, make
    the remaining calls, carry ticket-level leftovers into Linear.
-9. **`kb` — knowledge-base entries.** Via `author-knowledge-base` — this step is the explicit
+10. **`kb` — knowledge-base entries.** Via `author-knowledge-base` — this step is the explicit
    ask its write rule needs: an overview (what the project is, where its docs live), rules
    (norms any session on the project must follow), progress (which tickets moved).
-10. **`execute` — begin executing.** Hand the ticket groups to `workflow`'s project drive.
+11. **`execute` — begin executing.** Hand the ticket groups to `workflow`'s project drive.
 
 ## Menu steps
 
