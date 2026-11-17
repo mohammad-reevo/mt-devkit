@@ -1,6 +1,6 @@
 ---
 name: babysit
-description: Watch CI checks + PR review threads for the current worktree's PR(s) — or, given a project name, every slice PR in that project's index — in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly), and exits by announcing "ready for your review" with the PR link once required checks are green and every thread is resolved. Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) and runs update-branch on a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Unresolved review threads are handed straight to address-comments, which carries its own gate. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
+description: Watch CI checks + PR review threads for the current worktree's PR(s) — or, given a project name, every slice PR in that project's index — in a poll loop, paced to a ~25-minute CI run (~10-minute polls, so review comments are still picked up promptly), and exits by announcing "ready for your review" with the PR link once required checks are green and every thread is resolved — or "not approvable yet" when a review gate CI doesn't show (the builder agent's no-approval decision, a failed PR-description validation) is still unmet. Auto-starts as the funnel tail right after verify opens the PR; standalone it runs on my explicit invoke. Reports failing checks (trimmed logs) and runs update-branch on a conflicted or stale branch; reruns a genuinely-flaky failure once, and goes loud + stops once the same check has failed across two pushes. Unresolved review threads are handed straight to address-comments, which carries its own gate. Use --watch-only for a single-shot check. Triggers on "/babysit", "babysit the PR", "watch CI".
 argument-hint: [<project>] [--watch-only]
 allowed-tools:
   - Bash
@@ -68,6 +68,26 @@ Not conflicted → `ScheduleWakeup(120s)` and return (skip in `--watch-only`).
     On `failure`, the failed sections are the `**❌` lines of the latest comment containing
     `<!-- pr-description-validation -->` (the bot edits that comment in place but never marks
     a pass, so read it only after the run says `failure`).
+- **Review gates — what withholds approval without a red check.** On salestech-be and
+  frontend-monorepo, two gates are unmet until they pass. Neither ever shows up in
+  `gh pr checks --required`:
+  - **The builder agent's decision.** Passed when `eng-automation-user` has an `APPROVED`
+    review. Otherwise read the latest `reevo-builder-agent-code-review[bot]` review and the line
+    under its `## Decision` (`gh api repos/<owner>/<repo>/pulls/<n>/reviews`). A review whose
+    `commit_id` isn't the head SHA is stale: one is coming for the new push, so wait for it. Once
+    the required checks are done, wait at most 30 minutes more, then report it as pending and
+    stop waiting. What clears each decision:
+
+    | Decision | Clears when |
+    |---|---|
+    | `No approval (receipt): visual_verification` | screenshots of the pinned head are in the body (`pr-screenshots`; mine to attach if verify couldn't) |
+    | `No approval (receipt): policy_other` | the named policy point is satisfied; new evidence alone won't flip it |
+    | `Block: N open blockers` | its blocker threads are fixed — they reach `address-comments` as threads |
+
+    It re-reviews on commits, not on body edits
+    (`knowledge-base/concepts/github/builder-agent-review-triggers.md`). So after a body-only fix,
+    draft a `@reevo-builder-agent` re-review comment for me rather than waiting.
+  - **The description verdict** above. `failure` is an unmet gate.
 - **Mergeability — why a run may not exist at all.** `gh pr view <n> --json
   mergeable,mergeStateStatus`. `CONFLICTING` → the PR is dirty, and **a conflicted PR gets no CI
   runs scheduled at all** — so an absent run means dirty far more often than it means too early.
@@ -162,6 +182,7 @@ those can land at any moment, and they're the reason we don't simply sleep for 2
 | CI in flight, run age **< 20 min** | **600s** — CI won't be done; this poll is for new review comments |
 | CI in flight, run age **≥ 20 min** | **300s** — inside the expected finish window, tighten up to catch the result |
 | CI finished; only unresolved threads left | **600s** — nothing but comments to watch |
+| CI finished; the builder agent hasn't reviewed the head yet | **600s** — up to its 30-minute wait |
 | A rerun was just triggered | treat as a fresh run — back to the **< 20 min** row |
 
 Take the **shortest** interval across the PRs being watched (a cross-repo idea polls on whichever
@@ -177,22 +198,26 @@ past (~40 min+), and even then as an observation, not a failure.
 - **`--watch-only`** → print the status table + unresolved threads, then exit. No wakeup, no loop.
 - **Loop mode (default)** → every PR's `--required` checks passed (a base-inherited red counts
   as passed, and so does the prior green run while a base merge's re-run is still going)
-  **and** zero unresolved threads
+  **and** zero unresolved threads **and** no builder-agent review still awaited for the head (within
+  its 30-minute wait)
   → **ready for your review**: announce it and exit (do **not** invoke or suggest done — `/done` ends the
   whole session, not one PR — and do **not** write any state beyond marking the PR ready for
   review in the session's todo list, per `todo-list`). The announcement:
   - leads with **"Ready for your review"** and each PR's link, one line per PR (links every time,
-    per `github.md`);
-  - when the description verdict (above) is `failure`, says so right under the links: each
-    failed section in one line, and who fixes it — `## Verification` is mine (real results
-    replace the pending list), `## Verification Metrics` is the harness's (offer to rewrite
-    that section per `pr-description` § Overrides). It doesn't hold the announcement back;
+    per `github.md`) — or, when any review gate (above) is unmet, with **"Not approvable yet"**
+    instead. A green PR the reviewer won't approve is not ready, and saying so is the point;
+  - under the links, one line per unmet gate: the builder agent's receipt reason and what
+    clears it (table above), and each failed description section. Name who fixes each —
+    `## Verification` and screenshots are mine (real results replace the pending list),
+    `## Verification Metrics` is the harness's (offer to rewrite that section per
+    `pr-description` § Overrides), plus any re-review comment drafted for me;
   - lists any other non-required check that failed or is still running, one line each, marked
     non-blocking. These never hold the announcement back;
   - lists each base-inherited red, one line each with the commit behind it, marked
     non-blocking — and, after a base merge on a green PR, the CI re-run still going;
   - is also sent as a `PushNotification` (load it via `ToolSearch` if deferred) — "PR ready for
-    your review" + the link — since this is the moment I'm most likely away from the session.
+    your review" (or "PR not approvable yet: <gate>") + the link — since this is the moment I'm
+    most likely away from the session.
 
   The loop's **only other exit** is the two-failed-pushes escalation above — that one hands back
   instead of scheduling. Otherwise
@@ -247,6 +272,9 @@ past (~40 min+), and even then as an observation, not a failure.
   could just fix, but the body usually fails because it is waiting on verification media I attach
   by hand — and rewriting it risks destroying what I already attached (`github.md`). Report it
   and leave the body alone.
+- **Review gates are read, never worked around.** Never post the `@reevo-builder-agent`
+  re-review comment yourself (draft it), and never announce "Ready for your review" over an unmet
+  gate.
 - **Poll inline, in main orchestration — never delegate the watch.** babysit is a main-loop
   task: one inline `gh` check + `ScheduleWakeup`, nothing more. Never dispatch a subagent to
   poll CI/threads, and never arm a persistent `Monitor` to watch — a delegated watcher lingers
