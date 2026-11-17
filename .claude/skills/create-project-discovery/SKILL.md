@@ -50,6 +50,9 @@ Every multi-ticket project needs these, in this order:
    go to `open-questions.md` under this step.
 2. **`systems` — how the systems involved work, at altitude.** The native system and, if
    there is one, the vendor's — the same idea in two vocabularies. Conceptual, not code paths.
+   The vendor half follows `vendor-api-research`: tell its research agents to read
+   `.claude/skills/vendor-api-research/SKILL.md`, so every capability the design will lean on
+   lands labelled verified / doc-only / inferred.
 3. **`design` — system design and intended end state.** The big write-up: scope, each
    component, how the pieces connect, grounded in the code. I read it slowly and ask questions.
 4. **`gaps` — retrospective on the product gaps.** Re-read the parked questions with the
@@ -91,7 +94,8 @@ Each goes in only when the project needs it:
 - **`test-org` — set up a vendor test org.** One we are allowed to test in, never a
   customer's. Produces the credentials path and the rules for what may be created there.
 - **`spike` — vendor spike.** Answers what the vendor's public docs leave open, in the test
-  org. Blocked by `test-org`. Its findings fold back into the eng doc, the implementation doc,
+  org, per `vendor-api-research` — starting with every doc-only absence claim the design rests
+  on. Blocked by `test-org`. Its findings fold back into the eng doc, the implementation doc,
   the tickets and `open-questions.md`; whatever it couldn't test is carried to a ticket.
 
 A project may need a step that is neither. Add it with a new id and a one-paragraph entry in
