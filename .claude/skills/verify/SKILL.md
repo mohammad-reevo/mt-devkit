@@ -41,6 +41,11 @@ Judge from what actually changed:
 - **N/A** — no visual change, coding tests already cover it, and nothing complex in how the
   frontend consumes it. Nothing to manually verify.
 - **In-app** — real visual changes or potential side effects. You drive the app yourself (§ 3).
+  **A backend diff is a visual change when the app renders what it changed**: user-facing
+  strings or shapes the editor draws — `render_field` copy, variable-suggestion labels, node /
+  trigger config descriptions, descriptor display names, API-driven UI copy. Such a diff is
+  in-app with screenshots, never N/A. The builder agent withholds approval on it without them
+  (`visual_verification`).
 
 State which you picked and why in one line, then proceed. Don't hand me a menu, and don't wait
 for me — all three strategies run to completion inside the drive.
@@ -113,7 +118,8 @@ project drive, dispatch one tester per slice in a single message.
   `POST /api/v1/flow/user_flow/{id}/flow_runs/_list`, and read `GET /api/v1/flow/flow_run/{id}`.
   The tester doesn't read this skill — put the recipe in its brief when the check needs it.
 
-  For UI changes, capture and attach screenshots with the **`pr-screenshots`** skill — it signs in
+  For UI changes — a UI-visible backend diff included, shot on the local stack — capture and
+  attach screenshots with the **`pr-screenshots`** skill — it signs in
   as the agent's own dev user, saves to `~/Downloads/images/<slug>/`, and embeds the images in the
   PR body itself. The tester does both halves; you update the verification prose from its report.
 

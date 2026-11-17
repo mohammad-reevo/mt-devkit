@@ -141,7 +141,8 @@ Invoke each phase skill and let it run to completion — each handles its own in
   an expired credential or my being away from the keyboard does not.
 - **babysit → STOP.** babysit paces itself to a ~25-minute CI run (≈10-minute polls, so review
   comments still surface quickly) and reports what it finds — it does **not** fix, and reaching
-  green does **not** close anything out. It ends by announcing **"ready for your review"** with
+  green does **not** close anything out. It ends by announcing **"ready for your review"** (or
+  **"not approvable yet"** when a review gate is unmet, per `babysit`) with
   the PR link — that line comes first, because my review is the next step. **done stays
   explicit**: `/done` is mine, and it closes the whole session, not this PR. Never run it, and
   never surface it — I run it at every session's end (`todo-list`). Surface any verification
