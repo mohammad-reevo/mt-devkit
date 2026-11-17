@@ -31,6 +31,9 @@ file already exists — read it and revise from there with what changed; don't s
    Read, Grep, Glob, and Bash (inspect-only). Grep to the line, read the surrounding block —
    don't read whole modules. The product repos are gitignored siblings of the mt-devkit root;
    search them by path. External-tech ideas get a web search; self-contained ideas skip this.
+   An idea that turns on what a third-party vendor's API can do follows
+   `mt-devkit/.claude/skills/vendor-api-research/SKILL.md` — read it and apply it; write-probes
+   become Open questions, since you can't get Mohammad's go.
 4. **Candidates.** 2–3 genuinely different approaches, each with its one load-bearing assumption
    checked. Recommend one.
 5. **Write the scope file** in the skill's template, with the `> Mode:` header. Chosen direction

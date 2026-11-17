@@ -33,6 +33,8 @@ Postgres), `snowflake` (reporting warehouse),
 `posthog` (read the right PostHog project — DEV vs PROD — and a flag's real evaluation),
 `handoff-session` (a living handoff that survives `/compact`, or park a session and resume it later),
 `merged-prs-digest` (post my PRs merged in the last 24h to my Slack channel),
+`vendor-api-research` (what a vendor's API can really do — OAuth metadata, CLIs, plan gating —
+each claim probed and labelled verified / doc-only / inferred),
 `uat-announcement` (work out a "now in UAT" Slack post with me, or review my draft),
 `estimate-timeline` (aggressive + likely dates per release stage, from measured velocity),
 `hackathon` (ideate innovative ideas into the Notion Hackathon Ideas db, or execute one as a
