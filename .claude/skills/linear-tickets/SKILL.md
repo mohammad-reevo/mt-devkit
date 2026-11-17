@@ -39,6 +39,22 @@ Create issues with `save_issue` (`title` + `team` required). For a **tree**, min
 - Set `project`, `assignee` (`"me"` / id / name / email), `state`, `cycle`, and `milestone` per §2 and the Reevo defaults below. The baseline applies to **every** issue you create — each sub-issue of a tree, not just the root.
 - A project **overview** is the project's description/summary — set it with `save_project`, not on an issue.
 
+### Grouping parent + N children
+
+The common simpler tree: a parent that exists only to organise, with one sub-issue per
+deliverable — e.g. "Archive record workflow nodes" (CRMF-3287) over Archive Opportunity,
+Archive Account and Archive Contact (CRMF-3288/3289/3290). It is not a plan tree.
+
+- **The children are the ones I name** — their count and titles. Don't add any.
+- **Parent description:** one line saying it groups these tickets, the child list, and a 1–2
+  line shared summary. No task content on the parent.
+- **Children:** `parentId` = the parent; they inherit its project, milestone, cycle and status
+  (*A sub-issue of an existing ticket inherits from its parent*), which applies the same to a
+  parent created in this run. Assignee comes from the baseline.
+- **No blocking relations between siblings** unless I ask for them.
+- **Existing PRs** go on each child as `links` attachments; Linear renders them.
+- Verify with one `get_issue` per child that `parentId` landed (§5).
+
 ## 4. Edit mode
 
 Update existing issues with `save_issue` (`id` + the fields to change).
